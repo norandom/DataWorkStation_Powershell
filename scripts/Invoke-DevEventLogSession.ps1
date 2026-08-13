@@ -139,14 +139,14 @@ function Get-SessionEvents {
         if ($channel.Name -in 'Application', 'System') {
             $events = @($events | Where-Object { $_.Level -le 3 -or $_.Id -in 41,1000,1001,1002,1026,6008 })
         }
-        foreach ($event in $events) {
+        foreach ($eventRecord in $events) {
             $rows += [pscustomobject]@{
-                Time = $event.TimeCreated
-                Level = $event.LevelDisplayName
-                Id = $event.Id
-                Provider = $event.ProviderName
-                Log = $event.LogName
-                Message = ("$($event.Message)" -replace '\r?\n', ' ').Trim()
+                Time = $eventRecord.TimeCreated
+                Level = $eventRecord.LevelDisplayName
+                Id = $eventRecord.Id
+                Provider = $eventRecord.ProviderName
+                Log = $eventRecord.LogName
+                Message = ("$($eventRecord.Message)" -replace '\r?\n', ' ').Trim()
             }
         }
     }

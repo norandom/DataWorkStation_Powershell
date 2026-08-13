@@ -151,14 +151,14 @@ function Get-Recommendations {
     )
     $catalog = Import-PowerShellDataFile -LiteralPath $script:CapabilityFile
     $text = ("{0} {1}" -f $CaseData.Problem, $CaseData.Target).ToLowerInvariant()
-    $matches = @($catalog.Capabilities | Where-Object {
+    $matchedCapabilities = @($catalog.Capabilities | Where-Object {
         $capability = $_
         @($capability.Triggers | Where-Object { $text.Contains($_) }).Count -gt 0
     })
-    if ($matches.Count -eq 0) { $matches = @($catalog.Capabilities | Where-Object Id -eq 'event-history') }
+    if ($matchedCapabilities.Count -eq 0) { $matchedCapabilities = @($catalog.Capabilities | Where-Object Id -eq 'event-history') }
     $knownKinds = @($Evidence | Where-Object Exists | Select-Object -ExpandProperty Kind -Unique)
     $result = [Collections.Generic.List[object]]::new()
-    foreach ($capability in $matches) {
+    foreach ($capability in $matchedCapabilities) {
         $missing = @($capability.EvidenceKinds | Where-Object { $_ -notin $knownKinds })
         $result.Add([pscustomobject]@{
             Capability = $capability.Id

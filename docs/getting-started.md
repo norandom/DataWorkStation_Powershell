@@ -11,6 +11,14 @@ cd "$HOME/Source/PowerShell"
 
 Open a new PowerShell session after profile installation. The prompt should show `username@host path>` and commands such as `rg`, `gh`, `uv`, `docker`, `mem`, `ports`, and `tricky` should resolve.
 
+Install the repository-local Git hook once after cloning:
+
+```powershell
+precommit-install
+```
+
+Commits then lint staged PowerShell files automatically. Use `precommit-run` to check the full tracked tree without committing.
+
 ## Documentation locally
 
 MkDocs is a locked repository dependency, not a global workstation package:

@@ -45,6 +45,8 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `scripts/Invoke-SkillOpt.ps1` | Wraps review, mock validation, provider calls, staging, and explicit adoption. |
 | `scripts/Set-SkillOptState.ps1` | Installs pinned SkillOpt and maintains its safe user configuration. |
 | `scripts/Test-RepositorySkills.ps1` | Validates all repo-local skill packages locally and in CI. |
+| `scripts/Invoke-PowerShellLint.ps1` | Runs the pinned PSScriptAnalyzer policy on staged paths or the full tracked tree. |
+| `scripts/Install-PreCommitHook.ps1` | Installs the isolated pre-commit CLI, pinned analyzer module, and local Git hook. |
 | `scripts/Set-PoolMonState.ps1` | Copies the official WinDbg/WDK pool-tag database beside PoolMon. |
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
@@ -101,6 +103,8 @@ Desired state never configures rclone credentials, creates a persistent cloud mo
 It also never harvests Codex transcripts, contacts a model provider for SkillOpt, schedules optimization, or adopts generated skill edits. Those steps require reviewed task evidence and explicit commands.
 
 The SkillOpt resource pins the stable PyPI package only. It does not install the mutable source tree, global SkillOpt plugin, WebUI, benchmark extras, or local-model stacks.
+
+Repository hooks are explicit because `.git/hooks` is local state. Run `precommit-install` once per clone; it installs `pre-commit==4.6.2` as an isolated uv tool and PSScriptAnalyzer 1.25.0 for the current user. The hook lints staged PowerShell files, while `precommit-run` checks the complete tracked tree.
 
 The full WDK is not installed automatically because WinDbg supplies the required `pooltag.txt`. If that source disappears, `Set-PoolMonState.ps1` reports the explicit fallback command instead of silently installing the large WDK.
 

@@ -24,7 +24,7 @@ function Get-DesiredProfileContent {
     if (-not (Test-Path -LiteralPath $Path)) { return $template }
     $existing = Get-Content -LiteralPath $Path -Raw
     if ($existing -match [regex]::Escape($beginMarker)) {
-        return [regex]::Replace($existing, $blockPattern, [Text.RegularExpressions.MatchEvaluator]{ param($match) $template })
+        return [regex]::Replace($existing, $blockPattern, [Text.RegularExpressions.MatchEvaluator]{ param($match) $null = $match; $template })
     }
     return $existing.TrimEnd() + [Environment]::NewLine + [Environment]::NewLine + $template
 }

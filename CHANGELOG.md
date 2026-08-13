@@ -4,6 +4,7 @@
 
 - Add a pinned Microsoft SkillOpt-Sleep integration with one-skill targeting, reviewed task files, held-out validation, ignored staging, and explicit adoption.
 - Add repository skill validation locally and in GitHub Actions.
+- Add a pinned PSScriptAnalyzer pre-commit hook and matching GitHub Actions lint workflow.
 
 ## 0.1.0 - 2026-08-13
 

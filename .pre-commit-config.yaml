@@ -1,0 +1,16 @@
+minimum_pre_commit_version: "4.6.2"
+
+repos:
+  - repo: local
+    hooks:
+      - id: powershell-lint
+        name: PowerShell lint
+        entry: pwsh
+        args:
+          - -NoLogo
+          - -NoProfile
+          - -File
+          - scripts/Invoke-PowerShellLint.ps1
+        language: system
+        files: '\.(ps1|psm1|psd1)$'
+        pass_filenames: true

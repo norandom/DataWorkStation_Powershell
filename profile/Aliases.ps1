@@ -16,6 +16,17 @@ function global:skillopt-run { skillopt run @args }
 function global:skillopt-adopt { skillopt adopt @args }
 function global:skills-validate { skillopt validate @args }
 
+function global:lint-powershell {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PowerShellLint.ps1') @args
+}
+function global:precommit-install {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Install-PreCommitHook.ps1') @args
+}
+function global:precommit-run {
+    Push-Location (Join-Path $env:USERPROFILE 'Source\PowerShell')
+    try { & pre-commit.exe run --all-files @args } finally { Pop-Location }
+}
+
 function global:docs-serve {
     Push-Location (Join-Path $env:USERPROFILE 'Source\PowerShell')
     try { & uv.exe run --group docs mkdocs serve @args } finally { Pop-Location }

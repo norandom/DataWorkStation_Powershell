@@ -93,10 +93,10 @@ function Test-Rule {
 function Get-FirewallDrift {
     $issues = [Collections.Generic.List[string]]::new()
 
-    foreach ($profile in Get-NetFirewallProfile -Profile Domain, Private, Public) {
-        if ("$($profile.Enabled)" -ne 'True') { $issues.Add("$($profile.Name) firewall is disabled.") }
-        if ("$($profile.DefaultInboundAction)" -ne 'Block') { $issues.Add("$($profile.Name) default inbound action is not Block.") }
-        if ("$($profile.DefaultOutboundAction)" -ne 'Allow') { $issues.Add("$($profile.Name) default outbound action is not Allow.") }
+    foreach ($firewallProfile in Get-NetFirewallProfile -Profile Domain, Private, Public) {
+        if ("$($firewallProfile.Enabled)" -ne 'True') { $issues.Add("$($firewallProfile.Name) firewall is disabled.") }
+        if ("$($firewallProfile.DefaultInboundAction)" -ne 'Block') { $issues.Add("$($firewallProfile.Name) default inbound action is not Block.") }
+        if ("$($firewallProfile.DefaultOutboundAction)" -ne 'Allow') { $issues.Add("$($firewallProfile.Name) default outbound action is not Allow.") }
     }
 
     $managedNames = @(Get-NetFirewallRule -Group $ruleGroup -ErrorAction Ignore | Select-Object -ExpandProperty Name | Sort-Object)

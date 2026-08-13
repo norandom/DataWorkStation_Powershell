@@ -44,28 +44,27 @@ $events = foreach ($query in $queries) {
 }
 
 $events | Sort-Object TimeCreated -Descending | Select-Object -First $MaxEvents | ForEach-Object {
-    $event = $_
+    $eventRecord = $_
     $data = @{}
     try {
-        $xml = [xml]$event.ToXml()
+        $xml = [xml]$eventRecord.ToXml()
         foreach ($item in @($xml.Event.EventData.Data)) {
             if ($item.Name) { $data[$item.Name] = [string]$item.'#text' }
         }
-    } catch {}
+    } catch { Write-Verbose "Event XML could not be parsed: $($_.Exception.Message)" }
 
-    $message = if ($event.Message) { ($event.Message -replace '\s+', ' ').Trim() } else { '' }
+    $message = if ($eventRecord.Message) { ($eventRecord.Message -replace '\s+', ' ').Trim() } else { '' }
     [pscustomobject]@{
-        Time       = $event.TimeCreated
-        Level      = $event.LevelDisplayName
-        Id         = $event.Id
-        Provider   = $event.ProviderName
+        Time       = $eventRecord.TimeCreated
+        Level      = $eventRecord.LevelDisplayName
+        Id         = $eventRecord.Id
+        Provider   = $eventRecord.ProviderName
         User       = @($data.TargetUserName,$data.SubjectUserName | Where-Object { $_ -and $_ -ne '-' })[0]
         SourceIP   = @($data.IpAddress,$data.ClientAddress,$data.SourceAddress | Where-Object { $_ -and $_ -ne '-' })[0]
         LogonType  = $data.LogonType
         Process    = @($data.ProcessName,$data.NewProcessName | Where-Object { $_ })[0]
         Service    = $data.ServiceName
-        Log        = $event.LogName
+        Log        = $eventRecord.LogName
         Message    = if ($message.Length -gt 500) { $message.Substring(0,500) + '...' } else { $message }
     }
 }
-

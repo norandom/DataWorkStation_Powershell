@@ -13,13 +13,14 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$writeJson = $Json
 $wptRoot = 'C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit'
 $wpr = Join-Path $wptRoot 'wpr.exe'
 $wpa = Join-Path $wptRoot 'wpa.exe'
 if (-not (Test-Path -LiteralPath $wpr -PathType Leaf)) { throw "WPT recorder is missing: $wpr" }
 
 function Write-Result([object] $Value) {
-    if ($Json) { $Value | ConvertTo-Json -Depth 5 } else { $Value }
+    if ($writeJson) { $Value | ConvertTo-Json -Depth 5 } else { $Value }
 }
 
 if ($Action -eq 'Status' -and -not $Name) {

@@ -36,7 +36,7 @@ $rows = foreach ($entry in $paths.GetEnumerator()) {
             if ($entry.Key -eq 'Speedscope') { $version = $configuration.Speedscope.Version }
             elseif ($entry.Key -eq 'PySpy') { $version = (& $entry.Value --version 2>$null) -replace '^py-spy\s+', '' }
             else { $version = (Get-Item -LiteralPath $entry.Value).VersionInfo.ProductVersion }
-        } catch { }
+        } catch { Write-Verbose "Unable to read $($entry.Key) version: $($_.Exception.Message)" }
     }
     [pscustomobject]@{
         Tool = $entry.Key

@@ -386,3 +386,13 @@ sudo pwsh -NoProfile -File .\scripts\Set-FirewallState.ps1 -Mode Restore -Backup
 | `skills-validate` | Validate all repository skills without optimizing them. |
 
 Desired state installs `skillopt==0.2.0` through `uv tool`. It never harvests transcripts, contacts a provider, schedules runs, or adopts edits automatically.
+
+## Repository quality
+
+| Command | Purpose |
+|---|---|
+| `lint-powershell [PATH ...]` | Run PSScriptAnalyzer 1.25.0 on selected files, or all tracked PowerShell files when no paths are supplied. |
+| `precommit-install` | Install pinned pre-commit and PSScriptAnalyzer dependencies, validate the hook configuration, and install `.git/hooks/pre-commit`. |
+| `precommit-run` | Execute every configured pre-commit hook against all tracked files. |
+
+The PowerShell hook examines only staged `.ps1`, `.psm1`, and `.psd1` files during an ordinary commit. The same lint script runs in GitHub Actions. Hook installation is explicit per clone because `.git/hooks` is intentionally untracked.

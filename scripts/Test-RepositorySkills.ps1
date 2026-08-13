@@ -8,7 +8,8 @@ $ErrorActionPreference = 'Stop'
 if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path -Parent $PSScriptRoot }
 $skillsRoot = Join-Path $RepositoryRoot '.agents\skills'
 if (-not (Test-Path -LiteralPath $skillsRoot -PathType Container)) { throw "Skills directory not found: $skillsRoot" }
-$validator = Join-Path $env:USERPROFILE '.codex\skills\.system\skill-creator\scripts\quick_validate.py'
+$userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+$validator = if ($userProfile) { Join-Path $userProfile '.codex\skills\.system\skill-creator\scripts\quick_validate.py' } else { $null }
 $uv = (Get-Command uv.exe -CommandType Application -ErrorAction Ignore).Source
 $results = [Collections.Generic.List[object]]::new()
 
@@ -29,7 +30,7 @@ foreach ($directory in @(Get-ChildItem -LiteralPath $skillsRoot -Directory | Sor
     if (-not (Test-Path -LiteralPath $agentFile -PathType Leaf)) { $errors.Add('agents/openai.yaml is missing.') }
 
     $official = 'not available'
-    if ($errors.Count -eq 0 -and $uv -and (Test-Path -LiteralPath $validator -PathType Leaf)) {
+    if ($errors.Count -eq 0 -and $uv -and $validator -and (Test-Path -LiteralPath $validator -PathType Leaf)) {
         $validationOutput = & $uv run --isolated --with pyyaml --python 3.12 python $validator $directory.FullName 2>&1 | Out-String
         if ($LASTEXITCODE -ne 0) { $errors.Add("Official validator failed: $($validationOutput.Trim())") } else { $official = 'passed' }
     }

@@ -1,0 +1,66 @@
+$schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2023/08/config/document.json
+metadata:
+  winget:
+    processor:
+      identifier: dscv3
+resources:
+  - name: PowerShell 7
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Microsoft.PowerShell
+      source: winget
+      useLatest: true
+  - name: Microsoft Coreutils
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Microsoft.Coreutils
+      source: winget
+      useLatest: true
+  - name: ripgrep
+    type: Microsoft.WinGet/Package
+    properties:
+      id: BurntSushi.ripgrep.MSVC
+      source: winget
+      useLatest: true
+  - name: Sysinternals Suite
+    type: Microsoft.WinGet/Package
+    properties:
+      id: 9P7KNL5RWT25
+      source: msstore
+      useLatest: true
+  - name: btop4win
+    type: Microsoft.WinGet/Package
+    properties:
+      id: aristocratos.btop4win
+      source: winget
+      useLatest: true
+  - name: uv
+    type: Microsoft.WinGet/Package
+    properties:
+      id: astral-sh.uv
+      source: winget
+      useLatest: true
+  - name: GitHub CLI
+    type: Microsoft.WinGet/Package
+    properties:
+      id: GitHub.cli
+      source: winget
+      useLatest: true
+  - name: Tailscale
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Tailscale.Tailscale
+      source: winget
+      useLatest: true
+  - name: Windows Subsystem for Linux
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Microsoft.WSL
+      source: winget
+      useLatest: true
+  - name: Debian WSL
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Debian.Debian
+      source: winget
+      useLatest: true

@@ -1,0 +1,8 @@
+# Generated local state and backups
+state/
+
+# PowerShell and editor scratch files
+*.tmp
+*.bak
+*~
+

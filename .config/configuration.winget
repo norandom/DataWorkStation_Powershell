@@ -22,6 +22,30 @@ resources:
       id: BurntSushi.ripgrep.MSVC
       source: winget
       useLatest: true
+  - name: rclone
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Rclone.Rclone
+      source: winget
+      useLatest: true
+  - name: aria2
+    type: Microsoft.WinGet/Package
+    properties:
+      id: aria2.aria2
+      source: winget
+      useLatest: true
+  - name: WinFsp
+    type: Microsoft.WinGet/Package
+    properties:
+      id: WinFsp.WinFsp
+      source: winget
+      useLatest: true
+  - name: WinDbg
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Microsoft.WinDbg
+      source: winget
+      useLatest: true
   - name: Sysinternals Suite
     type: Microsoft.WinGet/Package
     properties:

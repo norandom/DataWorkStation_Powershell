@@ -1,8 +1,11 @@
 # Generated local state and backups
 state/
+eventlog-*/
+pcap-*/
+ttd/
+dumps/
 
 # PowerShell and editor scratch files
 *.tmp
 *.bak
 *~
-

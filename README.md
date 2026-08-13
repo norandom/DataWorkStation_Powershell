@@ -7,15 +7,26 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | Path | Responsibility |
 |---|---|
 | `.config/configuration.winget` | Declarative WinGet package state, including `uv`. |
-| `profile/Shell.ps1` | Managed PowerShell profile block. |
-| `scripts/Set-PowerShellProfile.ps1` | Tests, ensures, or reapplies both user profile files. |
+| `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
+| `profile/Shell.ps1` | Minimal managed profile-component loader. |
+| `profile/Config.ps1` | PSReadLine, prompt, and native-command precedence. |
+| `profile/Tools.ps1` | Reusable diagnostics and command implementations. |
+| `profile/Aliases.ps1` | Short user-facing wrappers and Linux-style mappings. |
+| `scripts/Set-PowerShellProfile.ps1` | Deploys and verifies the loader and components for both PowerShell runtimes. |
+| `scripts/Set-DeveloperToolsState.ps1` | Maintains CodeQL, Trail of Bits packs, Semgrep CE, TTD, Debian rsync, and PoolMon tags. |
+| `scripts/Set-PoolMonState.ps1` | Copies the official WinDbg/WDK pool-tag database beside PoolMon. |
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
-| `scripts/Set-SmartScreenState.ps1` | Keeps SmartScreen enabled in warning/override mode. |
+| `scripts/Set-DefenderState.ps1` | Explicitly enables, disables, or reports Defender runtime protection. |
+| `scripts/Set-SmartScreenState.ps1` | Controls SmartScreen Off, Medium/Warn, and Full/Block modes. |
+| `scripts/Set-SaveZoneState.ps1` | Controls whether future downloads retain Mark-of-the-Web. |
 | `scripts/Set-WslState.ps1` | Maintains the WSL memory and swap limits. |
 | `scripts/Set-PagefileState.ps1` | Maintains a 16-32 GiB Windows pagefile policy. |
 | `scripts/Set-EventLogState.ps1` | Maintains the balanced audit channels and scheduled EVTX archive task. |
 | `scripts/Get-EventTriage.ps1` | Normalizes operational, crash, logon, remote, and security event views. |
+| `scripts/Invoke-DevEventLogSession.ps1` | Captures scoped EVTX, ETW/WPR ETL, and WER full dumps for a development repro. |
+| `scripts/Invoke-PacketCapture.ps1` | Captures NIC traffic with in-box PktMon and converts ETL to PCAPNG. |
+| `scripts/Get-PcapTriage.ps1` | Provides compact packet, failure, protocol, port, and endpoint views from PktMon ETL. |
 | `scripts/ssh-copy-id.ps1` | Installs an OpenSSH public key on a POSIX SSH target. |
 | `scripts/Set-FirewallState.ps1` | Tests, ensures, reinitializes, removes, or restores the firewall state. |
 | `config/defender-exclusions.psd1` | Declares paths excluded from Microsoft Defender scanning. |
@@ -39,12 +50,20 @@ Run from PowerShell 7:
 
 The Defender exclusions are `D:\` and `%USERPROFILE%\Source`. The entire D: volume is intentionally excluded from real-time and scheduled Defender scanning. Unrelated exclusions are preserved.
 
-Defender remains active outside those paths, but scheduled activity is idle-only, low-priority, throttled toward 15% average CPU, and does not run missed-scan catch-up jobs. SmartScreen remains enabled at `Warn`, allowing an explicit override for known tools. Smart App Control is deliberately not changed.
+Defender remains active outside those paths by default, but scheduled activity is idle-only, low-priority, throttled toward 15% average CPU, and does not run missed-scan catch-up jobs. Use `disable-defender` and `enable-defender` for an explicit elevated runtime toggle; neither command starts a scan. SmartScreen supports `Off`, `Medium` (`Warn` with override), and `Full` (`Block` without bypass). SaveZone/Mark-of-the-Web is controlled independently. Smart App Control is deliberately not changed.
 
 WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Windows uses a 16 GiB initial and 32 GiB maximum pagefile; changing that policy requires a Windows restart.
 
 The balanced event-log template keeps relevant live logs circular and generously sized, then exports a rolling 48-hour EVTX window every day. Generated ZIP archives are stored in `E:\Logs`, retained for at most 14 days, capped at 768 MiB total, and rotated early if E: has less than 128 MiB free. Staging occurs under ProgramData on C:. The scheduled exporter is copied into an administrator-controlled directory and runs as SYSTEM.
 
-The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, Sysinternals Suite, btop4win, uv, GitHub CLI (`gh`), Tailscale, WSL, and Debian. Docker Engine and Compose inside Debian WSL remain separate because Linux repository configuration and daemon state belong inside the distribution rather than the Windows package configuration.
+The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, GitHub CLI (`gh`), Tailscale, WSL, and Debian. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, standalone TTD, Debian rsync, and the official PoolMon tag database. It does not use or modify the AMD/PyTorch Python environment.
+
+## Automatic versus explicit actions
+
+`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages and developer CLIs. It never configures rclone credentials, creates a persistent cloud mount, signs into Semgrep, starts a Semgrep/CodeQL scan, records a TTD trace, attaches a debugger, captures a crash dump, or registers a machine-wide postmortem debugger. Those actions remain explicit shell commands.
+
+The full WDK is not installed automatically because WinDbg supplies the required `pooltag.txt`. If that source disappears, `Set-PoolMonState.ps1` reports the explicit fallback command instead of silently installing the large WDK.
+
+Docker Engine and Compose inside Debian WSL remain separate because Linux repository configuration and daemon state belong inside the distribution rather than the Windows package configuration.
 
 See [docs/Aliases.md](docs/Aliases.md) for daily commands and the exact network exposure model.

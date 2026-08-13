@@ -5,7 +5,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$templatePath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\profile\Shell.ps1'))
+$profileSourceDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\profile'))
+$templatePath = Join-Path $profileSourceDirectory 'Shell.ps1'
+$componentNames = @('Config.ps1', 'Tools.ps1', 'Aliases.ps1')
 $beginMarker = '# BEGIN CODEX LINUX SHELL'
 $endMarker = '# END CODEX LINUX SHELL'
 $blockPattern = '(?s)' + [regex]::Escape($beginMarker) + '.*?' + [regex]::Escape($endMarker)
@@ -27,11 +29,26 @@ function Get-DesiredProfileContent {
     return $existing.TrimEnd() + [Environment]::NewLine + [Environment]::NewLine + $template
 }
 
+function Test-ComponentDrift {
+    param([string] $ProfilePath)
+
+    $componentDirectory = Join-Path (Split-Path -Parent $ProfilePath) 'LinuxShell'
+    foreach ($componentName in $componentNames) {
+        $source = Join-Path $profileSourceDirectory $componentName
+        $target = Join-Path $componentDirectory $componentName
+        if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { return $true }
+        if ((Get-Content -LiteralPath $source -Raw).TrimEnd() -cne (Get-Content -LiteralPath $target -Raw).TrimEnd()) {
+            return $true
+        }
+    }
+    return $false
+}
+
 $driftedTargets = @()
 foreach ($target in $targets) {
     $existing = if (Test-Path -LiteralPath $target) { (Get-Content -LiteralPath $target -Raw).TrimEnd() } else { '' }
     $desired = (Get-DesiredProfileContent -Path $target).TrimEnd()
-    if ($existing -cne $desired) { $driftedTargets += $target }
+    if ($existing -cne $desired -or (Test-ComponentDrift -ProfilePath $target)) { $driftedTargets += $target }
 }
 
 if ($Mode -eq 'Test') {
@@ -47,19 +64,37 @@ if ($Mode -eq 'Test') {
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 foreach ($target in $targets) {
     $desired = Get-DesiredProfileContent -Path $target
-    $changed = $Mode -eq 'Reinitialize' -or $target -in $driftedTargets
-    if (-not $changed) {
+    $existing = if (Test-Path -LiteralPath $target) { (Get-Content -LiteralPath $target -Raw).TrimEnd() } else { '' }
+    $profileChanged = $Mode -eq 'Reinitialize' -or $existing -cne $desired.TrimEnd()
+    $componentDirectory = Join-Path (Split-Path -Parent $target) 'LinuxShell'
+    $changedComponents = @($componentNames | Where-Object {
+        $source = Join-Path $profileSourceDirectory $_
+        $destination = Join-Path $componentDirectory $_
+        $Mode -eq 'Reinitialize' -or
+            -not (Test-Path -LiteralPath $destination -PathType Leaf) -or
+            (Get-Content -LiteralPath $source -Raw).TrimEnd() -cne (Get-Content -LiteralPath $destination -Raw).TrimEnd()
+    })
+
+    if (-not $profileChanged -and $changedComponents.Count -eq 0) {
         Write-Host "Unchanged profile: $target"
         continue
     }
 
     $targetDirectory = Split-Path -Parent $target
     New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
-    if (Test-Path -LiteralPath $target) {
-        Copy-Item -LiteralPath $target -Destination "$target.$timestamp.bak" -Force
+    if ($profileChanged) {
+        if (Test-Path -LiteralPath $target) {
+            Copy-Item -LiteralPath $target -Destination "$target.$timestamp.bak" -Force
+        }
+        Set-Content -LiteralPath $target -Value $desired -Encoding UTF8
+        Write-Host "Updated profile loader: $target"
     }
-    Set-Content -LiteralPath $target -Value $desired -Encoding UTF8
-    Write-Host "Updated profile: $target"
+
+    New-Item -ItemType Directory -Path $componentDirectory -Force | Out-Null
+    foreach ($componentName in $changedComponents) {
+        Copy-Item -LiteralPath (Join-Path $profileSourceDirectory $componentName) -Destination (Join-Path $componentDirectory $componentName) -Force
+        Write-Host "Updated profile component: $(Join-Path $componentDirectory $componentName)"
+    }
 }
 
 # Keep the btop process list focused on RAM consumers.
@@ -74,4 +109,3 @@ if ($btopConfig) {
         Write-Host "Configured btop memory sorting: $($btopConfig.FullName)"
     }
 }
-

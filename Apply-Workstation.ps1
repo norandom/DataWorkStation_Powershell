@@ -3,6 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [switch] $SkipPackages,
+    [switch] $SkipDeveloperTools,
     [switch] $SkipFirewall,
     [switch] $SkipDefender,
     [switch] $SkipSmartScreen,
@@ -13,6 +14,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
+$developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
 $sudoScript = Join-Path $PSScriptRoot 'scripts\Set-SudoState.ps1'
 $defenderScript = Join-Path $PSScriptRoot 'scripts\Set-DefenderExclusionState.ps1'
 $smartScreenScript = Join-Path $PSScriptRoot 'scripts\Set-SmartScreenState.ps1'
@@ -38,6 +40,12 @@ if (-not $SkipPackages) {
         Invoke-CheckedProcess 'WinGet configuration' {
             & winget configure --file $configurationFile --accept-configuration-agreements --disable-interactivity
         }
+    }
+}
+
+if (-not $SkipDeveloperTools) {
+    Invoke-CheckedProcess 'Developer tool state' {
+        & $pwsh -NoLogo -NoProfile -File $developerToolsScript -Mode $Mode
     }
 }
 

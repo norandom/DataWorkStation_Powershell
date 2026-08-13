@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Test', 'Ensure', 'Reinitialize', 'Apply', 'Remove', 'Restore')]
+    [ValidateSet('Test', 'Ensure', 'Reinitialize', 'Apply', 'Remove', 'Restore', 'Disable', 'Enable', 'Status')]
     [string] $Mode = 'Ensure',
 
     [string] $BackupPath
@@ -170,6 +170,34 @@ if ($Mode -eq 'Remove') {
     Assert-Administrator
     Get-NetFirewallRule -Group $ruleGroup -ErrorAction Ignore | Remove-NetFirewallRule
     Write-Host "Removed the managed firewall rules: $ruleGroup"
+    exit 0
+}
+
+if ($Mode -in 'Status', 'Disable', 'Enable') {
+    if ($Mode -ne 'Status') {
+        Assert-Administrator
+        $enabled = $Mode -eq 'Enable'
+        Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled $enabled
+
+        $deadline = (Get-Date).AddSeconds(5)
+        do {
+            Start-Sleep -Milliseconds 250
+            $profiles = @(Get-NetFirewallProfile -Profile Domain,Private,Public)
+            $expected = @($profiles | Where-Object { ("$($_.Enabled)" -eq 'True') -ne $enabled }).Count -eq 0
+        } while (-not $expected -and (Get-Date) -lt $deadline)
+    } else {
+        $profiles = @(Get-NetFirewallProfile -Profile Domain,Private,Public)
+        $expected = $true
+    }
+
+    $profiles | Select-Object Name,Enabled,DefaultInboundAction,DefaultOutboundAction,AllowInboundRules
+    if (-not $expected) {
+        Write-Warning "Windows Firewall did not reach the requested '$Mode' state within 5 seconds."
+        exit 1
+    }
+    if ($Mode -ne 'Status') {
+        Write-Host "Windows Firewall protection state: $($Mode.ToLowerInvariant()). Managed rules were preserved."
+    }
     exit 0
 }
 

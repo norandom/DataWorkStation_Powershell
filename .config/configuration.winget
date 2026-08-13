@@ -64,6 +64,18 @@ resources:
       id: astral-sh.uv
       source: winget
       useLatest: true
+  - name: .NET 10 SDK
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Microsoft.DotNet.SDK.10
+      source: winget
+      useLatest: true
+  - name: Node.js LTS
+    type: Microsoft.WinGet/Package
+    properties:
+      id: OpenJS.NodeJS.LTS
+      source: winget
+      useLatest: true
   - name: GitHub CLI
     type: Microsoft.WinGet/Package
     properties:

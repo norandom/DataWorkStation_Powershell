@@ -76,6 +76,76 @@ function global:ttd-open {
     & WinDbgX.exe -z (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
 }
 
+# Profiling: native/system ETW, Python sampling, .NET EventPipe, and AMD counters.
+function global:profile-status {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Get-ProfilerStatus.ps1') @args
+}
+function global:profile-native {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-NativeCpuProfile.ps1') @args
+}
+function global:profile-native-start {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    profile-native Start $Name -WorkingDirectory $Path
+}
+function global:profile-native-stop {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    profile-native Stop $Name -WorkingDirectory $Path
+}
+function global:profile-native-cancel {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    profile-native Cancel $Name -WorkingDirectory $Path
+}
+function global:profile-native-record {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Name,
+        [ValidateRange(1, 3600)][int] $Seconds = 15,
+        [string] $Path = (Get-Location).Path
+    )
+    profile-native Start $Name -WorkingDirectory $Path
+    try { Start-Sleep -Seconds $Seconds }
+    finally {
+        $state = profile-native Status $Name -WorkingDirectory $Path
+        if ($state.Active) { profile-native Stop $Name -WorkingDirectory $Path }
+    }
+}
+function global:profile-native-open {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    profile-native Open $Name -WorkingDirectory $Path
+}
+function global:profile-python {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PythonProfile.ps1') @args
+}
+function global:profile-dotnet {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-DotNetProfile.ps1') @args
+}
+function global:profile-dotnet-ps {
+    & (Join-Path $env:USERPROFILE '.dotnet\tools\dotnet-trace.exe') ps @args
+}
+function global:profile-view {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Open-Profile.ps1') @args
+}
+function global:speedscope {
+    $launcher = Join-Path $env:APPDATA 'npm\speedscope.cmd'
+    if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) { throw "Speedscope is missing: $launcher" }
+    & $launcher @args
+}
+function global:wpa {
+    $executable = 'C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\wpa.exe'
+    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw "WPA is missing: $executable" }
+    & $executable @args
+}
+function global:uprof {
+    $executable = 'C:\Program Files\AMD\AMDuProf\bin\AMDuProf.exe'
+    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'AMD uProf is not installed. Run uprof-install to open the EULA-gated AMD download page.' }
+    & $executable @args
+}
+function global:uprof-cli {
+    $executable = 'C:\Program Files\AMD\AMDuProf\bin\AMDuProfCLI.exe'
+    if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) { throw 'AMD uProf is not installed. Run uprof-install to open the EULA-gated AMD download page.' }
+    & $executable @args
+}
+function global:uprof-install { Start-Process 'https://www.amd.com/en/developer/uprof.html' }
+
 function global:ports {
     Get-PortProcess -Listen @args | Sort-Object Protocol, LocalPort, ProcessId
 }

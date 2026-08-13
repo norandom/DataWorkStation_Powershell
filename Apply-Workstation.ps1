@@ -4,6 +4,7 @@ param(
     [string] $Mode = 'Ensure',
     [switch] $SkipPackages,
     [switch] $SkipDeveloperTools,
+    [switch] $SkipProfilingTools,
     [switch] $SkipFirewall,
     [switch] $SkipDefender,
     [switch] $SkipSmartScreen,
@@ -15,6 +16,7 @@ $ErrorActionPreference = 'Stop'
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
+$profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
 $sudoScript = Join-Path $PSScriptRoot 'scripts\Set-SudoState.ps1'
 $defenderScript = Join-Path $PSScriptRoot 'scripts\Set-DefenderExclusionState.ps1'
 $smartScreenScript = Join-Path $PSScriptRoot 'scripts\Set-SmartScreenState.ps1'
@@ -46,6 +48,12 @@ if (-not $SkipPackages) {
 if (-not $SkipDeveloperTools) {
     Invoke-CheckedProcess 'Developer tool state' {
         & $pwsh -NoLogo -NoProfile -File $developerToolsScript -Mode $Mode
+    }
+}
+
+if (-not $SkipProfilingTools) {
+    Invoke-CheckedProcess 'Profiling tool state' {
+        & $pwsh -NoLogo -NoProfile -File $profilingToolsScript -Mode $Mode
     }
 }
 

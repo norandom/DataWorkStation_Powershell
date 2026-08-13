@@ -69,6 +69,39 @@ Semgrep is installed by `uv tool` into its own environment. It does not share th
 
 TTD has no first-class two-trace diff. For a before/after comparison, record the same deterministic workload twice, open both traces, and compare stable semantic checkpoints such as call stacks, object fields, allocation counts, return values, and exception positions. Do not diff raw addresses because ASLR and allocation order make them unstable. TTD is most valuable inside each trace: travel backward from the failure to the last write or call that corrupted state. Recording can slow a target substantially and captures process memory, so it is never automatic.
 
+## Performance profiling
+
+| Command | Purpose |
+|---|---|
+| `profile-status` | Report WPT/WPA, py-spy, dotnet-trace, Speedscope, and optional AMD uProf state as PowerShell objects. |
+| `profile-status -Json` | Emit the same inventory for scripts or AI tools. |
+| `profile-native-start NAME` | Start a system-wide sampled CPU trace with WPR's `CPU` profile and file-mode buffering. Elevation is inline. |
+| `profile-native-stop NAME` | Stop the named WPR instance and save `profile-native-NAME/cpu.etl`. |
+| `profile-native-cancel NAME` | Cancel a named capture without retaining an ETL. |
+| `profile-native-record NAME [-Seconds 15]` | Run a bounded native CPU capture and stop it automatically. This is the normal capture command. |
+| `profile-native-open NAME` | Open the retained ETL in Windows Performance Analyzer. |
+| `profile-native Status [NAME]` | List retained native sessions or inspect one session's JSON-backed state. |
+| `profile-python -ProcessId PID [-Seconds 30] [-Rate 100] [-Open]` | Attach py-spy and create a standalone interactive SVG flame graph. |
+| `profile-python -Executable python.exe -Argument script.py` | Launch and profile a Python workload without modifying its environment. |
+| `profile-dotnet-ps` | List traceable .NET processes. |
+| `profile-dotnet -ProcessId PID [-Seconds 30] [-Open]` | Record sampled managed stacks, retain the original `.nettrace`, and create Speedscope JSON. |
+| `profile-dotnet -Executable TOOL.exe -Argument ...` | Launch and trace a .NET workload from startup. |
+| `profile-view FILE` | Open ETL in WPA, SVG in the browser, Speedscope JSON in the local Speedscope viewer, or convert `.nettrace` before opening it. |
+| `wpa FILE.etl` | Open an ETL directly in WPA. |
+| `speedscope FILE.speedscope.json` | Open a profile in the locally installed Speedscope CLI/browser viewer. |
+| `uprof` / `uprof-cli` | Open AMD uProf after its explicit installation. |
+| `uprof-install` | Open AMD's official EULA-gated uProf download page. |
+
+Use WPR and WPA for compiled programs, drivers, kernel activity, cross-process CPU work, and system-wide investigation. In WPA, select the sampled CPU data and its flame visualization, then group or filter by process and stack. Keep the ETL because WPA can revisit it with different tables, symbols, and views.
+
+WPR CPU captures are system-wide and can produce roughly tens of MiB per second before compression on a busy machine. Prefer `profile-native-record` with a short interval. Stopping and compressing the ETL can take substantially longer than the recording interval.
+
+Use py-spy for Python-first CPU questions. It is installed in an isolated uv tool environment and does not alter the AMD/PyTorch interpreter being observed. Its SVG result is self-contained and remains local.
+
+Use dotnet-trace for managed stacks. The `.nettrace` is the complete retained source artifact; the `.speedscope.json` file is the visualization derivative. Speedscope runs from the locally installed package and serves the selected profile to the local browser rather than requiring a trace upload.
+
+AMD uProf 5.3 is optional and useful when AMD PMU events, IBS, power, memory bandwidth, or other hardware counters are required. Desired state does not silently accept AMD's EULA, so it reports uProf separately and does not fail workstation compliance when uProf is absent.
+
 ## Processes and handles
 
 | Command | Purpose |

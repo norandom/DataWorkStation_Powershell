@@ -1,5 +1,22 @@
 # Shell behavior: readline editing, completion, prompt, and native command precedence.
 
+# Tool-specific user and WPT directories are deterministic profile dependencies.
+# Add only directories that exist and avoid duplicating an existing PATH entry.
+$managedToolPaths = @(
+    (Join-Path $env:USERPROFILE '.local\bin'),
+    (Join-Path $env:USERPROFILE '.dotnet\tools'),
+    (Join-Path $env:APPDATA 'npm'),
+    'C:\Program Files\nodejs',
+    'C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit'
+)
+foreach ($managedToolPath in $managedToolPaths) {
+    if ((Test-Path -LiteralPath $managedToolPath -PathType Container) -and
+        -not (($env:PATH -split ';') -contains $managedToolPath)) {
+        $env:PATH = "$managedToolPath;$env:PATH"
+    }
+}
+Remove-Variable managedToolPaths, managedToolPath -ErrorAction Ignore
+
 # PSReadLine: Emacs/readline editing, searchable history and menu completion.
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine

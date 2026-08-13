@@ -4,6 +4,10 @@ eventlog-*/
 pcap-*/
 ttd/
 dumps/
+profile-native-*/
+python-*.svg
+dotnet-*.nettrace
+dotnet-*.speedscope.json
 
 # PowerShell and editor scratch files
 *.tmp

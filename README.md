@@ -8,12 +8,18 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 |---|---|
 | `.config/configuration.winget` | Declarative WinGet package state, including `uv`. |
 | `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
+| `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
 | `profile/Shell.ps1` | Minimal managed profile-component loader. |
 | `profile/Config.ps1` | PSReadLine, prompt, and native-command precedence. |
 | `profile/Tools.ps1` | Reusable diagnostics and command implementations. |
 | `profile/Aliases.ps1` | Short user-facing wrappers and Linux-style mappings. |
 | `scripts/Set-PowerShellProfile.ps1` | Deploys and verifies the loader and components for both PowerShell runtimes. |
 | `scripts/Set-DeveloperToolsState.ps1` | Maintains CodeQL, Trail of Bits packs, Semgrep CE, TTD, Debian rsync, and PoolMon tags. |
+| `scripts/Set-ProfilingToolsState.ps1` | Maintains WPT/WPA, py-spy, dotnet-trace, and the local Speedscope viewer. |
+| `scripts/Invoke-NativeCpuProfile.ps1` | Records native/system CPU traces with WPR for WPA. |
+| `scripts/Invoke-PythonProfile.ps1` | Records Python sampled stacks as standalone SVG flame graphs. |
+| `scripts/Invoke-DotNetProfile.ps1` | Records .NET EventPipe traces and Speedscope data. |
+| `scripts/Get-ProfilerStatus.ps1` | Reports profiler availability as PowerShell objects or JSON. |
 | `scripts/Set-PoolMonState.ps1` | Copies the official WinDbg/WDK pool-tag database beside PoolMon. |
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
@@ -56,11 +62,13 @@ WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Wind
 
 The balanced event-log template keeps relevant live logs circular and generously sized, then exports a rolling 48-hour EVTX window every day. Generated ZIP archives are stored in `E:\Logs`, retained for at most 14 days, capped at 768 MiB total, and rotated early if E: has less than 128 MiB free. Staging occurs under ProgramData on C:. The scheduled exporter is copied into an administrator-controlled directory and runs as SYSTEM.
 
-The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, GitHub CLI (`gh`), Tailscale, WSL, and Debian. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, standalone TTD, Debian rsync, and the official PoolMon tag database. It does not use or modify the AMD/PyTorch Python environment.
+The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, GitHub CLI (`gh`), Tailscale, WSL, and Debian. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, standalone TTD, Debian rsync, and the official PoolMon tag database. The profiling state installs only the Windows Performance Toolkit feature from the ADK, py-spy through an isolated uv environment, dotnet-trace as a global .NET tool, and Speedscope as a local CLI/browser viewer. None of these use or modify the AMD/PyTorch Python environment.
 
 ## Automatic versus explicit actions
 
-`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages and developer CLIs. It never configures rclone credentials, creates a persistent cloud mount, signs into Semgrep, starts a Semgrep/CodeQL scan, records a TTD trace, attaches a debugger, captures a crash dump, or registers a machine-wide postmortem debugger. Those actions remain explicit shell commands.
+`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages, developer CLIs, and required profiling tools. WPT uses a separate idempotent resource so only `OptionId.WindowsPerformanceToolkit` is installed rather than the complete ADK. AMD uProf remains explicit because AMD requires interactive EULA acceptance; `uprof-install` opens the official download page and desired state reports whether it was installed.
+
+Desired state never configures rclone credentials, creates a persistent cloud mount, signs into Semgrep, starts a Semgrep/CodeQL scan, records a performance or TTD trace, attaches a debugger, captures a crash dump, or registers a machine-wide postmortem debugger. Those actions remain explicit shell commands.
 
 The full WDK is not installed automatically because WinDbg supplies the required `pooltag.txt`. If that source disappears, `Set-PoolMonState.ps1` reports the explicit fallback command instead of silently installing the large WDK.
 

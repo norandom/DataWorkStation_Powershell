@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing semantic version tag to release
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  documentation-release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+      - name: Validate version
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RELEASE_TAG" = "v$(tr -d '\r\n' < VERSION)"
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.33"
+          enable-cache: true
+      - name: Build documentation
+        run: uv run --locked --group docs mkdocs build --strict --site-dir site
+      - name: Create release archives
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p dist
+          tar -C site -czf "dist/DataWorkStation-PowerShell-${version}-site.tar.gz" .
+          tar -czf "dist/DataWorkStation-PowerShell-${version}-docs-source.tar.gz" \
+            docs mkdocs.yml pyproject.toml uv.lock README.md CHANGELOG.md VERSION
+      - name: Create or update GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/* --verify-tag --generate-notes --title "$RELEASE_TAG"
+          fi

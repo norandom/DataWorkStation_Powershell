@@ -1,5 +1,19 @@
 # Short, user-facing command wrappers and Linux-style tool mappings.
 
+function global:tricky {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-Tricky.ps1') @args
+}
+
+function global:docs-serve {
+    Push-Location (Join-Path $env:USERPROFILE 'Source\PowerShell')
+    try { & uv.exe run --group docs mkdocs serve @args } finally { Pop-Location }
+}
+
+function global:docs-build {
+    Push-Location (Join-Path $env:USERPROFILE 'Source\PowerShell')
+    try { & uv.exe run --group docs mkdocs build --strict @args } finally { Pop-Location }
+}
+
 function global:aria2c {
     $executable = Find-NativeTool -Name aria2c.exe -WinGetId 'aria2.aria2'
     if (-not $executable) { throw 'aria2c.exe is not installed.' }

@@ -358,3 +358,15 @@ Complete firewall backups are stored under `state/firewall-backups`. Restore one
 ```powershell
 sudo pwsh -NoProfile -File .\scripts\Set-FirewallState.ps1 -Mode Restore -BackupPath .\state\firewall-backups\firewall-before-reinitialize-YYYYMMDD-HHMMSS.wfw
 ```
+## Tricky cases and documentation
+
+| Command | Purpose |
+|---|---|
+| `tricky new NAME -Problem '...' [-Target '...']` | Create an evidence-first investigation case. |
+| `tricky add NAME -Path PATH [-Copy]` | Reference existing evidence, or copy it into the case. |
+| `tricky inspect NAME [-Hash] [-Json\|-AsObject]` | Inventory evidence and route explicit evidence gaps. |
+| `tricky report NAME [-Hash] [-Open]` | Write Markdown, JSON, and standalone visual HTML reports. |
+| `tricky list` | List cases under the current directory. |
+| `tricky capabilities [-Json]` | Show the machine-readable capability catalog. |
+| `docs-serve` | Serve the locked MkDocs site locally. |
+| `docs-build` | Build the MkDocs site in strict mode. |

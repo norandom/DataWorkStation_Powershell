@@ -1,0 +1,61 @@
+site_name: DataWorkStation PowerShell
+site_description: Human- and AI-operable Windows engineering workstation
+site_url: https://norandom.github.io/DataWorkStation_Powershell/
+repo_url: https://github.com/norandom/DataWorkStation_Powershell
+repo_name: norandom/DataWorkStation_Powershell
+edit_uri: edit/main/docs/
+copyright: DataWorkStation PowerShell
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Use dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Use light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Capabilities:
+      - Overview: capabilities/index.md
+      - Memory pressure: workflows/memory-pressure.md
+      - Crash without an error: workflows/crash-without-error.md
+      - Network path: workflows/network-path.md
+      - Performance profiling: workflows/performance-profiling.md
+      - Something is not working: workflows/problem-not-working.md
+  - Tricky cases: tricky.md
+  - Desired state: desired-state.md
+  - Humans and AI: architecture/humans-and-ai.md
+  - Codex skills: skills.md
+  - Command reference: Aliases.md
+  - Releases: releases.md

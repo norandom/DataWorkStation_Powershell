@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnose a Problem"
+  short_description: "Route an ambiguous workstation failure"
+  default_prompt: "Use $diagnose-problem to investigate why this is not working."

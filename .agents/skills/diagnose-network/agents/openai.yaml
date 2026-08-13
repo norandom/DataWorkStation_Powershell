@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnose Network"
+  short_description: "Trace DNS, IPv6, ports, and firewall"
+  default_prompt: "Use $diagnose-network to investigate this connection failure."

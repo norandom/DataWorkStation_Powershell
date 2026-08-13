@@ -8,6 +8,9 @@ profile-native-*/
 python-*.svg
 dotnet-*.nettrace
 dotnet-*.speedscope.json
+tricky-*/
+site/
+.venv/
 
 # PowerShell and editor scratch files
 *.tmp

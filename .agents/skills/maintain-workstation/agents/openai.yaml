@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Workstation"
+  short_description: "Test and repair declared workstation state"
+  default_prompt: "Use $maintain-workstation to test and repair workstation drift."

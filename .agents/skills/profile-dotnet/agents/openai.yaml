@@ -1,0 +1,4 @@
+interface:
+  display_name: "Profile .NET"
+  short_description: "Capture EventPipe and view Speedscope"
+  default_prompt: "Use $profile-dotnet to profile this .NET workload."

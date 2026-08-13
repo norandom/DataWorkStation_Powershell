@@ -1,4 +1,22 @@
-# Windows workstation desired state
+# DataWorkStation PowerShell
+
+[![Documentation Pages](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/docs-pages.yml/badge.svg)](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/docs-pages.yml)
+[![Release](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/release.yml/badge.svg)](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/release.yml)
+
+A human- and AI-operable Windows engineering workstation for quant finance, data science, development, administration, and occasional forensics.
+
+## Capabilities
+
+| Need | Commands and artifacts |
+|---|---|
+| Find memory owners | `mem`, `memapps`, `memproc`, `memtop`, RAMMap, PoolMon |
+| Explain a crash or silent exit | event triage, scoped EVTX/ETL, WER dumps, WinDbg, optional TTD |
+| Trace DNS, IPv6, firewall, and ports | socket/process maps plus PktMon ETL and PCAPNG queries |
+| Render flame graphs | WPR/WPA for native/system, py-spy SVG for Python, EventPipe/Speedscope for .NET |
+| Reproduce workstation state | WinGet Configuration plus focused idempotent PowerShell resources |
+| Keep an investigation coherent | `tricky` cases with structured JSON and standalone HTML reports |
+
+The published documentation lives at <https://norandom.github.io/DataWorkStation_Powershell/>. See [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
 This repository maintains a Linux-friendly PowerShell environment without using the legacy DSC MOF/LCM model. WinGet Configuration uses the current DSC v3 processor for packages; small idempotent PowerShell resources maintain the user profiles, Windows sudo, btop preferences, and firewall policy.
 
@@ -9,6 +27,7 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `.config/configuration.winget` | Declarative WinGet package state, including `uv`. |
 | `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
+| `config/capabilities.psd1` | Machine-readable investigation and routing catalog. |
 | `profile/Shell.ps1` | Minimal managed profile-component loader. |
 | `profile/Config.ps1` | PSReadLine, prompt, and native-command precedence. |
 | `profile/Tools.ps1` | Reusable diagnostics and command implementations. |
@@ -20,6 +39,7 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `scripts/Invoke-PythonProfile.ps1` | Records Python sampled stacks as standalone SVG flame graphs. |
 | `scripts/Invoke-DotNetProfile.ps1` | Records .NET EventPipe traces and Speedscope data. |
 | `scripts/Get-ProfilerStatus.ps1` | Reports profiler availability as PowerShell objects or JSON. |
+| `scripts/Invoke-Tricky.ps1` | Maintains evidence-first cases and renders Markdown, JSON, and HTML reports. |
 | `scripts/Set-PoolMonState.ps1` | Copies the official WinDbg/WDK pool-tag database beside PoolMon. |
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
@@ -40,6 +60,9 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `config/eventlogs.psd1` | Declares channels, sizes, audit coverage, and archive rotation. |
 | `config/taildrive-policy.hujson` | Tailnet policy fragment required for Taildrive. |
 | `docs/Aliases.md` | Command reference and firewall behavior. |
+| `.agents/skills` | Separate repo-local Codex workflows using the same commands as humans. |
+| `mkdocs.yml` | Capability-focused documentation site. |
+| `.github/workflows` | Strict Pages builds and version-tagged documentation releases. |
 | `state/firewall-backups` | Generated full Windows Firewall backups. |
 
 ## Usage

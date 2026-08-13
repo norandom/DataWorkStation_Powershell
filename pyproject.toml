@@ -1,0 +1,11 @@
+[project]
+name = "dataworkstation-powershell-docs"
+version = "0.1.0"
+description = "Documentation toolchain for the DataWorkStation PowerShell environment"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+docs = [
+    "mkdocs-material==9.7.7",
+]

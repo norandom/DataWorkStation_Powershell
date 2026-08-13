@@ -1,0 +1,4 @@
+interface:
+  display_name: "Investigate Crash"
+  short_description: "Analyze silent exits, faults, and hangs"
+  default_prompt: "Use $investigate-crash to investigate this silent crash."

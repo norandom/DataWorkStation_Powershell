@@ -1,0 +1,4 @@
+interface:
+  display_name: "Profile Native Code"
+  short_description: "Capture and analyze WPR and WPA traces"
+  default_prompt: "Use $profile-native to profile this native or system workload."

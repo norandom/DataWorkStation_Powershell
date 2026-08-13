@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnose Memory"
+  short_description: "Find process, WSL, and kernel memory"
+  default_prompt: "Use $diagnose-memory to explain this memory pressure."

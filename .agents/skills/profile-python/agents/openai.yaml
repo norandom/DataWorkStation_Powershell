@@ -1,0 +1,4 @@
+interface:
+  display_name: "Profile Python"
+  short_description: "Create focused py-spy flame graphs"
+  default_prompt: "Use $profile-python to profile this Python workload."

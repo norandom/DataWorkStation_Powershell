@@ -24,4 +24,4 @@ pcap-failures ./pcap-api
 
 The capture produces ETL and PCAPNG without installing Wireshark. The query commands answer the basic questions: which endpoints, protocols, ports, and failures occurred. They operate on the PktMon ETL, so PCAPNG is primarily the portable interchange artifact.
 
-The managed firewall allows private-profile inbound traffic from local subnets and explicit external access only to SSH 22, RDP 3389, and application ports 8080/8081. Verify the exact current rules with `firewall-status`.
+The managed firewall allows inbound TCP 22 for SSH, 3389 for RDP, and 8080/8081 for HTTP/application services on physical networks. The Tailscale interface is unrestricted, direct Tailscale transport uses UDP 41641, and other inbound TCP/UDP ports on physical interfaces are blocked. Verify the exact current rules with `firewall-status`.

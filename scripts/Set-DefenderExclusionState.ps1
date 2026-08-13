@@ -13,13 +13,26 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 $configurationPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\config\defender-exclusions.psd1'))
 $configuration = Import-PowerShellDataFile -LiteralPath $configurationPath
 $desiredPreferences = $configuration.Preferences
-$desiredPaths = @($configuration.Paths | ForEach-Object {
-    $expanded = [Environment]::ExpandEnvironmentVariables($_)
+$repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$exclusionListPath = [IO.Path]::GetFullPath((Join-Path $repositoryRoot $configuration.ExclusionFile))
+if (-not (Test-Path -LiteralPath $exclusionListPath -PathType Leaf)) {
+    throw "Local Defender exclusion list is missing: $exclusionListPath. Copy .excluded.sample to .excluded and customize it first."
+}
+
+$declaredPaths = @(Get-Content -LiteralPath $exclusionListPath | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') })
+if ($declaredPaths.Count -eq 0) { throw "Local Defender exclusion list contains no paths: $exclusionListPath" }
+
+$desiredPaths = @($declaredPaths | ForEach-Object {
+    $expanded = [regex]::Replace($_, '(?i)\$(?:HOME|USERPROFILE)(?=\\|/|$)', { $env:USERPROFILE })
+    $expanded = [Environment]::ExpandEnvironmentVariables($expanded)
+    if ($expanded -match '%[^%]+%' -or $expanded -match '(?i)\$(?:HOME|USERPROFILE)') {
+        throw "Defender exclusion path contains an unresolved variable: $_"
+    }
     if (-not (Test-Path -LiteralPath $expanded)) {
         throw "Defender exclusion path does not exist: $expanded"
     }
     (Resolve-Path -LiteralPath $expanded).Path.TrimEnd('\') + $(if ($expanded -match '^[A-Za-z]:\\$') { '\' } else { '' })
-})
+} | Sort-Object -Unique)
 
 function Get-CurrentExclusions {
     @((Get-MpPreference).ExclusionPath | Where-Object { $_ -and $_ -notlike 'N/A:*' })

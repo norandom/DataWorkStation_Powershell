@@ -142,7 +142,7 @@ GitHub CLI is managed separately from GitHub Desktop through the official WinGet
 | `port 8080` | Listeners and connections whose local or remote port is 8080. |
 | `pidports 1234` | Network endpoints owned by process ID 1234. |
 
-`Exposure=LocalOnly` means loopback (`127.0.0.0/8` or `::1`). `Network` includes wildcard, LAN, Wi-Fi, VPN, and Tailscale addresses. The firewall classification shows `ExternalAllowed` for TCP 8080/8081, `TailscaleTransport` for UDP 41641, and `TailnetOrInternal` for other non-loopback listeners.
+`Exposure=LocalOnly` means loopback (`127.0.0.0/8` or `::1`). `Network` includes wildcard, LAN, Wi-Fi, VPN, and Tailscale addresses. The firewall classification shows `ExternalAllowed` for TCP 22/3389/8080/8081, `TailscaleTransport` for UDP 41641, and `TailnetOrInternal` for other non-loopback listeners.
 
 ## Memory and hardware
 
@@ -177,9 +177,9 @@ Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicat
 | `fw-lockdown` | Compatibility name for `fw-ensure`. |
 | `fw-unlock` | Remove only this repository's managed rules; Windows rules remain. |
 
-The declared policy applies explicit block rules to physical wired and Wi-Fi interfaces. It allows inbound TCP 8080 and 8081 there, plus UDP 41641 for direct Tailscale transport, and blocks all other inbound TCP/UDP ports. Therefore SSH 22 and RDP 3389 are not exposed through physical networks.
+The declared policy applies explicit block rules to physical wired and Wi-Fi interfaces. It allows inbound TCP 22 for SSH, 3389 for RDP, and 8080/8081 for HTTP/application services, plus UDP 41641 for direct Tailscale transport. All other inbound TCP/UDP ports on physical interfaces are blocked.
 
-The Tailscale interface is fully allowed, so SSH, RDP, and other services remain available inside the Tailnet subject to the Tailscale access policy. Loopback is unaffected. WSL/Docker services published on loopback are also local-only. Outbound traffic remains allowed. Router/NAT port forwarding still determines whether TCP 8080/8081 are reachable from the public internet.
+The Tailscale interface is fully allowed, so SSH, RDP, and other services remain available inside the Tailnet subject to the Tailscale access policy. Loopback is unaffected. WSL/Docker services published on loopback are also local-only. Outbound traffic remains allowed. Router/NAT port forwarding still determines whether any physically allowed port—22, 3389, 8080, or 8081—is reachable from the public internet.
 
 Use a loopback binding for Docker services that should not be externally exposed:
 
@@ -349,7 +349,7 @@ These community tools are not installed automatically because they do not curren
 | `.\Apply-Workstation.ps1 -Mode Reinitialize` | Reapply local state and always recreate the firewall rules with a backup. |
 | `sudo COMMAND` | Run a command elevated in the current terminal; Windows sudo is maintained in `normal` inline mode. |
 
-The workstation state also maintains Microsoft Defender path exclusions for `D:\` and `%USERPROFILE%\Source`. Because `D:\` is a whole-volume exclusion, Defender does not scan existing or newly created content anywhere on that volume. The configuration preserves unrelated Defender exclusions.
+The workstation state reads Microsoft Defender paths from the ignored `.excluded` file. Start from `.excluded.sample`; native Windows `%ENVIRONMENT_VARIABLE%` references expand before paths are validated. The public repository therefore contains no machine-specific exclusion list, and unrelated Defender exclusions are preserved.
 
 Scheduled Defender activity runs only while idle, at low priority, with a 15% average CPU target and no catch-up scans. SmartScreen uses warning mode and permits an explicit override. Use `unblock PATH` to remove Mark-of-the-Web from a file you have independently verified. Smart App Control is not modified.
 

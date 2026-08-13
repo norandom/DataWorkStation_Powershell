@@ -8,11 +8,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $ruleGroup = 'Linux Shell - Inbound Allowlist'
-$allowedTcpPorts = @(8080, 8081)
+$allowedTcpPorts = @(22, 3389, 8080, 8081)
 $allowedUdpPorts = @(41641)
 $tailscaleProgram = Join-Path $env:ProgramFiles 'Tailscale\tailscaled.exe'
 $expectedRuleNames = @(
-    'LinuxShell-Allow-App-TCP-8080-8081'
+    'LinuxShell-Allow-External-TCP-22-3389-8080-8081'
     'LinuxShell-Allow-Tailscale-Interface'
     'LinuxShell-Allow-Tailscale-UDP-41641'
     'LinuxShell-Block-Other-TCP'
@@ -104,8 +104,8 @@ function Get-FirewallDrift {
         $issues.Add('The managed firewall rule set does not contain exactly the expected rules.')
     }
 
-    if (-not (Test-Rule -Name 'LinuxShell-Allow-App-TCP-8080-8081' -Action Allow -Protocol TCP -LocalPort 8080,8081 -InterfaceType Wired,Wireless)) {
-        $issues.Add('The external TCP 8080-8081 allow rule has drifted.')
+    if (-not (Test-Rule -Name 'LinuxShell-Allow-External-TCP-22-3389-8080-8081' -Action Allow -Protocol TCP -LocalPort 22,3389,8080,8081 -InterfaceType Wired,Wireless)) {
+        $issues.Add('The external TCP 22, 3389, 8080, and 8081 allow rule has drifted.')
     }
     if (-not (Test-Rule -Name 'LinuxShell-Allow-Tailscale-UDP-41641' -Action Allow -Protocol UDP -LocalPort 41641 -Program $tailscaleProgram)) {
         $issues.Add('The Tailscale UDP 41641 transport rule has drifted.')
@@ -142,7 +142,7 @@ function Initialize-FirewallState {
 
     New-NetFirewallRule -Name 'LinuxShell-Allow-Tailscale-UDP-41641' -DisplayName 'Allow Tailscale WireGuard UDP 41641' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol UDP -LocalPort 41641 -Program $tailscaleProgram | Out-Null
     New-NetFirewallRule -Name 'LinuxShell-Allow-Tailscale-Interface' -DisplayName 'Allow all traffic from Tailscale interface' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol Any -InterfaceAlias 'Tailscale' | Out-Null
-    New-NetFirewallRule -Name 'LinuxShell-Allow-App-TCP-8080-8081' -DisplayName 'Allow application TCP 8080-8081' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol TCP -LocalPort 8080,8081 -InterfaceType Wired,Wireless | Out-Null
+    New-NetFirewallRule -Name 'LinuxShell-Allow-External-TCP-22-3389-8080-8081' -DisplayName 'Allow SSH, RDP, and HTTP application ports' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol TCP -LocalPort 22,3389,8080,8081 -InterfaceType Wired,Wireless | Out-Null
     New-NetFirewallRule -Name 'LinuxShell-Block-Other-TCP' -DisplayName 'Block all other inbound TCP ports on physical networks' -Group $ruleGroup -Direction Inbound -Action Block -Profile Any -Protocol TCP -LocalPort (Get-BlockedPortRanges $allowedTcpPorts) -InterfaceType Wired,Wireless | Out-Null
     New-NetFirewallRule -Name 'LinuxShell-Block-Other-UDP' -DisplayName 'Block all other inbound UDP ports on physical networks' -Group $ruleGroup -Direction Inbound -Action Block -Profile Any -Protocol UDP -LocalPort (Get-BlockedPortRanges $allowedUdpPorts) -InterfaceType Wired,Wireless | Out-Null
 
@@ -150,7 +150,7 @@ function Initialize-FirewallState {
     if ($drift.Count -gt 0) { throw "Firewall reinitialization did not converge: $($drift -join ' ')" }
 
     Write-Host 'Firewall desired state is active.'
-    Write-Host 'Physical networks: inbound TCP 8080-8081 and Tailscale UDP 41641 are allowed; all other TCP/UDP ports are blocked.'
+    Write-Host 'Physical networks: inbound TCP 22, 3389, 8080, 8081 and Tailscale UDP 41641 are allowed; all other TCP/UDP ports are blocked.'
     Write-Host 'Internal access: loopback and the Tailscale interface remain unrestricted by the managed port block rules.'
     Write-Host "Backup: $backupFile"
 }

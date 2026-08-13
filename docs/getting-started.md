@@ -5,6 +5,8 @@ Run desired state from PowerShell 7:
 ```powershell
 git clone https://github.com/norandom/DataWorkStation_Powershell.git "$HOME/Source/PowerShell"
 cd "$HOME/Source/PowerShell"
+Copy-Item .excluded.sample .excluded
+# Edit .excluded for this workstation before applying desired state.
 ./Apply-Workstation.ps1 -Mode Test
 ./Apply-Workstation.ps1 -Mode Ensure
 ```

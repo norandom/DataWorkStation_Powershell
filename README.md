@@ -62,7 +62,8 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `scripts/Get-PcapTriage.ps1` | Provides compact packet, failure, protocol, port, and endpoint views from PktMon ETL. |
 | `scripts/ssh-copy-id.ps1` | Installs an OpenSSH public key on a POSIX SSH target. |
 | `scripts/Set-FirewallState.ps1` | Tests, ensures, reinitializes, removes, or restores the firewall state. |
-| `config/defender-exclusions.psd1` | Declares paths excluded from Microsoft Defender scanning. |
+| `.excluded.sample` | Public, machine-agnostic template for the ignored local Defender exclusion list. |
+| `config/defender-exclusions.psd1` | Declares Defender performance policy and the local exclusion-list filename. |
 | `config/wslconfig.ini` | Declares the global WSL 2 memory policy. |
 | `config/eventlogs.psd1` | Declares channels, sizes, audit coverage, and archive rotation. |
 | `config/taildrive-policy.hujson` | Tailnet policy fragment required for Taildrive. |
@@ -77,6 +78,8 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 Run from PowerShell 7:
 
 ```powershell
+Copy-Item .excluded.sample .excluded
+# Edit .excluded for this workstation.
 .\Apply-Workstation.ps1 -Mode Test
 .\Apply-Workstation.ps1 -Mode Ensure
 .\Apply-Workstation.ps1 -Mode Reinitialize
@@ -84,7 +87,7 @@ Run from PowerShell 7:
 
 `Ensure` is the normal operation. It leaves compliant profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
 
-The Defender exclusions are `D:\` and `%USERPROFILE%\Source`. The entire D: volume is intentionally excluded from real-time and scheduled Defender scanning. Unrelated exclusions are preserved.
+Defender exclusion paths are read from the ignored local `.excluded` file. Copy `.excluded.sample` after cloning and customize it; native Windows `%ENVIRONMENT_VARIABLE%` references are supported. The repository publishes no workstation-specific exclusion paths, and unrelated existing Defender exclusions are preserved.
 
 Defender remains active outside those paths by default, but scheduled activity is idle-only, low-priority, throttled toward 15% average CPU, and does not run missed-scan catch-up jobs. Use `disable-defender` and `enable-defender` for an explicit elevated runtime toggle; neither command starts a scan. SmartScreen supports `Off`, `Medium` (`Warn` with override), and `Full` (`Block` without bypass). SaveZone/Mark-of-the-Web is controlled independently. Smart App Control is deliberately not changed.
 

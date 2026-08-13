@@ -220,7 +220,7 @@ function global:daemons {
                 if (-not $firewallEnabled) { 'FirewallOff' }
                 elseif (-not $allowlistActive) { 'CheckRules' }
                 elseif ($_.Exposure -eq 'LocalOnly') { 'LocalOnly' }
-                elseif ($_.Protocol -eq 'TCP' -and $_.LocalPort -in 8080, 8081) { 'ExternalAllowed' }
+                elseif ($_.Protocol -eq 'TCP' -and $_.LocalPort -in 22, 3389, 8080, 8081) { 'ExternalAllowed' }
                 elseif ($_.Protocol -eq 'UDP' -and $_.LocalPort -eq 41641) { 'TailscaleTransport' }
                 elseif ($allowlistActive) { 'TailnetOrInternal' }
                 else { 'CheckRules' }

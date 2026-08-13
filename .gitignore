@@ -12,6 +12,7 @@ tricky-*/
 site/
 .venv/
 .skillopt-sleep/
+.excluded
 
 # PowerShell and editor scratch files
 *.tmp

@@ -1,8 +1,5 @@
 @{
-    Paths = @(
-        'D:\'
-        '%USERPROFILE%\Source'
-    )
+    ExclusionFile = '.excluded'
 
     Preferences = @{
         ScanAvgCPULoadFactor               = 15

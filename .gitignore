@@ -11,6 +11,7 @@ dotnet-*.speedscope.json
 tricky-*/
 site/
 .venv/
+.skillopt-sleep/
 
 # PowerShell and editor scratch files
 *.tmp

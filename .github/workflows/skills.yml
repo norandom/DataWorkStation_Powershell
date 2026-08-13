@@ -1,0 +1,28 @@
+name: Repository Skills
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".agents/skills/**"
+      - "scripts/Test-RepositorySkills.ps1"
+      - ".github/workflows/skills.yml"
+  pull_request:
+    paths:
+      - ".agents/skills/**"
+      - "scripts/Test-RepositorySkills.ps1"
+      - ".github/workflows/skills.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Validate repository skills
+        shell: pwsh
+        run: ./scripts/Test-RepositorySkills.ps1

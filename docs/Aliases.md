@@ -370,3 +370,19 @@ sudo pwsh -NoProfile -File .\scripts\Set-FirewallState.ps1 -Mode Restore -Backup
 | `tricky capabilities [-Json]` | Show the machine-readable capability catalog. |
 | `docs-serve` | Serve the locked MkDocs site locally. |
 | `docs-build` | Build the MkDocs site in strict mode. |
+
+## Skill optimization
+
+| Command | Purpose |
+|---|---|
+| `skillopt-status` | Show SkillOpt state and the latest staged proposal. |
+| `skillopt-harvest SKILL` | Create a local, unapproved task draft from project Codex sessions. |
+| `skillopt-review SKILL -TasksFile PATH` | Inspect task metadata and the checkable task list. |
+| `skillopt-approve-tasks SKILL -TasksFile PATH -ConfirmReview` | Mark a fully inspected/redacted task file as reviewed. |
+| `skillopt-dry-run SKILL -TasksFile PATH` | Run the deterministic mock gate without staging or provider calls. |
+| `skillopt-run SKILL -TasksFile PATH -Backend Codex -AllowProviderCalls` | Run a real gated optimization and stage accepted edits. |
+| `skillopt-review SKILL -Staging PATH` | Read a staged report and artifact inventory. |
+| `skillopt-adopt SKILL -Staging PATH -ConfirmAdoption` | Explicitly adopt one reviewed staged proposal, then validate skills. |
+| `skills-validate` | Validate all repository skills without optimizing them. |
+
+Desired state installs `skillopt==0.2.0` through `uv tool`. It never harvests transcripts, contacts a provider, schedules runs, or adopts edits automatically.

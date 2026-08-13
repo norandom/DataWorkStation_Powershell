@@ -6,4 +6,5 @@
 - Use `config/capabilities.psd1` as the routing catalog and update it with command changes.
 - Use `tricky ... -Json` for machine consumption and the default output for humans.
 - Keep Codex skills focused and separate under `.agents/skills/`; do not create one omnibus workstation skill.
+- Use SkillOpt only on one explicit skill from reviewed tasks. Keep gating on, stage by default, and never auto-adopt or schedule unattended optimization.
 - Run PowerShell parser checks, Tricky smoke tests, and `uv run --group docs mkdocs build --strict` before publishing.

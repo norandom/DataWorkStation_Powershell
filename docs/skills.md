@@ -12,5 +12,8 @@ Repository-local skills live under `.agents/skills/`, which Codex discovers whil
 | `profile-python` | Python py-spy flame graphs |
 | `profile-dotnet` | .NET EventPipe and Speedscope |
 | `maintain-workstation` | Desired-state testing and repair |
+| `optimize-skills` | Review, gate, stage, and explicitly adopt one SkillOpt proposal |
 
 Skills must inspect evidence before starting capture and must not change privileged state without making the exact action visible. Their descriptions are narrow so implicit activation selects one specialist rather than loading an omnibus runbook.
+
+Skill improvement follows the same rule: `optimize-skills` operates on one selected skill from a reviewed task file. Microsoft SkillOpt stages proposals under ignored local state; it never receives permission to auto-adopt or rewrite the repository contract.

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add a pinned Microsoft SkillOpt-Sleep integration with one-skill targeting, reviewed task files, held-out validation, ignored staging, and explicit adoption.
+- Add repository skill validation locally and in GitHub Actions.
+
 ## 0.1.0 - 2026-08-13
 
 - Establish the Linux-style PowerShell workstation desired state.

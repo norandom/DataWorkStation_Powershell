@@ -4,6 +4,18 @@ function global:tricky {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-Tricky.ps1') @args
 }
 
+function global:skillopt {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-SkillOpt.ps1') @args
+}
+function global:skillopt-status { skillopt status @args }
+function global:skillopt-harvest { skillopt harvest @args }
+function global:skillopt-review { skillopt review @args }
+function global:skillopt-approve-tasks { skillopt approve-tasks @args }
+function global:skillopt-dry-run { skillopt dry-run @args }
+function global:skillopt-run { skillopt run @args }
+function global:skillopt-adopt { skillopt adopt @args }
+function global:skills-validate { skillopt validate @args }
+
 function global:docs-serve {
     Push-Location (Join-Path $env:USERPROFILE 'Source\PowerShell')
     try { & uv.exe run --group docs mkdocs serve @args } finally { Pop-Location }

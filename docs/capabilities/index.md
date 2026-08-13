@@ -12,5 +12,6 @@ The environment is organized around questions, not product names.
 | Security state | status commands | enable/disable/ensure commands | state objects |
 | Code analysis | `codeql`, `semgrep` | explicit scan commands | SARIF or findings |
 | Data movement | `rclone`, `rsync`, `taildrive` | explicit copy or mount | remote filesystem |
+| Skill development | `skills-validate`, `skillopt-status` | reviewed SkillOpt run and explicit adoption | task set and staged skill |
 
 `config/capabilities.psd1` is the machine-readable catalog used by `tricky capabilities` and case routing.

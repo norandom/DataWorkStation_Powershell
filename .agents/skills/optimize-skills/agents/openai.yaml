@@ -1,0 +1,4 @@
+interface:
+  display_name: "Optimize Skills"
+  short_description: "Stage and validate bounded SkillOpt edits"
+  default_prompt: "Use $optimize-skills to improve one repository skill from reviewed evidence."

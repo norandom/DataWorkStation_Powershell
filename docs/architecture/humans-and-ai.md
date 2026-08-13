@@ -20,5 +20,6 @@ The shell commands are the product boundary. Documentation and Codex skills desc
 | `tricky` case schema | Shared evidence boundary and reports |
 | `docs/` | Human workflows and reference |
 | `.agents/skills/` | Focused AI procedures built from the same commands |
+| SkillOpt staging | Reviewed, validation-gated proposals for one skill at a time |
 
-Skill optimization may later improve descriptions and routing examples, but generated changes must remain reviewable, bounded to skill content, and validated against the command catalog.
+SkillOpt may improve descriptions and routing examples, but generated changes remain reviewable, bounded to one skill, staged outside Git, and validated against the command catalog before explicit adoption.

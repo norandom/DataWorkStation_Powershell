@@ -12,6 +12,7 @@ DataWorkStation PowerShell turns a Windows engineering machine into an evidence-
 | Where is CPU time going? | `profile-status` | WPR/WPA, py-spy, or dotnet-trace |
 | Is workstation policy still correct? | `./Apply-Workstation.ps1 -Mode Test` | `Ensure` or `Reinitialize` |
 | How do I keep the investigation together? | `tricky new ...` | inspect and render a portable case report |
+| How do skills improve safely? | `skills-validate`, `skillopt-status` | reviewed tasks, held-out gate, staged adoption |
 
 ## Evidence before instrumentation
 

@@ -53,6 +53,7 @@ nav:
       - Network path: workflows/network-path.md
       - Performance profiling: workflows/performance-profiling.md
       - Something is not working: workflows/problem-not-working.md
+      - Skill optimization: workflows/skill-optimization.md
   - Tricky cases: tricky.md
   - Desired state: desired-state.md
   - Humans and AI: architecture/humans-and-ai.md

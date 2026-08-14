@@ -9,6 +9,7 @@ python-*.svg
 dotnet-*.nettrace
 dotnet-*.speedscope.json
 tricky-*/
+evidence/malware/
 site/
 .venv/
 .skillopt-sleep/

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Implement"
+  short_description: "Implement approved feature tasks test-first"
+  default_prompt: "Use $speckit-implement to implement the current approved tasks test-first."

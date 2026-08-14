@@ -1,0 +1,15 @@
+.git/
+.venv/
+state/
+evidence/
+tricky-*/
+eventlog-*/
+pcap-*/
+dumps/
+profile-native-*/
+*.etl
+*.evtx
+*.pcapng
+*.dmp
+*.log*
+.env*

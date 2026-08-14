@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Converge"
+  short_description: "Find remaining implementation gaps"
+  default_prompt: "Use $speckit-converge to compare the implemented feature with its approved artifacts."

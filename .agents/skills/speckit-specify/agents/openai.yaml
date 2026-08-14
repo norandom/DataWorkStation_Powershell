@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Specify"
+  short_description: "Specify behavior as testable EARS requirements"
+  default_prompt: "Use $speckit-specify to create an EARS-normalized specification for this feature."

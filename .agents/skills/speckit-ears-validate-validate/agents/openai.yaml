@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit EARS Validate"
+  short_description: "Validate EARS and TDD traceability gates"
+  default_prompt: "Use $speckit-ears-validate-validate to run the deterministic EARS/TDD gate."

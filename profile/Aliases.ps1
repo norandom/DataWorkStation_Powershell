@@ -112,6 +112,7 @@ function global:aria2c {
     & $executable --continue=true --max-connection-per-server=3 --split=3 @args
 }
 function global:aria { aria2c @args }
+Set-Alias -Name wget -Value aria2c -Scope Global
 
 function global:rclone {
     $executable = Find-NativeTool -Name rclone.exe -WinGetId 'Rclone.Rclone'
@@ -124,8 +125,8 @@ function global:rclone-mount { Mount-RcloneRemote @args }
 function global:rclone-unmount { Dismount-RcloneRemote @args }
 function global:rclone-mounts { Get-RcloneMounts }
 
-function global:rsync { & wsl.exe -d Debian -- rsync @args }
-function global:wslpath { & wsl.exe -d Debian -- wslpath @args }
+function global:rsync { wsl-dev rsync @args }
+function global:wslpath { wsl-dev wslpath @args }
 
 function global:codeql {
     $executable = Get-CodeQLPath
@@ -344,17 +345,54 @@ function global:tailunshare {
 # Docker Engine runs natively inside Debian WSL. Calling wsl.exe starts the
 # distribution on demand; systemd then starts the enabled Docker service.
 # A future native Windows Docker CLI takes precedence automatically.
+function global:Invoke-ConfiguredWsl {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Developer', 'Malware')]
+        [string] $Target,
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]] $ArgumentList
+    )
+    $repositoryRoot = Join-Path $env:USERPROFILE 'Source\PowerShell'
+    . (Join-Path $repositoryRoot 'scripts\Import-WslEnvironment.ps1')
+    $wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
+    $distribution = if ($Target -eq 'Developer') { $wslEnvironment.WSL_DISTRIBUTION } else { $wslEnvironment.WSL_MALWARE_DISTRIBUTION }
+    $user = if ($Target -eq 'Developer') { $wslEnvironment.WSL_USER } else { $wslEnvironment.WSL_MALWARE_USER }
+    if ($ArgumentList.Count -gt 0) {
+        & wsl.exe -d $distribution --user $user -- @ArgumentList
+    } else {
+        & wsl.exe -d $distribution --user $user
+    }
+}
+
+function global:wsl-dev {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
+    Invoke-ConfiguredWsl -Target Developer @ArgumentList
+}
+
+function global:wsl-mw {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
+    Invoke-ConfiguredWsl -Target Malware @ArgumentList
+}
+
 if (-not (Get-Command docker.exe -CommandType Application -ErrorAction Ignore)) {
     function global:docker {
-        & wsl.exe -d Debian -- docker @args
+        wsl-dev docker @args
     }
+}
+
+function global:docker-mw {
+    wsl-mw docker @args
 }
 
 if (-not (Get-Command docker-compose.exe -CommandType Application -ErrorAction Ignore)) {
     function global:docker-compose {
-        & wsl.exe -d Debian -- docker compose @args
+        wsl-dev docker compose @args
     }
 }
+
+function global:docker-mw-compose { docker-mw compose @args }
 
 if (-not (Get-Command ssh-copy-id.exe -CommandType Application -ErrorAction Ignore)) {
     function global:ssh-copy-id {
@@ -517,4 +555,154 @@ if (Get-Command handle.exe -ErrorAction Ignore) {
 
 function global:top {
     btop @args
+}
+
+# Zhorn Software Caffeine is installed by WinGet as caffeine64.exe/caffeine32.exe
+# without a stable portable-command link. This wrapper starts that real tray tool.
+function global:caffeine {
+    [CmdletBinding()]
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
+    $packageRoot = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+    $executable = Get-ChildItem -LiteralPath $packageRoot -Recurse -File -Filter 'caffeine64.exe' -ErrorAction Ignore |
+        Where-Object FullName -Like '*ZhornSoftware.Caffeine*' |
+        Select-Object -First 1 -ExpandProperty FullName
+    if (-not $executable) {
+        $executable = Get-ChildItem -LiteralPath $packageRoot -Recurse -File -Filter 'caffeine32.exe' -ErrorAction Ignore |
+            Where-Object FullName -Like '*ZhornSoftware.Caffeine*' |
+            Select-Object -First 1 -ExpandProperty FullName
+    }
+    if (-not $executable) { throw 'Zhorn Software Caffeine is not installed. Run: .\Apply-Workstation.ps1 -Mode Ensure -Module Caffeine' }
+    Start-Process -FilePath $executable -ArgumentList $ArgumentList
+}
+
+function global:is-this-malware {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Path, [switch] $Json)
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-MalwareAnalysis.ps1'
+    & $script -Action Inspect -Path $Path -Json:$Json
+}
+function global:lint-python {
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PythonLint.ps1'
+    & $script @args
+}
+Set-Alias -Name host-static -Value is-this-malware -Scope Global
+
+function global:malware-container-status {
+    [CmdletBinding()]
+    param([switch] $Json)
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Test-MalwareContainerIsolation.ps1'
+    & $script -Json:$Json
+}
+
+function global:malware-container-image {
+    [CmdletBinding()]
+    param(
+        [ValidateSet('Test', 'Ensure', 'Reinitialize')][string] $Mode = 'Test',
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-MalwareContainerImageState.ps1'
+    & $script -Mode $Mode -Json:$Json
+}
+
+function global:malware-container {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [ValidateSet('Control', 'Target')][string] $Role = 'Target',
+        [switch] $Run,
+        [switch] $ConfirmContainer,
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-MalwareContainerAnalysis.ps1'
+    $action = if ($Run) { 'Run' } else { 'Plan' }
+    & $script -Action $action -Path $Path -Role $Role -ConfirmContainer:$ConfirmContainer -Json:$Json
+}
+
+function global:malware-container-control {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [switch] $Run,
+        [switch] $ConfirmContainer,
+        [switch] $Json
+    )
+    malware-container -Path $Path -Role Control -Run:$Run -ConfirmContainer:$ConfirmContainer -Json:$Json
+}
+
+function global:malware-sandbox {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [ValidateSet('Dissect', 'Disassemble', 'Decompile', 'Detonate')][string] $Mode = 'Dissect',
+        [ValidateRange(5, 900)][int] $DurationSeconds = 30,
+        [switch] $Run,
+        [switch] $ConfirmSandbox,
+        [switch] $ConfirmExecution,
+        [switch] $AllowNetwork,
+        [switch] $Control,
+        [switch] $KeepSandboxOpen,
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-MalwareAnalysis.ps1'
+    $action = if ($Run) { 'Run' } else { 'Plan' }
+    & $script -Action $action -Mode $Mode -Path $Path -DurationSeconds $DurationSeconds `
+        -ConfirmSandbox:$ConfirmSandbox -ConfirmExecution:$ConfirmExecution -AllowNetwork:$AllowNetwork `
+        -Control:$Control -KeepSandboxOpen:$KeepSandboxOpen -Json:$Json
+}
+Set-Alias -Name sandbox-static -Value malware-sandbox -Scope Global
+
+function global:malware-control {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [ValidateSet('Dissect', 'Disassemble', 'Decompile', 'Detonate')][string] $Mode = 'Dissect',
+        [ValidateRange(5, 900)][int] $DurationSeconds = 30,
+        [switch] $Run,
+        [switch] $ConfirmSandbox,
+        [switch] $AllowNetwork,
+        [switch] $KeepSandboxOpen,
+        [switch] $Json
+    )
+    malware-sandbox -Path $Path -Mode $Mode -DurationSeconds $DurationSeconds -Run:$Run `
+        -ConfirmSandbox:$ConfirmSandbox -AllowNetwork:$AllowNetwork -Control `
+        -KeepSandboxOpen:$KeepSandboxOpen -Json:$Json
+}
+
+function global:malware-diff {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string] $ControlCase,
+        [Parameter(Mandatory = $true)][string] $TargetCase,
+        [string] $OutputRoot,
+        [switch] $ShowDiff,
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Compare-MalwareEvidence.ps1'
+    $parameters = @{ ControlCase = $ControlCase; TargetCase = $TargetCase; ShowDiff = $ShowDiff; Json = $Json }
+    if ($OutputRoot) { $parameters.OutputRoot = $OutputRoot }
+    & $script @parameters
+}
+
+function global:disass {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [switch] $Run,
+        [switch] $ConfirmSandbox,
+        [switch] $KeepSandboxOpen,
+        [switch] $Json
+    )
+    malware-sandbox -Path $Path -Mode Disassemble -Run:$Run -ConfirmSandbox:$ConfirmSandbox -KeepSandboxOpen:$KeepSandboxOpen -Json:$Json
+}
+
+function global:decomp {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [switch] $Run,
+        [switch] $ConfirmSandbox,
+        [switch] $KeepSandboxOpen,
+        [switch] $Json
+    )
+    malware-sandbox -Path $Path -Mode Decompile -Run:$Run -ConfirmSandbox:$ConfirmSandbox -KeepSandboxOpen:$KeepSandboxOpen -Json:$Json
 }

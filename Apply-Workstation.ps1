@@ -3,8 +3,8 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'Packages', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'DeveloperTools',
-        'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'FocusFollowsMouse',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'DeveloperDocker', 'RootlessDocker', 'DeveloperTools', 'SpecDrivenDevelopment',
+        'MalwareHashes', 'MalwareAnalysisTools', 'MalwareContainerImage', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -17,6 +17,7 @@ param(
     [switch] $SkipHardening,
     [switch] $SkipFocusFollowsMouse,
     [switch] $SkipDeveloperTools,
+    [switch] $SkipSpecDrivenDevelopment,
     [switch] $SkipProfilingTools,
     [switch] $SkipSkillOpt,
     [switch] $SkipFirewall,
@@ -30,7 +31,11 @@ $ErrorActionPreference = 'Stop'
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
 $gitConfigurationFile = Join-Path $PSScriptRoot '.config\git.winget'
 $powerShell7ConfigurationFile = Join-Path $PSScriptRoot '.config\powershell7.winget'
+$goStateScript = Join-Path $PSScriptRoot 'scripts\Set-GoState.ps1'
+$malwareHashesScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareHashesState.ps1'
 $moduleCatalogPath = Join-Path $PSScriptRoot 'config\workstation-modules.psd1'
+$nativeTextToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeTextToolsState.ps1'
+$caffeineScript = Join-Path $PSScriptRoot 'scripts\Set-CaffeineState.ps1'
 $scoopScript = Join-Path $PSScriptRoot 'scripts\Set-ScoopState.ps1'
 $terminalFontScript = Join-Path $PSScriptRoot 'scripts\Set-TerminalFontState.ps1'
 $contourTerminalScript = Join-Path $PSScriptRoot 'scripts\Set-ContourTerminalState.ps1'
@@ -40,8 +45,13 @@ $debloatScript = Join-Path $PSScriptRoot 'scripts\Set-DebloatState.ps1'
 $focusFollowsMouseScript = Join-Path $PSScriptRoot 'scripts\Set-FocusFollowsMouseState.ps1'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
+$specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
+$malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalysisToolsState.ps1'
+$malwareContainerImageScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareContainerImageState.ps1'
 $linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
 $linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
+$rootlessDockerScript = Join-Path $PSScriptRoot 'scripts\Set-RootlessDockerState.ps1'
+$developerDockerScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperDockerState.ps1'
 $profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
 $skillOptScript = Join-Path $PSScriptRoot 'scripts\Set-SkillOptState.ps1'
 $sudoScript = Join-Path $PSScriptRoot 'scripts\Set-SudoState.ps1'
@@ -153,6 +163,16 @@ function Invoke-WorkstationModule {
                 }
             }
         }
+        'NativeTextTools' {
+            Invoke-CheckedProcess 'Native awk and sed state' {
+                & $pwsh -NoLogo -NoProfile -File $nativeTextToolsScript -Mode $Mode
+            }
+        }
+        'Caffeine' {
+            Invoke-CheckedProcess 'Caffeine package state' {
+                & $pwsh -NoLogo -NoProfile -File $caffeineScript -Mode $Mode
+            }
+        }
         'PowerShell7' {
             if ($Mode -eq 'Test') {
                 Invoke-CheckedProcess 'PowerShell 7 WinGet configuration test' {
@@ -162,6 +182,16 @@ function Invoke-WorkstationModule {
                 Invoke-CheckedProcess 'PowerShell 7 WinGet configuration' {
                     & winget configure --file $powerShell7ConfigurationFile --accept-configuration-agreements --disable-interactivity
                 }
+            }
+        }
+        'Go' {
+            Invoke-CheckedProcess 'Go package and environment state' {
+                & $pwsh -NoLogo -NoProfile -File $goStateScript -Mode $Mode
+            }
+        }
+        'MalwareHashes' {
+            Invoke-CheckedProcess 'malware_hashes GitHub release state' {
+                & $pwsh -NoLogo -NoProfile -File $malwareHashesScript -Mode $Mode
             }
         }
         'Git' {
@@ -210,9 +240,34 @@ function Invoke-WorkstationModule {
                 & $pwsh -NoLogo -NoProfile -File $linuxAutomationScript -Mode $Mode
             }
         }
+        'RootlessDocker' {
+            Invoke-CheckedProcess 'Rootless Docker state' {
+                & $pwsh -NoLogo -NoProfile -File $rootlessDockerScript -Mode $Mode
+            }
+        }
+        'DeveloperDocker' {
+            Invoke-CheckedProcess 'Developer Docker state' {
+                & $pwsh -NoLogo -NoProfile -File $developerDockerScript -Mode $Mode
+            }
+        }
         'DeveloperTools' {
             Invoke-CheckedProcess 'Developer tool state' {
                 & $pwsh -NoLogo -NoProfile -File $developerToolsScript -Mode $Mode
+            }
+        }
+        'SpecDrivenDevelopment' {
+            Invoke-CheckedProcess 'Spec-driven development state' {
+                & $pwsh -NoLogo -NoProfile -File $specDrivenDevelopmentScript -Mode $Mode
+            }
+        }
+        'MalwareAnalysisTools' {
+            Invoke-CheckedProcess 'Optional malware analysis tool state' {
+                & $pwsh -NoLogo -NoProfile -File $malwareAnalysisToolsScript -Mode $Mode
+            }
+        }
+        'MalwareContainerImage' {
+            Invoke-CheckedProcess 'Rootless malware parser image state' {
+                & $pwsh -NoLogo -NoProfile -File $malwareContainerImageScript -Mode $Mode
             }
         }
         'ProfilingTools' {
@@ -285,7 +340,7 @@ function Invoke-WorkstationModule {
 }
 
 $skipSwitchUsed = $SkipPackages -or $SkipWindowsFeatures -or $SkipHardening -or
-    $SkipFocusFollowsMouse -or $SkipDeveloperTools -or $SkipProfilingTools -or
+    $SkipFocusFollowsMouse -or $SkipDeveloperTools -or $SkipSpecDrivenDevelopment -or $SkipProfilingTools -or
     $SkipSkillOpt -or $SkipFirewall -or $SkipDefender -or $SkipSmartScreen -or
     $SkipMemoryPolicy -or $SkipEventLogs
 $explicitModules = @($Module | Where-Object { $_ -ne 'All' })
@@ -299,6 +354,7 @@ if ($SkipWindowsFeatures) { $excludedModules.Add('WindowsFeatures') }
 if ($SkipHardening) { $excludedModules.Add('Hardening') }
 if ($SkipFocusFollowsMouse) { $excludedModules.Add('FocusFollowsMouse') }
 if ($SkipDeveloperTools) { $excludedModules.Add('DeveloperTools') }
+if ($SkipSpecDrivenDevelopment) { $excludedModules.Add('SpecDrivenDevelopment') }
 if ($SkipProfilingTools) { $excludedModules.Add('ProfilingTools') }
 if ($SkipSkillOpt) { $excludedModules.Add('SkillOpt') }
 if ($SkipFirewall) { $excludedModules.Add('Firewall') }

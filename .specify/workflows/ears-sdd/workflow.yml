@@ -1,0 +1,80 @@
+schema_version: "1.0"
+
+workflow:
+  id: "ears-sdd"
+  name: "EARS/TDD SDD Cycle"
+  version: "0.1.0"
+  author: "mariu"
+  description: "Runs Spec Kit with EARS validation, test traceability, and human review gates."
+
+requires:
+  speckit_version: ">=0.16.3,<0.17.0"
+  integrations:
+    any: ["codex", "claude", "copilot", "gemini", "opencode"]
+
+inputs:
+  spec:
+    type: string
+    required: true
+    prompt: "Describe what you want to build"
+  integration:
+    type: string
+    default: "auto"
+    prompt: "Integration to use; `auto` uses the initialized integration"
+
+steps:
+  - id: specify
+    command: speckit.specify
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+  - id: review-spec
+    type: gate
+    message: "Review the EARS requirements before validation."
+    options: [approve, reject]
+    on_reject: abort
+  - id: validate-spec
+    command: speckit.ears-validate.validate
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "spec"
+  - id: plan
+    command: speckit.plan
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+  - id: review-plan
+    type: gate
+    message: "Review design and verification traceability before task generation."
+    options: [approve, reject]
+    on_reject: abort
+  - id: validate-plan
+    command: speckit.ears-validate.validate
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "plan"
+  - id: tasks
+    command: speckit.tasks
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+  - id: validate-tasks
+    command: speckit.ears-validate.validate
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "tasks"
+  - id: approve-implementation
+    type: gate
+    message: "Approve test-first tasks before production code changes."
+    options: [approve, reject]
+    on_reject: abort
+  - id: implement
+    command: speckit.implement
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "{{ inputs.spec }}"
+  - id: validate-final
+    command: speckit.ears-validate.validate
+    integration: "{{ inputs.integration }}"
+    input:
+      args: "final"

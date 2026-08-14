@@ -42,6 +42,36 @@
             Description = 'Focused WinGet Configuration state for the PowerShell 7 dependency.'
         }
         @{
+            Name = 'Go'
+            Order = 19
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Official Go package, user workspace, command PATH, and built-in toolchain selection.'
+        }
+        @{
+            Name = 'NativeTextTools'
+            Order = 23
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Native Win32 awk and sed applets installed through focused WinGet Configuration.'
+        }
+        @{
+            Name = 'Caffeine'
+            Order = 24
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Zhorn Software Caffeine idle-sleep inhibitor with enabled per-user startup.'
+        }
+        @{
             Name = 'Scoop'
             Order = 25
             Default = $true
@@ -112,14 +142,74 @@
             Description = 'Pinned pyinfra executor inside Debian WSL for local Linux deploy files.'
         }
         @{
+            Name = 'RootlessDocker'
+            Order = 49
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Dedicated Debian-MW WSL distro with a rootless Docker user daemon for untrusted parsers.'
+        }
+        @{
+            Name = 'DeveloperDocker'
+            Order = 49
+            Default = $false
+            DependsOn = @('LinuxAutomation')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Pyinfra-managed rootful Docker daemon in Debian for Dagger.'
+        }
+        @{
             Name = 'DeveloperTools'
             Order = 50
             Default = $true
-            DependsOn = @('LinuxAutomation')
+            DependsOn = @('DeveloperDocker', 'Go')
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'CodeQL, Semgrep, Dagger, TTD, rsync, and PoolMon support.'
+            Description = 'Go, CodeQL, Semgrep, Dagger, TTD, rsync, and PoolMon support.'
+        }
+        @{
+            Name = 'SpecDrivenDevelopment'
+            Order = 55
+            Default = $true
+            DependsOn = @('Packages')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Release-pinned Spec Kit EARS/TDD policy tool installed through uv.'
+        }
+        @{
+            Name = 'MalwareHashes'
+            Order = 56
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Hash-pinned malware_hashes Windows executable from its GitHub release.'
+        }
+        @{
+            Name = 'MalwareAnalysisTools'
+            Order = 65
+            Default = $false
+            DependsOn = @('Packages', 'WindowsFeatures', 'ProfilingTools', 'MalwareHashes')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Opt-in, hash-pinned static-analysis and Sandbox telemetry tools.'
+        }
+        @{
+            Name = 'MalwareContainerImage'
+            Order = 66
+            Default = $false
+            DependsOn = @('RootlessDocker')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Opt-in, locally built rootless static parser image for documents, PDFs, and binaries.'
         }
         @{
             Name = 'ProfilingTools'

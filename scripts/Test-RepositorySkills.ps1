@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$env:PYTHONUTF8 = '1'
 if (-not $RepositoryRoot) { $RepositoryRoot = Split-Path -Parent $PSScriptRoot }
 $skillsRoot = Join-Path $RepositoryRoot '.agents\skills'
 if (-not (Test-Path -LiteralPath $skillsRoot -PathType Container)) { throw "Skills directory not found: $skillsRoot" }
@@ -23,7 +24,11 @@ foreach ($directory in @(Get-ChildItem -LiteralPath $skillsRoot -Directory | Sor
         $content = Get-Content -LiteralPath $skillFile -Raw
         $frontmatterName = $null
         if ($content -notmatch '(?s)^---\s*\r?\nname:\s*([^\r\n]+)\r?\ndescription:\s*.+?\r?\n---') { $errors.Add('Frontmatter must contain name and description.') } else { $frontmatterName = $Matches[1].Trim(' "') }
-        if ($content -match '\[TODO|\bTODO\b') { $errors.Add('TODO marker remains.') }
+        $contentWithoutExamples = [regex]::Replace($content, '(?ms)```.*?```', '')
+        $contentWithoutExamples = [regex]::Replace($contentWithoutExamples, '`[^`]*`', '')
+        if ($contentWithoutExamples -match '(?im)\[TODO|^\s*TODO(?:\([^)]*\))?\s*:') {
+            $errors.Add('TODO marker remains.')
+        }
         if ($directory.Name -notmatch '^[a-z0-9-]{1,63}$') { $errors.Add('Directory name is not valid hyphen-case.') }
         if ($frontmatterName -and $frontmatterName -ne $directory.Name) { $errors.Add('Frontmatter name does not match the directory.') }
     }

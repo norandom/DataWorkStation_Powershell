@@ -1,6 +1,70 @@
 # Managed Contour configuration translated from BlueTerm/Blue.json.
 # Contour requires the first color scheme to be named "default".
 default_profile: main
+on_mouse_select: CopyToClipboard
+
+# Contour replaces its complete built-in map when input_mapping is present.
+# This list therefore preserves the 0.6.3.8249 defaults, standardizes page
+# scrolling with Windows Terminal, and makes tab switching available by mouse.
+input_mapping:
+  - { mods: [Alt], key: Enter, action: ToggleFullscreen }
+  - { mods: [], key: Escape, action: CancelSelection, mode: 'Select|Insert' }
+  - { mods: [Shift], key: DownArrow, action: ScrollOneDown }
+  - { mods: [Shift], key: End, action: ScrollToBottom }
+  - { mods: [Shift], key: Home, action: ScrollToTop }
+  - { mods: [Shift], key: PageDown, action: ScrollPageDown }
+  - { mods: [Shift], key: PageUp, action: ScrollPageUp }
+  - { mods: [Control, Shift], key: PageDown, action: ScrollPageDown }
+  - { mods: [Control, Shift], key: PageUp, action: ScrollPageUp }
+  - { mods: [Shift], key: UpArrow, action: ScrollOneUp }
+  - { mods: [], key: F3, action: FocusNextSearchMatch, mode: 'Search' }
+  - { mods: [Shift], key: F3, action: FocusPreviousSearchMatch, mode: 'Search' }
+  - { mods: [Shift], key: LeftArrow, action: SwitchToTabLeft }
+  - { mods: [Shift], key: RightArrow, action: SwitchToTabRight }
+  - { mods: [Alt, Control], key: ',', action: ToggleInputMethodHandling }
+  - { mods: [Shift, Control], key: '-', action: DecreaseFontSize }
+  - { mods: [Shift, Control], key: '_', action: DecreaseFontSize }
+  - { mods: [Shift, Control], key: N, action: NewTerminal }
+  - { mods: [Alt, Control], key: V, action: PasteClipboard, strip: true }
+  - { mods: [Shift, Control], key: V, action: PasteClipboard, strip: false }
+  - { mods: [Alt, Control], key: S, action: ScreenshotVT }
+  - { mods: [Control], key: '0', action: ResetFontSize }
+  - { mods: [Control, Shift], key: T, action: CreateNewTab }
+  - { mods: [Alt], key: '1', action: SwitchToTab, position: 1 }
+  - { mods: [Alt], key: '2', action: SwitchToTab, position: 2 }
+  - { mods: [Alt], key: '3', action: SwitchToTab, position: 3 }
+  - { mods: [Alt], key: '4', action: SwitchToTab, position: 4 }
+  - { mods: [Alt], key: '5', action: SwitchToTab, position: 5 }
+  - { mods: [Alt], key: '6', action: SwitchToTab, position: 6 }
+  - { mods: [Alt], key: '7', action: SwitchToTab, position: 7 }
+  - { mods: [Alt], key: '8', action: SwitchToTab, position: 8 }
+  - { mods: [Alt], key: '9', action: SwitchToTab, position: 9 }
+  - { mods: [Alt], key: '0', action: SwitchToTab, position: 10 }
+  - { mods: [Control], key: C, action: CopySelection, mode: 'Select|Insert' }
+  - { mods: [Control], key: C, action: CancelSelection, mode: 'Select|Insert' }
+  - { mods: [Control], key: V, action: PasteClipboard, strip: false, mode: 'Select|Insert' }
+  - { mods: [Control], key: V, action: CancelSelection, mode: 'Select|Insert' }
+  - { mods: [Shift, Control], key: ',', action: OpenConfiguration, mode: 'Insert' }
+  - { mods: [Shift, Control], key: SPACE, action: ViNormalMode, mode: 'Insert' }
+  - { mods: [Shift, Control], key: ',', action: OpenConfiguration }
+  - { mods: [Shift, Control], key: Q, action: Quit }
+  - { mods: [Alt, Control], key: K, action: ScrollMarkUp, mode: '~Alt' }
+  - { mods: [Alt, Control], key: J, action: ScrollMarkDown, mode: '~Alt' }
+  - { mods: [Alt, Control], key: O, action: OpenFileManager }
+  - { mods: [Alt, Control], key: '.', action: ToggleStatusLine }
+  - { mods: [Shift, Control], key: F, action: SearchReverse }
+  - { mods: [Shift, Control], key: H, action: NoSearchHighlight }
+  - { mods: [Shift, Control], key: U, action: HintMode, patterns: url, hint_action: Open }
+  - { mods: [Control], mouse: Left, action: FollowHyperlink }
+  - { mods: [], mouse: Middle, action: PasteSelection }
+  - { mods: [], mouse: WheelDown, action: ScrollDown, mode: '~Alt' }
+  - { mods: [], mouse: WheelUp, action: ScrollUp, mode: '~Alt' }
+  - { mods: [Alt], mouse: WheelDown, action: SwitchToTabRight }
+  - { mods: [Alt], mouse: WheelUp, action: SwitchToTabLeft }
+  - { mods: [Control], mouse: WheelDown, action: DecreaseFontSize }
+  - { mods: [Control], mouse: WheelUp, action: IncreaseFontSize }
+  - { mods: [Shift], mouse: WheelDown, action: ScrollPageDown, mode: '~Alt' }
+  - { mods: [Shift], mouse: WheelUp, action: ScrollPageUp, mode: '~Alt' }
 
 profiles:
   main:
@@ -13,6 +77,11 @@ profiles:
       limit: -1
       auto_scroll_on_update: true
       scroll_multiplier: 3
+    smooth_scrolling: true
+    momentum_scrolling: true
+    scrollbar:
+      position: Right
+      hide_in_alt_screen: false
     font:
       size: 17
       regular:
@@ -45,7 +114,7 @@ color_schemes:
       background_alpha: 1.0
     normal:
       black: '#14191E'
-      red: '#B43C2A'
+      red: '#FF8F80'
       green: '#00C200'
       yellow: '#C7C400'
       blue: '#E0C3E7'
@@ -54,7 +123,7 @@ color_schemes:
       white: '#C7C7C7'
     bright:
       black: '#686868'
-      red: '#DD7975'
+      red: '#FFD0C8'
       green: '#58E790'
       yellow: '#ECE100'
       blue: '#A7ABF2'
@@ -75,7 +144,7 @@ color_schemes:
       background_alpha: 1.0
     normal:
       black: '#14191E'
-      red: '#B43C2A'
+      red: '#FF8F80'
       green: '#00C200'
       yellow: '#C7C400'
       blue: '#2744C7'
@@ -84,7 +153,7 @@ color_schemes:
       white: '#C7C7C7'
     bright:
       black: '#686868'
-      red: '#DD7975'
+      red: '#FFD0C8'
       green: '#58E790'
       yellow: '#ECE100'
       blue: '#A7ABF2'

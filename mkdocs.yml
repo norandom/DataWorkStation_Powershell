@@ -55,11 +55,14 @@ nav:
       - Something is not working: workflows/problem-not-working.md
       - Skill optimization: workflows/skill-optimization.md
   - Tricky cases: tricky.md
+  - Suspicious-file analysis: malware-analysis.md
   - Desired state: desired-state.md
   - Workstation modules: workstation-modules.md
   - Sample outputs: sample-outputs.md
-  - Sample outputs: sample-outputs.md
+  - Spec-driven development: spec-driven-development.md
   - Contour Terminal: contour-terminal.md
+  - Terminal keyboard and scrolling: terminal-keybindings.md
+  - Native awk and sed: native-text-tools.md
   - Hardening and attack surface: hardening.md
   - Opt-in debloat: debloat.md
   - Humans and AI: architecture/humans-and-ai.md

@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "ears-validate": {
+      "version": "0.1.0",
+      "source": "local",
+      "manifest_hash": "sha256:03969984beee884a28b89a243ff838a26d7f2de5d8f5c87c8ba4216b43d24762",
+      "enabled": true,
+      "priority": 5,
+      "registered_commands": {
+        "codex": [
+          "speckit.ears-validate.validate"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-08-14T16:08:05.604546+00:00"
+    }
+  }
+}

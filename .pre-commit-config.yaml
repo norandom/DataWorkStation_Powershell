@@ -14,3 +14,14 @@ repos:
         language: system
         files: '\.(ps1|psm1|psd1)$'
         pass_filenames: true
+      - id: python-lint
+        name: Python lint (Ruff 0.16.3)
+        entry: pwsh
+        args:
+          - -NoLogo
+          - -NoProfile
+          - -File
+          - scripts/Invoke-PythonLint.ps1
+        language: system
+        files: '\.py$'
+        pass_filenames: true

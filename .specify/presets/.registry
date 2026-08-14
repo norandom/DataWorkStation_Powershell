@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "presets": {
+    "ears-tdd": {
+      "version": "0.1.0",
+      "source": "local",
+      "manifest_hash": "sha256:98c9b63d5ecdf0457982ff955d0ab0d0687705353e6e33bff7e4f8e29330f2dc",
+      "enabled": true,
+      "priority": 5,
+      "registered_commands": {
+        "codex": [
+          "speckit.specify",
+          "speckit.plan",
+          "speckit.tasks",
+          "speckit.implement"
+        ]
+      },
+      "registered_skills": {
+        "codex": [
+          "speckit-specify",
+          "speckit-plan",
+          "speckit-tasks",
+          "speckit-implement"
+        ]
+      },
+      "installed_at": "2026-08-14T16:08:04.994273+00:00"
+    }
+  }
+}

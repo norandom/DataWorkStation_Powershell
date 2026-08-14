@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Analyze"
+  short_description: "Analyze consistency across feature artifacts"
+  default_prompt: "Use $speckit-analyze to check the current specification, plan, and tasks for gaps."

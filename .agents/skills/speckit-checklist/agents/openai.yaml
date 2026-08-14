@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Checklist"
+  short_description: "Create a focused feature quality checklist"
+  default_prompt: "Use $speckit-checklist to create a quality checklist for the current feature."

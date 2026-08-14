@@ -13,11 +13,65 @@ Workstation module plan for mode 'Test':
 Order Name             DependsOn       Privileged Destructive
 ----- ----             ---------       ---------- -----------
    18 PowerShell7                       False      False
+   19 Go                                False      False
    20 Packages         PowerShell7      False      False
    45 LinuxHomebrew    Packages         False      False
    47 LinuxAutomation  LinuxHomebrew    False      False
-   50 DeveloperTools   LinuxAutomation  False      False
+   49 DeveloperDocker  LinuxAutomation  True       False
+   50 DeveloperTools   DeveloperDocker, Go  False  False
 ```
+
+Go and the released hash command are independently selectable Windows resources:
+
+```text
+PS> .\Apply-Workstation.ps1 -Mode Test -Module Go -Plan
+
+Order Name DependsOn Privileged Destructive
+----- ---- --------- ---------- -----------
+   19 Go             False      False
+
+PS> pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test
+Go: compliant (1.26.5, auto)
+  Package: compliant
+  GoPath: compliant
+  GoBinOnUserPath: compliant
+  ToolchainManager: compliant
+  GoRootUnmanaged: compliant
+
+PS> pwsh -NoProfile -File .\scripts\Set-MalwareHashesState.ps1 -Mode Test
+malware_hashes: compliant (v2.4.0)
+  ReleaseAsset: compliant
+  ReleaseHash: compliant
+  CommandHash: compliant
+  ReleaseVersion: compliant
+  StaticHashSmoke: compliant
+```
+
+The Spec Kit policy tool is independently selectable and does not pull in WSL or Dagger:
+
+```text
+PS> .\Apply-Workstation.ps1 -Mode Test -Module SpecDrivenDevelopment -Plan
+Workstation module plan for mode 'Test':
+
+Order Name                    DependsOn  Privileged Destructive
+----- ----                    ---------  ---------- -----------
+   18 PowerShell7                         False      False
+   20 Packages                PowerShell7 False      False
+   55 SpecDrivenDevelopment  Packages    False      False
+```
+
+After `Ensure`, its narrow test reports the release and command independently:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Set-SpecDrivenDevelopmentState.ps1 -Mode Test
+
+Resource                    State       Detail
+--------                    -----       ------
+SpecKitEarsTddPackage       compliant   release v0.1.0; specify-cli==0.16.3
+EarsSddCommand              compliant   ...\uv\tools\spec-kit-ears-tdd\Scripts\ears-sdd.exe
+```
+
+The same resource test returns the same state under inbox Windows PowerShell 5.1.
 
 ## Focused desired-state test
 
@@ -85,3 +139,189 @@ Id             Title
 --             -----
 crash-analysis Crash, hang, and silent process exit
 ```
+
+## Suspicious-file triage
+
+Static inspection does not execute or upload the file and does not claim a verdict:
+
+```text
+PS> is-this-malware C:\Samples\synthetic.exe
+
+SchemaVersion : 1
+Status        : complete
+Verdict       : undetermined
+Sample        : @{Name=synthetic.exe; Size=4096; Sha256=AC96...; Type=PE32+; Entropy=0.3475}
+Signature     : @{Status=NotSigned; Signer=}
+Pe            : @{EntryPointRva=4660; ImageBase=5368709120; Sections=System.Object[]}
+Indicators    : {@{Category=api; Value=VirtualAlloc}, @{Category=direct-syscall; Value=0F 05 at file offset 0x2F0}}
+Execution     : not-run
+Upload        : not-performed
+```
+
+Planning an isolated job makes the consent boundary visible and does not launch it:
+
+```text
+PS> malware-sandbox C:\Samples\synthetic.exe -Mode Detonate
+
+Status               : planned
+Verdict              : undetermined
+Mode                 : Detonate
+SandboxConfiguration : ...\analysis.wsb
+NetworkEnabled       : False
+DurationSeconds      : 30
+CloseWhenComplete    : True
+Telemetry            : {process, file, file-handles, registry, dns...}
+Execution            : not-run
+```
+
+Target plans retain the host report and arrange an independent guest report from the same verified release:
+
+```text
+MalwareHashes : @{Release=v2.4.0; ToolMappedReadOnly=True; HostState=complete; SandboxState=planned}
+```
+
+After an approved Sandbox run, bounded evidence ingestion reports only validated cross-boundary fields:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Read-MalwareEvidence.ps1 -Case <case>
+Status        : validated
+AnalysisStatus: complete
+HashAgreement : matched
+```
+
+`matched` means the host source and read-only guest copy produced identical deterministic hashes. It does not mean the target is safe.
+
+Default jobs close Windows Sandbox after `result.json` is finalized. An explicitly reviewed
+`-KeepSandboxOpen` plan instead shows `CloseWhenComplete : False` in the manifest and plan output.
+
+A clean-control plan is visibly distinct but retains the same reviewed policies:
+
+```text
+PS> malware-control C:\Samples\synthetic.exe -Mode Detonate -DurationSeconds 30
+
+Status                     : planned
+Verdict                    : undetermined
+Role                       : Control
+Mode                       : Detonate
+NetworkEnabled             : False
+DurationSeconds            : 30
+ToolInventoryFingerprint   : 8A...
+IsolationPolicyFingerprint : F4...
+Execution                  : not-run
+```
+
+After separately approved control and target runs, the normal comparison uses a standard unified
+diff and retains both input trees:
+
+```text
+PS> malware-diff -ControlCase $control -TargetCase $target
+
+Status                    : complete
+Verdict                   : undetermined
+Compatibility             : compatible
+DiffStatus                : differences
+ControlCanonicalDirectory : ...\comparison-...\control
+TargetCanonicalDirectory  : ...\comparison-...\target
+DiffPath                  : ...\comparison-...\evidence.diff
+DiffCommand               : git.exe diff --no-index --no-ext-diff --text ...
+```
+
+The canonical paths can be passed to another common directory-diff tool. Diff status
+`differences` is not a command failure or a malware verdict. Reports cross-link same-hash static,
+document, reverse-engineering, and dynamic cases without treating a static indicator as observed
+execution. Default output never renders raw evidence. `-ShowDiff` prints the escaped canonical diff;
+unknown traces and parser artifacts appear only as path, size, and SHA-256.
+
+The complete rootless static-parser path is also plan-first:
+
+```text
+PS> malware-container C:\Samples\invoice.pdf
+
+Status             : planned
+Backend            : RootlessContainer
+Distribution       : Debian-MW
+Role               : Target
+Image              : dataworkstation/malware-static:2026.08.14-1
+Network            : none
+ReadOnlyRoot       : True
+Execution          : not-run
+Verdict            : undetermined
+ContainerPlan      : ...\container-plan.json
+```
+
+The local image is a separate opt-in state resource:
+
+```text
+PS> .\Apply-Workstation.ps1 -Mode Test -Module MalwareContainerImage -Plan
+
+Order Name                  DependsOn       Privileged Destructive
+----- ----                  ---------       ---------- -----------
+   49 RootlessDocker                         True       False
+   66 MalwareContainerImage RootlessDocker   False      False
+
+PS> lint-python
+All checks passed!
+```
+
+Only `malware-container ... -Run -ConfirmContainer` starts the static parser. It cannot enable
+networking and never executes the sample or extracted content.
+
+The four boundary names are intentionally visible:
+
+```text
+PS> workstation-help -Type Commands -Name '*static'
+
+Kind    Name           Source
+----    ----           ------
+Command host-static    profile/Aliases.ps1
+Command sandbox-static profile/Aliases.ps1
+
+PS> wsl-dev uname -a
+PS> wsl-mw docker info --format '{{json .SecurityOptions}}'
+```
+
+The explicitly approved benign integration check produces local, ignored evidence and requires an
+actual guest handle observation:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Test-MalwareSandboxIntegration.ps1 -ConfirmSandbox -ConfirmExecution
+
+SchemaVersion          : 1
+Status                 : passed
+Verdict                : undetermined
+FileHandleEvidence     : ...\output\file-handles.jsonl
+FileHandleObservations : 12
+NetworkEnabled         : False
+Note                   : This validates the benign evidence path only; it is not a malware verdict.
+```
+
+The observation count varies by timing. A missing Handle tool, collection failure, or process that
+exits before a snapshot is reported explicitly and does not pass this end-to-end check.
+
+The optional tool plan puts both dependency chains before the non-default module:
+
+```text
+PS> .\Apply-Workstation.ps1 -Mode Test -Module MalwareAnalysisTools -Plan
+
+Order Name                   DependsOn                 Privileged Destructive
+----- ----                   ---------                 ---------- -----------
+   10 Sudo                                              False      False
+   18 PowerShell7                                       False      False
+   20 Packages               PowerShell7                False      False
+   30 WindowsFeatures        Sudo                        True       False
+   56 MalwareHashes                                                     False  False
+   65 MalwareAnalysisTools   Packages, WindowsFeatures, ProfilingTools, MalwareHashes  False  False
+```
+
+The Handle prerequisite can be checked without testing or installing the large analyzer bundle:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Set-MalwareAnalysisToolsState.ps1 -Mode Test -Tool Handle
+
+Name   Source State          Path
+----   ------ -----          ----
+Handle WinGet drift detected
+Malware analysis tool state: drift detected.
+```
+
+`-Mode Ensure -Tool Handle` is the corresponding explicit, focused state change.

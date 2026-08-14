@@ -1,0 +1,173 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "manual"
+rationale = "Compare the rendered module baseline against the human-readable module plan and declared catalog."
+
+[requirements.REQ-002]
+verification = "manual"
+rationale = "Review every module row in the catalog for all required metadata fields during baseline migration."
+
+[requirements.REQ-003]
+verification = "manual"
+rationale = "Run full and focused plan commands and inspect ordering without applying workstation state."
+
+[requirements.REQ-004]
+verification = "manual"
+rationale = "Run representative focused plans and compare their rows with the expected transitive dependency closure."
+
+[requirements.REQ-005]
+verification = "manual"
+rationale = "Run plan mode while monitoring that no desired-state resource or package operation is invoked."
+
+[requirements.REQ-006]
+verification = "manual"
+rationale = "Run representative resource Test modes and review their state reports without authorizing repair."
+
+[requirements.REQ-007]
+verification = "manual"
+rationale = "Run Ensure twice on a disposable or already compliant host and compare the second compliance report."
+
+[requirements.REQ-008]
+verification = "manual"
+rationale = "Inspect documented backup artifacts before explicitly exercising supported Reinitialize modes."
+
+[requirements.REQ-009]
+verification = "manual"
+rationale = "Inspect focused privileged-module plans and verify that Sudo precedes every elevated dependant."
+
+[requirements.REQ-010]
+verification = "manual"
+rationale = "Invoke the destructive profile without confirmation and verify that it refuses to remove state."
+
+[requirements.REQ-011]
+verification = "manual"
+rationale = "Inspect the default module plan and verify that the opt-in Debloat module is absent."
+
+[requirements.REQ-012]
+verification = "manual"
+rationale = "Run each declared dual-shell command under PowerShell 7 and Windows PowerShell 5.1 and compare results."
+
+[requirements.REQ-013]
+verification = "manual"
+rationale = "Review the developer README and getting-started documentation for an explicit Windows 11 Pro prerequisite."
+
+[requirements.REQ-014]
+verification = "manual"
+rationale = "Inspect the Windows feature plan and confirm all Hyper-V parent dependencies precede Sandbox."
+
+[requirements.REQ-015]
+verification = "manual"
+rationale = "Exercise the feature resource on a disposable host and verify that it reports restart state without rebooting."
+
+[requirements.REQ-016]
+verification = "manual"
+rationale = "Inspect module selection and direct commands for independent security and removal state boundaries."
+
+[requirements.REQ-017]
+verification = "manual"
+rationale = "Inspect the declared hardening controls and test report to confirm no User Account Control setting is managed."
+
+[requirements.REQ-018]
+verification = "manual"
+rationale = "Compare debloat inventory results with the protected-package rules before authorizing any removal."
+
+[requirements.REQ-019]
+verification = "manual"
+rationale = "On a disposable host, confirm that the documented inventory snapshot exists before removal begins."
+
+[requirements.REQ-020]
+verification = "manual"
+rationale = "Inspect the Contour transition report and installed package sources during an explicitly authorized Ensure run."
+
+[requirements.REQ-021]
+verification = "manual"
+rationale = "Run the bounded Contour graphics test with compatible and intentionally invalid driver conditions."
+
+[requirements.REQ-022]
+verification = "manual"
+rationale = "Resolve the awk and sed commands and inventory installed packages for excluded shell environments."
+
+[requirements.REQ-023]
+verification = "manual"
+rationale = "Test the selected Debian resources and inspect package locations from inside the distribution."
+
+[requirements.REQ-024]
+verification = "manual"
+rationale = "Inspect isolated tool environments and verify unrelated Python environments are not modified."
+
+[requirements.REQ-025]
+verification = "manual"
+rationale = "Load the managed profile in both documented runtimes and exercise command and skill discovery."
+
+[requirements.REQ-026]
+verification = "manual"
+rationale = "Compare capability discovery output with all nineteen entries in the migration baseline table."
+
+[requirements.REQ-027]
+verification = "manual"
+rationale = "Review every capability route for nonempty triggers, evidence kinds, inspection commands, and capture command."
+
+[requirements.REQ-028]
+verification = "manual"
+rationale = "Walk each diagnostic skill against a case with existing evidence and verify inspection occurs first."
+
+[requirements.REQ-029]
+verification = "manual"
+rationale = "Review diagnostic workflows for explicit operator commands before every capture or state-changing action."
+
+[requirements.REQ-030]
+verification = "manual"
+rationale = "Run representative Tricky discovery and case commands without JSON and inspect readable terminal output."
+
+[requirements.REQ-031]
+verification = "manual"
+rationale = "Run representative Tricky commands with JSON and parse their complete output with a JSON parser."
+
+[requirements.REQ-032]
+verification = "manual"
+rationale = "Validate repository skill packages and review that each directory retains one focused purpose."
+
+[requirements.REQ-033]
+verification = "manual"
+rationale = "Exercise profiler status and representative format generation for Python, .NET, and native workflows."
+
+[requirements.REQ-034]
+verification = "manual"
+rationale = "Compare every documented local selector with its safe sample and version-control exclusion."
+
+[requirements.REQ-035]
+verification = "manual"
+rationale = "Build and review the operator documentation for commands, outputs, privileges, rollback, and attack surface."
+
+[requirements.REQ-036]
+verification = "manual"
+rationale = "Review command-changing commits for matching capability catalog and operator documentation updates."
+
+[requirements.REQ-037]
+verification = "manual"
+rationale = "Run the declared publication commands and retain their zero-error output before a release is published."
+
+[requirements.REQ-038]
+verification = "manual"
+rationale = "Test the released bundle state in both PowerShell runtimes and inspect its version and hash declarations."
+
+[requirements.REQ-039]
+verification = "manual"
+rationale = "Run deterministic plan validation and inspect that every requirement has one accepted verification entry."
+
+[requirements.REQ-040]
+verification = "manual"
+rationale = "Review generated behavior tasks for a requirement identifier, selector, and preceding failing-test task."
+
+[requirements.REQ-041]
+verification = "manual"
+rationale = "Review and mock the SkillOpt workflow to verify explicit targeting, gating, staging, and adoption."
+
+[requirements.REQ-042]
+verification = "automated"
+tests = ["tests/Test-GoState.ps1"]
+
+[requirements.REQ-043]
+verification = "automated"
+tests = ["tests/Test-MalwareHashesState.ps1"]

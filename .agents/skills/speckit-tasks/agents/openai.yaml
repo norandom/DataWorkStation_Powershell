@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Tasks"
+  short_description: "Generate complete test-first feature tasks"
+  default_prompt: "Use $speckit-tasks to generate dependency-ordered, test-first tasks for the current feature."

@@ -66,16 +66,68 @@
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
+            Id = 'malware-triage'
+            Title = 'Suspicious file triage and isolated analysis'
+            Triggers = @('malware', 'suspicious file', 'pdf dissection', 'document dissection', 'disassembly', 'decompile', 'detonate', 'sandbox diff', 'clean sandbox', 'control case')
+            EvidenceKinds = @('Snapshot', 'Sandbox report', 'Canonical evidence', 'Unified diff', 'Disassembly', 'Decompilation', 'File-handle trace', 'Packet capture', 'Event log', 'ETW trace')
+            InspectCommands = @(
+                'is-this-malware <path>'
+                'malware_hashes <path> [--json]'
+                'host-static <path>'
+                'sandbox-static <path> -Mode Dissect'
+                'wsl-dev [command] (developer tools only; never suspicious content)'
+                'wsl-mw [command] (dedicated malware-analysis WSL)'
+                'malware-container-status'
+                'malware-container-image -Mode Test'
+                'malware-container <path>'
+                'malware-container-control <path>'
+                'docker-mw info'
+                'disass <path>'
+                'decomp <path>'
+                'malware-sandbox <path> -Mode Dissect'
+                'malware-control <path> -Mode <Dissect|Disassemble|Decompile|Detonate>'
+                'malware-diff -ControlCase <control-case> -TargetCase <target-case> [-ShowDiff]'
+                'pwsh -NoProfile -File .\scripts\Read-MalwareEvidence.ps1 -Case <case>'
+                'pwsh -NoProfile -File .\scripts\Invoke-MalwareAnalysis.ps1 -Action Report -Case <case>'
+            )
+            ValidationCommands = @(
+                'pwsh -NoProfile -File .\scripts\Test-MalwareSandboxIntegration.ps1 -ConfirmSandbox -ConfirmExecution'
+                'pwsh -NoProfile -File .\scripts\Test-MalwareSandboxIntegration.ps1 -Case <existing-case>'
+                'pwsh -NoProfile -File .\tests\Test-MalwareAnalysis.ps1 -Section Differential'
+            )
+            StateCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-MalwareHashesState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-MalwareHashesState.ps1 -Mode Ensure'
+                'pwsh -NoProfile -File .\scripts\Set-MalwareAnalysisToolsState.ps1 -Mode Test -Tool Handle'
+                'pwsh -NoProfile -File .\scripts\Set-MalwareAnalysisToolsState.ps1 -Mode Ensure -Tool Handle'
+                'pwsh -NoProfile -File .\scripts\Set-MalwareContainerImageState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module MalwareContainerImage -Plan'
+            )
+            CaptureCommand = 'malware-sandbox <path> -Mode Detonate -Run -ConfirmSandbox -ConfirmExecution'
+        }
+        @{
             Id = 'workstation-help'
             Title = 'Managed command, alias, and skill discovery'
-            Triggers = @('list aliases', 'list skills', 'commands', 'workstation help', 'wshelp')
+            Triggers = @('list aliases', 'list skills', 'commands', 'workstation help', 'wshelp', 'wget', 'aria2c', 'download alias')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'workstation-help'
                 'workstation-help -Type Skills'
                 'workstation-help -Json'
+                'Get-Command wget, aria2c'
             )
             CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
+            Id = 'idle-sleep-inhibition'
+            Title = 'Explicit Caffeine idle-sleep inhibition'
+            Triggers = @('caffeine', 'stay awake', 'inhibit standby', 'prevent sleep', 'idle sleep')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-CaffeineState.ps1 -Mode Test'
+                'Get-Process caffeine -ErrorAction Ignore'
+            )
+            CaptureCommand = 'caffeine'
         }
         @{
             Id = 'workstation-modules'
@@ -96,10 +148,42 @@
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-LinuxAutomationState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-RootlessDockerState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperToolsState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan'
             )
             CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
+            Id = 'go-development'
+            Title = 'Go package, workspace, and toolchain selection'
+            Triggers = @('go', 'golang', 'go.mod', 'GOPATH', 'GOBIN', 'GOROOT', 'GOTOOLCHAIN', 'go toolchain')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'go version'
+                'go env GOPATH GOBIN GOTOOLCHAIN GOROOT GOENV'
+                'pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module Go -Plan'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module Go'
+            )
+            CaptureCommand = 'tricky add {case} <go-state.json>'
+        }
+        @{
+            Id = 'spec-driven-development'
+            Title = 'EARS requirements and test traceability with Spec Kit'
+            Triggers = @('spec kit', 'speckit', 'ears', 'requirements', 'traceability', 'spec-driven development', 'tdd')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-SpecDrivenDevelopmentState.ps1 -Mode Test'
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-SpecDrivenDevelopmentState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module SpecDrivenDevelopment -Plan'
+                'ears-sdd status --phase final'
+                'ears-sdd status --phase final --json'
+            )
+            CaptureCommand = 'tricky add {case} <ears-sdd-status.json>'
         }
         @{
             Id = 'terminal-fonts'
@@ -113,9 +197,22 @@
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
+            Id = 'native-text-tools'
+            Title = 'Native awk and sed for PowerShell'
+            Triggers = @('awk', 'sed', 'native text tools', 'busybox', 'git bash', 'mingit', 'msys', 'msys2', 'cygwin')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-NativeTextToolsState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module NativeTextTools -Plan'
+                "'alpha beta' | awk '{print `$2}'"
+                "'abc' | sed 's/b/B/'"
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
             Id = 'contour-terminal'
             Title = 'Official Contour MSI and terminal desired state'
-            Triggers = @('contour', 'contour msi', 'terminal theme', 'terminal font', 'blueterm', 'terminal package', 'scoop contour migration', 'opengl', 'glsl', 'display driver', 'terminal tabs', 'vertical line marks', 'clickable links', 'osc 8')
+            Triggers = @('contour', 'contour msi', 'terminal theme', 'terminal font', 'blueterm', 'terminal package', 'scoop contour migration', 'opengl', 'glsl', 'display driver', 'terminal tabs', 'tab switching', 'terminal scrollback', 'terminal keybindings', 'psreadline', 'copy on select', 'clipboard', 'status line', 'statusline', 'byobu', 'vertical line marks', 'clickable links', 'osc 8')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test'

@@ -59,16 +59,30 @@ Although the 0.6.3.8249 generated comments mention automatic light/dark mappings
 
 The managed PowerShell prompt emits Contour's `CSI > M` vertical-line mark before every prompt and wraps filesystem locations in an OSC 8 hyperlink. This behavior is enabled only when Contour identifies the session through `CONTOUR_PROFILE` or `TERMINAL_NAME`; redirected output and other terminals receive plain text. Use `terminal-link URI [TEXT]` to emit another explicit hyperlink.
 
-Contour 0.6.3's built-in bindings are:
+Selecting text with the mouse immediately copies it to the Windows system clipboard through `on_mouse_select: CopyToClipboard`; no additional copy chord is required. This is intentionally the primary clipboard rather than Contour's platform-dependent selection clipboard. Selecting sensitive terminal output therefore replaces the current clipboard contents, and other processes running in the interactive Windows session may be able to read that clipboard.
+
+The managed map preserves Contour 0.6.3's bindings and adds common scrolling and mouse tab switching:
 
 - `Ctrl+Alt+K` / `Ctrl+Alt+J`: jump to the previous or next marked prompt;
 - `Ctrl+click`: follow the OSC 8 link under the pointer;
 - `Ctrl+Shift+U`: enter hint mode for detected URLs and file paths;
 - `Ctrl+Shift+T`: create a tab;
+- `Alt+wheel up` / `Alt+wheel down`: switch to the tab on the left or right;
 - `Shift+Left` / `Shift+Right`: switch to the tab on the left or right;
 - `Alt+1` through `Alt+9`, and `Alt+0` for tab 10: switch directly to a tab.
+- `Ctrl+Shift+Page Up` / `Ctrl+Shift+Page Down`: scroll terminal history by a page, matching Windows Terminal.
 
-The managed Contour YAML intentionally omits `input_mapping`, preserving the complete bindings supplied by this installed release instead of replacing them with a partial list.
+The bottom status line shows the active tabs but is not a clickable tab bar in this Contour release. Use `Alt+wheel` for mouse-driven switching. Plain wheel scrolling remains terminal scrollback, `Shift+wheel` moves by a page, and `Ctrl+wheel` changes font size.
+
+The deep-blue palette uses a warm coral ANSI red (`#FF8F80`) and a pale-coral bright red (`#FFD0C8`). Red and blue are perceptual opposites, but the original dark red had only about 2.0:1 contrast against `#00347F`. The replacement retains error semantics while reaching about 5.3:1 for normal red and 8.4:1 for bright red. The same values are carried into the BlueTerm Windows Terminal conversion.
+
+For touch use, the profile enables smooth/momentum scrolling and keeps the right-side scrollbar visible even in alternate-screen tools. Unmodified wheel events are captured for terminal history only on the primary screen, allowing Codex and other mouse-aware TUIs to receive them in the alternate screen. See [Terminal keyboard and scrolling](terminal-keybindings.md).
+
+Contour's indicator status line supports configurable `left`, `middle`, and `right` templates. Built-in variables cover the clock, command output, history-line count, hyperlink under the pointer, input/protected/search modes, search prompt, tabs, title, and VT type. The default indicator already shows mode/tab state on the left, the title in the middle, and history count plus clock on the right.
+
+This can approximate a Byobu layout, but Contour has no Byobu-style catalog of CPU, memory, network, battery, or host modules. `{Command:Program=...}` can insert an external program's output; a future workstation helper could provide cached system metrics, but invoking uncached PowerShell commands during status-line redraw would add process overhead and is not enabled by this profile. The separate host-writable VT status line is application-driven and likewise is not a declarative item system.
+
+Contour replaces its entire built-in map when `input_mapping` is present. The managed YAML therefore declares the complete 0.6.3.8249 map rather than a partial override. See [Terminal keyboard and scrolling](terminal-keybindings.md) for the full Contour, Windows Terminal, compact-keyboard, and PSReadLine reference.
 
 The MSI installs the binary at `C:\Program Files\Contour Terminal Emulator 0.6\bin\contour.exe` and supplies the all-users Desktop shortcut `C:\Users\Public\Desktop\Contour Terminal Emulator.lnk`. Desired state validates both. If a different user configuration exists, Ensure copies it to `state/contour-backups` before deploying the managed artifact.
 

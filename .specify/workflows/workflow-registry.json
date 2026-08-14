@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "workflows": {
+    "speckit": {
+      "name": "Full SDD Cycle",
+      "version": "1.0.0",
+      "description": "Runs specify \u2192 plan \u2192 tasks \u2192 implement with review gates",
+      "source": "bundled",
+      "installed_at": "2026-08-14T16:08:04.535625+00:00",
+      "updated_at": "2026-08-14T16:08:04.535625+00:00"
+    },
+    "ears-sdd": {
+      "name": "EARS/TDD SDD Cycle",
+      "version": "0.1.0",
+      "description": "Runs Spec Kit with EARS validation, test traceability, and human review gates.",
+      "source": "C:\\Users\\mariu\\AppData\\Roaming\\uv\\tools\\spec-kit-ears-tdd\\Lib\\site-packages\\ears_sdd\\assets\\components\\workflow\\ears-sdd",
+      "installed_at": "2026-08-14T16:08:06.083096+00:00",
+      "updated_at": "2026-08-14T16:08:06.083096+00:00"
+    }
+  }
+}

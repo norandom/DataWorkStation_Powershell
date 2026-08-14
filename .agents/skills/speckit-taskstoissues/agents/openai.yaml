@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Tasks to Issues"
+  short_description: "Convert feature tasks into ordered issues"
+  default_prompt: "Use $speckit-taskstoissues to convert the current tasks into dependency-ordered GitHub issues."

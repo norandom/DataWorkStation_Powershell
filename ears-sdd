@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+set -eu
+
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script="$project_dir/.specify/extensions/ears-validate/scripts/ears-sdd.sh"
+if [ ! -f "$script" ]; then
+  echo "EARS/TDD extension script not found. Re-run the standalone repository's init command." >&2
+  exit 2
+fi
+exec sh "$script" "$@"

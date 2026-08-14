@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Clarify"
+  short_description: "Resolve ambiguity in a feature specification"
+  default_prompt: "Use $speckit-clarify to resolve the most important ambiguities in the current specification."

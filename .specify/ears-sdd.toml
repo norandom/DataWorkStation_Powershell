@@ -1,0 +1,14 @@
+# Project-specific policy. Paths are relative to the consuming project root.
+spec_glob = "specs/*/spec.md"
+traceability_file = "traceability.toml"
+require_test_files = true
+
+# Publishing still runs these commands explicitly; the validator records the reviewed gate.
+test_command = "lint-powershell; tricky capabilities; tricky capabilities -Json; uv run --group docs mkdocs build --strict"
+
+# Requirement prose and IDs must not be copied into these production-code roots.
+production_roots = ["scripts", "profile", "linux"]
+test_roots = ["tests"]
+source_extensions = [
+  ".ps1", ".py"
+]

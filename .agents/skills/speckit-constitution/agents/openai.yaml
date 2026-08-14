@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Constitution"
+  short_description: "Define and maintain project governance"
+  default_prompt: "Use $speckit-constitution to create or update the project constitution."

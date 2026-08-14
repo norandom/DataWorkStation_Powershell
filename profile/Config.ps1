@@ -59,14 +59,13 @@ foreach ($commandName in $nativeCommands) {
 }
 
 # Windows includes curl.exe, while Windows PowerShell 5.1 masks it with curl/wget aliases.
+# Aliases.ps1 assigns wget to the managed aria2c wrapper after this cleanup.
 if (Get-Command curl.exe -CommandType Application -ErrorAction Ignore) {
     foreach ($commandName in 'curl', 'wget') {
         if (Test-Path "Alias:$commandName") {
             Remove-Item "Alias:$commandName" -Force
         }
     }
-
-    function global:wget { & curl.exe @args }
 }
 
 function Test-ContourTerminalSession {

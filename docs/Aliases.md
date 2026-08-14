@@ -13,6 +13,7 @@ The managed profile supports Windows PowerShell 5.1 and PowerShell 7. Some entri
 | Prompt | Shows `username@computer path>`; in Contour it marks each prompt line and makes a filesystem path clickable. |
 | `terminal-link URI [TEXT]` | Emit an OSC 8 hyperlink in Contour, falling back to plain text elsewhere or when output is redirected. |
 | `workstation-help` / `wshelp` | List managed commands, loaded aliases, and repository skills together. Filter with `-Type Commands|Aliases|Skills`, `-Name PATTERN`, or emit stable data with `-Json`. |
+| `caffeine` | Start the real Zhorn Software Caffeine tray utility installed by the focused `Caffeine` WinGet module. It starts active at sign-in; double-click its tray icon to toggle inhibition. |
 
 Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
 
@@ -27,7 +28,6 @@ Microsoft Coreutils executables take precedence over same-named PowerShell alias
 | `grep` | Microsoft Coreutils grep. |
 | `rg PATTERN [PATH]` | Fast recursive text search with ripgrep. |
 | `curl` | Native Windows `curl.exe`, not `Invoke-WebRequest`. |
-| `wget` | A compatibility wrapper around `curl.exe`; pass curl options. |
 
 Options such as `ls -la` now belong to the native Coreutils command. PowerShell `Get-ChildItem` parameters no longer apply to `ls`.
 
@@ -35,7 +35,7 @@ Options such as `ls -la` now belong to the native Coreutils command. PowerShell 
 
 | Command | Purpose |
 |---|---|
-| `aria2c URL` / `aria URL` | Download with resume and three concurrent segments by default. Later arguments can override those defaults. |
+| `aria2c URL` / `aria URL` / `wget URL` | Download with resume and three concurrent segments by default. `wget` is a PowerShell alias for the managed `aria2c` wrapper; later arguments can override its defaults. |
 | `rclone-config` | Configure rclone remotes interactively. Credentials are never created by desired state. |
 | `rclone-remotes` | List configured rclone remotes. |
 | `rclone-mount remote:path R:` | Mount a remote through WinFsp with network-drive semantics and `writes` VFS caching. Run non-elevated so Explorer sees it. |
@@ -53,6 +53,9 @@ WinFsp makes rclone's virtual mount available on Windows. Mounts, remote configu
 | `semgrep scan ...` | Use the full Semgrep CE CLI directly. |
 | `codeql ...` | Use the pinned user-local CodeQL CLI. |
 | `codeql-tob DATABASE [-Language cpp|go|java] [-Output FILE]` | Analyze a CodeQL database with the installed public Trail of Bits query pack and write SARIF. |
+| `lint-python [PATH...]` | Run the repository-pinned Ruff policy over pyinfra and static-container Python. |
+| `go version` / `go env GOPATH GOBIN GOTOOLCHAIN GOROOT` | Inspect the MSI-backed Go runtime and built-in project toolchain selector. |
+| `malware_hashes PATH [--json]` | Run the hash-pinned released static hash tool directly; suspicious-case reports are retained and ingested through the case workflow. |
 
 Semgrep is installed by `uv tool` into its own environment. It does not share the AMD/PyTorch Python interpreter. CodeQL and the Trail of Bits packs are installed automatically, but database creation and scans are always explicit.
 
@@ -245,9 +248,14 @@ Taildrive is a persistent WebDAV file server inside the Tailnet, locally reachab
 | `docker ps` | Run the Debian Docker CLI from PowerShell. WSL starts on demand. |
 | `docker compose ...` | Use the installed Docker Compose plugin inside Debian. |
 | `docker-compose ...` | Compatibility wrapper for `docker compose`. |
+| `docker-mw info` | Inspect the separate rootless daemon in `Debian-MW`. |
+| `docker-mw ...` | Run an explicitly chosen container command against `Debian-MW`; malware policy still gates arguments. |
+| `docker-mw-compose ...` | Run Compose against the rootless `Debian-MW` daemon. |
 | `wsl --terminate Debian` | Stop Debian and its Docker daemon. A later Docker command starts Debian again. |
 
-The wrappers are defined only when the corresponding native Windows executable is absent. This means Docker Desktop or another Windows Docker CLI can take precedence if installed later. For best filesystem performance, keep container projects in Debian's Linux filesystem rather than under `/mnt/c`.
+The ordinary wrappers are defined only when the corresponding native Windows executable is absent. This means Docker Desktop or another Windows Docker CLI can take precedence if installed later. The `docker-mw` wrapper is always explicit and reads its dedicated distro/user from `.wsl-env`.
+
+`Debian` runs the pyinfra-managed rootful daemon required by Dagger. `Debian-MW` is a clean, separately managed distro whose daemon reports Docker rootless mode and stores state beneath `/home/mc/.local/share/docker`. Do not use `Debian` for untrusted analysis, and do not add Dagger to `Debian-MW`. For best filesystem performance, keep ordinary container projects in Debian's Linux filesystem rather than under `/mnt/c`.
 
 ## Windows event logs
 
@@ -356,6 +364,10 @@ These community tools are not installed automatically because they do not curren
 | `.\Apply-Workstation.ps1 -Mode Ensure -Module MODULE` | Ensure only one module plus its declared dependencies. |
 | `.\Apply-Workstation.ps1 -Mode Test -Module MODULE -Plan [-Json]` | Validate and display the resolved dependency order without invoking resources. |
 | `.\Apply-Workstation.ps1 -Mode Test -Module MODULE1,MODULE2` | Test several named modules in topological dependency order. |
+| `pwsh -NoProfile -File .\scripts\Set-SpecDrivenDevelopmentState.ps1 -Mode Test` | Test the pinned Spec Kit EARS/TDD tool without changing state. |
+| `.\Apply-Workstation.ps1 -Mode Ensure -Module SpecDrivenDevelopment` | Install the hash-verified release wheel after the managed `uv` dependency. |
+| `ears-sdd init --project . --integration codex` | Explicitly adopt the EARS/TDD Spec Kit components in the current project. |
+| `.\ears-sdd.ps1 validate --phase spec` | Validate human-readable EARS requirements; use `--json` for agents. |
 | `pwsh -NoProfile -File .\scripts\Set-ScoopState.ps1 -Mode Test` | Verify Scoop prerequisites and official Main/Extras bucket sources. |
 | `pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test` | Verify the official Contour MSI, absence of the legacy Scoop package, native Desktop shortcut, managed BlueTerm config, and bounded graphics gate. |
 | `.\Apply-Workstation.ps1 -Mode Ensure -Module ContourTerminal` | Ensure Sudo, the hash-pinned machine-wide Contour MSI, and the translated theme in dependency order. |
@@ -418,3 +430,52 @@ Desired state installs `skillopt==0.2.0` through `uv tool`. It never harvests tr
 | `precommit-run` | Execute every configured pre-commit hook against all tracked files. |
 
 The PowerShell hook examines only staged `.ps1`, `.psm1`, and `.psd1` files during an ordinary commit. The same lint script runs in GitHub Actions. Hook installation is explicit per clone because `.git/hooks` is intentionally untracked.
+# Suspicious-file commands
+
+These commands plan potentially dangerous work before they run it. `-Json` provides the machine-readable form.
+
+| Command | Behavior |
+|---|---|
+| `is-this-malware <path>` | bounded hash, signature, entropy, strings, PE, and indicator inspection without host execution |
+| `malware-sandbox <path> -Mode Dissect` | create a reviewable document-dissection Sandbox job |
+| `disass <path>` | create a reviewable Rizin/text/SQLite Sandbox job |
+| `decomp <path>` | create a reviewable best-effort Ghidra Sandbox job |
+| `malware-sandbox <path> -Mode Detonate` | create a reviewable execution plan without launching it |
+| `malware-control <path> -Mode <mode>` | create the clean-control half of a matched Sandbox comparison without touching the target |
+| `malware-diff -ControlCase <case> -TargetCase <case>` | retain canonical evidence directories and display a native Git standard unified diff |
+| `malware-container-status` | verify that the dedicated Debian-MW engine is rootless and arguments are policy-compatible |
+| `malware-container-image -Mode Test` | inspect the reviewed local static-parser image and inventory fingerprint |
+| `malware-container <path>` | plan inert rootless static parsing without starting a container |
+| `malware-container <path> -Run -ConfirmContainer` | explicitly run inert static parsing with networking disabled |
+| `malware-container-control <path>` | plan the clean control for a matched static-container comparison |
+| `host-static <path>` | explicit alias for bounded host byte inspection (`is-this-malware`) |
+| `sandbox-static <path> -Mode Dissect` | explicit alias for Windows Sandbox planning (`malware-sandbox`) |
+
+Add `-Run -ConfirmSandbox` only after reviewing `analysis.wsb`. Detonation additionally requires `-ConfirmExecution`. `-AllowNetwork` is separate because it exposes networks reachable from the host. Documents are never opened automatically. Sandbox jobs close the guest after the terminal result is persisted; add `-KeepSandboxOpen` only when an interactive guest is intentionally required.
+
+For a differential run, plan `malware-control` and `malware-sandbox` with the same path, mode,
+duration, and network policy. Review and approve each Sandbox launch separately; the target
+`Detonate` job still requires `-ConfirmExecution`. Compare only completed compatible cases.
+`malware-diff` uses native Windows `git diff --no-index --no-ext-diff --text`; it does not use Git
+Bash, MSYS, Cygwin, or BusyBox. Raw trace/parser/decompiler output is never parsed by PowerShell:
+the bounded Python boundary canonicalizes only known schemas and records other files by path, size,
+and SHA-256. Default output gives the diff path; `-ShowDiff` prints only escaped canonical content.
+The canonical directories remain available for another ordinary directory-diff program.
+
+## Execution-boundary and WSL commands
+
+| Command | Boundary |
+|---|---|
+| `host-static <path>` | Windows host; bounded inert byte inspection only |
+| `sandbox-static <path> ...` | Windows Sandbox; complex parsing or explicitly approved execution |
+| `wsl-dev [command]` | configured developer distribution and user (`WSL_DISTRIBUTION`, `WSL_USER`) |
+| `wsl-mw [command]` | configured dedicated malware-analysis distribution and user (`WSL_MALWARE_DISTRIBUTION`, `WSL_MALWARE_USER`) |
+
+Windows Sandbox is not a WSL distribution. `wsl-dev` is the ordinary Debian development boundary
+and must never receive suspicious samples. `wsl-mw` reaches the separate rootless analysis distro;
+it does not make arbitrary containers safe. Both commands read ignored `.wsl-env`, refuse a missing
+selection, and refuse to use the same distribution for developer and malware state. With no
+arguments they open the selected distribution; with arguments they execute that command directly.
+
+`docker`, `docker-compose`, `rsync`, and `wslpath` use `wsl-dev`. `docker-mw` and
+`docker-mw-compose` use `wsl-mw`.

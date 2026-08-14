@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Plan"
+  short_description: "Plan implementation and verification traceability"
+  default_prompt: "Use $speckit-plan to design the current feature and complete verification traceability."

@@ -1,0 +1,24 @@
+schema_version: "1.0"
+
+extension:
+  id: "ears-validate"
+  name: "EARS/TDD Validator"
+  version: "0.1.0"
+  description: "Validates EARS syntax, verification traceability, test references, and production-code separation."
+  category: "process"
+  effect: "read-only"
+  author: "mariu"
+  repository: "https://github.com/norandom/spec-kit-ears-tdd"
+  homepage: "https://github.com/norandom/spec-kit-ears-tdd"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=0.16.3,<0.17.0"
+
+provides:
+  commands:
+    - name: "speckit.ears-validate.validate"
+      file: "commands/speckit.ears-validate.validate.md"
+      description: "Run the deterministic EARS/TDD validation gate and explain failures"
+
+tags: ["ears", "requirements", "validation", "tdd"]

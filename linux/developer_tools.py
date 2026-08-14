@@ -4,7 +4,6 @@ from pathlib import Path
 
 from pyinfra.operations import brew, files
 
-
 brew.tap(
     name="Add the official Dagger Homebrew tap",
     src="dagger/tap",

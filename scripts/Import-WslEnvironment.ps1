@@ -21,8 +21,11 @@ function Import-WslEnvironment {
         $values[$parts[0]] = $parts[1].Trim()
     }
 
-    foreach ($required in @('WSL_DISTRIBUTION', 'WSL_USER')) {
+    foreach ($required in @('WSL_DISTRIBUTION', 'WSL_USER', 'WSL_MALWARE_DISTRIBUTION', 'WSL_MALWARE_USER')) {
         if (-not $values.ContainsKey($required)) { throw "Missing $required in $environmentFile." }
+    }
+    if ($values.WSL_DISTRIBUTION -eq $values.WSL_MALWARE_DISTRIBUTION) {
+        throw 'WSL_DISTRIBUTION and WSL_MALWARE_DISTRIBUTION must be different so developer and malware-analysis state remain distinct.'
     }
 
     return $values

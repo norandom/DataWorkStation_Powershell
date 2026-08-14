@@ -1,0 +1,53 @@
+schema_version: "1.0"
+
+preset:
+  id: "ears-tdd"
+  name: "EARS Requirements and TDD"
+  version: "0.1.0"
+  description: "Adds EARS requirements, explicit verification traceability, and test-first implementation gates."
+  author: "mariu"
+  repository: "https://github.com/norandom/spec-kit-ears-tdd"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=0.16.3,<0.17.0"
+
+provides:
+  templates:
+    - type: "template"
+      name: "spec-template"
+      file: "templates/spec-addendum.md"
+      description: "Append EARS requirement and traceability guidance"
+      strategy: "append"
+    - type: "template"
+      name: "plan-template"
+      file: "templates/plan-addendum.md"
+      description: "Append requirement-to-design translation guidance"
+      strategy: "append"
+    - type: "template"
+      name: "tasks-template"
+      file: "templates/tasks-addendum.md"
+      description: "Append mandatory test task guidance"
+      strategy: "append"
+    - type: "command"
+      name: "speckit.specify"
+      file: "commands/speckit.specify.md"
+      description: "Wrap specification with EARS postconditions"
+      strategy: "wrap"
+    - type: "command"
+      name: "speckit.plan"
+      file: "commands/speckit.plan.md"
+      description: "Wrap planning with traceability rules"
+      strategy: "wrap"
+    - type: "command"
+      name: "speckit.tasks"
+      file: "commands/speckit.tasks.md"
+      description: "Wrap task generation with mandatory verification tasks"
+      strategy: "wrap"
+    - type: "command"
+      name: "speckit.implement"
+      file: "commands/speckit.implement.md"
+      description: "Wrap implementation with test-first gates"
+      strategy: "wrap"
+
+tags: ["ears", "requirements", "tdd", "traceability"]

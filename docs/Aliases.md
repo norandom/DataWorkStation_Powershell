@@ -344,9 +344,12 @@ These community tools are not installed automatically because they do not curren
 
 | Command | Purpose |
 |---|---|
-| `.\Apply-Workstation.ps1 -Mode Test` | Report package, profile, sudo, and firewall drift without repairing it. |
-| `.\Apply-Workstation.ps1 -Mode Ensure` | Install/update declared packages and repair only drifted local state. |
+| `.\Apply-Workstation.ps1 -Mode Test` | Report package, Windows feature, profile, sudo, and firewall drift without repairing it. |
+| `.\Apply-Workstation.ps1 -Mode Ensure` | Install/update declared packages and Windows features, then repair only drifted local state without restarting Windows. |
 | `.\Apply-Workstation.ps1 -Mode Reinitialize` | Reapply local state and always recreate the firewall rules with a backup. |
+| `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` | Validate dependencies and show the Windows feature installation order without elevation. |
+| `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test` | Report Hyper-V and Windows Sandbox state without changing it. |
+| `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Ensure` | Enable missing declared Windows features without restarting Windows. |
 | `sudo COMMAND` | Run a command elevated in the current terminal; Windows sudo is maintained in `normal` inline mode. |
 
 The workstation state reads Microsoft Defender paths from the ignored `.excluded` file. Start from `.excluded.sample`; native Windows `%ENVIRONMENT_VARIABLE%` references expand before paths are validated. The public repository therefore contains no machine-specific exclusion list, and unrelated Defender exclusions are preserved.

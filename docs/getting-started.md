@@ -1,5 +1,7 @@
 # Getting started
 
+Windows 11 Pro is required.
+
 Run desired state from PowerShell 7:
 
 ```powershell
@@ -11,7 +13,7 @@ Copy-Item .excluded.sample .excluded
 ./Apply-Workstation.ps1 -Mode Ensure
 ```
 
-Open a new PowerShell session after profile installation. The prompt should show `username@host path>` and commands such as `rg`, `gh`, `uv`, `docker`, `mem`, `ports`, and `tricky` should resolve.
+Open a new PowerShell session after profile installation. The prompt should show `username@host path>` and commands such as `rg`, `gh`, `uv`, `npx`, `docker`, `mem`, `ports`, and `tricky` should resolve.
 
 Install the repository-local Git hook once after cloning:
 
@@ -39,7 +41,8 @@ The first invocation lets `uv` create the isolated documentation environment. `d
 profile-status
 firewall-status
 defender-status
+sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test
 tricky capabilities
 ```
 
-Some Windows state tests require an elevated shell. Capture and debugger commands remain explicit even after `Ensure`.
+Some Windows state tests require an elevated shell. Desired state enables declared Windows optional features without restarting the machine; restart explicitly if requested. Capture and debugger commands remain explicit even after `Ensure`.

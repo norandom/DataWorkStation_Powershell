@@ -65,5 +65,16 @@
             InspectCommands = @('firewall-status', 'defender-status', 'smartscreen-status', 'savezone-status')
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
+        @{
+            Id = 'windows-virtualization'
+            Title = 'Hyper-V and Windows Sandbox optional-feature state'
+            Triggers = @('hyper-v', 'hyperv', 'sandbox', 'virtualization', 'windows feature')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan'
+                'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
     )
 }

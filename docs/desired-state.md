@@ -14,7 +14,9 @@
 
 ## Automatically maintained
 
-The declared package set, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
+The declared package set, Windows optional features, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
+
+`config/windows-features.psd1` declares Hyper-V and Windows Sandbox, with Sandbox explicitly depending on Hyper-V. The resource validates missing dependencies and cycles, then applies features in topological order. Inspect that order without elevation by running `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan`. `Apply-Workstation.ps1` bootstraps the inbox Windows sudo configuration before any resource invokes `sudo`. The feature resource uses inbox Windows PowerShell because the DISM module is not reliably hosted by PowerShell 7. Inspect only the elevated feature state with `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test`, or repair it with the same command and `-Mode Ensure`. Enabling a feature never restarts Windows automatically; restart explicitly if the command reports that one is required. Use `-SkipWindowsFeatures` on `Apply-Workstation.ps1` to omit this resource.
 
 Defender exclusion paths are local state in ignored `.excluded`; `.excluded.sample` documents the portable format. Desired state refuses to guess paths when the local file is absent.
 

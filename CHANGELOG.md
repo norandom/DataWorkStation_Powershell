@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-08-14
+
+- Declare Hyper-V and Windows Sandbox with validated dependency ordering and idempotent test/ensure commands.
+- Bootstrap Windows sudo before privileged resources and stop dependent repairs when bootstrap fails.
+- Add Windows virtualization routing, operator commands, and desired-state documentation.
+- Make npm and npx explicit outputs of the managed Node.js LTS package.
 - Add a pinned Microsoft SkillOpt-Sleep integration with one-skill targeting, reviewed task files, held-out validation, ignored staging, and explicit adoption.
 - Add repository skill validation locally and in GitHub Actions.
 - Add a pinned PSScriptAnalyzer pre-commit hook and matching GitHub Actions lint workflow.

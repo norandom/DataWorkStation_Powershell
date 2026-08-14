@@ -5,6 +5,12 @@
 
 A human- and AI-operable Windows engineering workstation for quant finance, data science, development, administration, and occasional forensics.
 
+## Developer documentation
+
+**[Open the published MkDocs developer documentation →](https://norandom.github.io/DataWorkStation_Powershell/)**
+
+Windows 11 Pro is required. The managed state uses Client Hyper-V, Windows Sandbox, native Windows sudo, and other Windows 11 workstation capabilities.
+
 ## Capabilities
 
 | Need | Commands and artifacts |
@@ -17,15 +23,16 @@ A human- and AI-operable Windows engineering workstation for quant finance, data
 | Keep an investigation coherent | `tricky` cases with structured JSON and standalone HTML reports |
 | Improve AI workflows safely | SkillOpt reviewed tasks, held-out gates, staged proposals, explicit adoption |
 
-The published documentation lives at <https://norandom.github.io/DataWorkStation_Powershell/>. See [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
+Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
-This repository maintains a Linux-friendly PowerShell environment without using the legacy DSC MOF/LCM model. WinGet Configuration uses the current DSC v3 processor for packages; small idempotent PowerShell resources maintain the user profiles, Windows sudo, btop preferences, and firewall policy.
+This repository maintains a Linux-friendly PowerShell environment without using the legacy DSC MOF/LCM model. WinGet Configuration uses the current DSC v3 processor for packages; small idempotent PowerShell resources maintain Windows features, user profiles, Windows sudo, btop preferences, and firewall policy.
 
 ## Layout
 
 | Path | Responsibility |
 |---|---|
 | `.config/configuration.winget` | Declarative WinGet package state, including `uv`. |
+| `config/windows-features.psd1` | Declarative Hyper-V and Windows Sandbox optional-feature state. |
 | `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
 | `config/capabilities.psd1` | Machine-readable investigation and routing catalog. |
@@ -49,6 +56,7 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `scripts/Install-PreCommitHook.ps1` | Installs the isolated pre-commit CLI, pinned analyzer module, and local Git hook. |
 | `scripts/Set-PoolMonState.ps1` | Copies the official WinDbg/WDK pool-tag database beside PoolMon. |
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
+| `scripts/Set-WindowsFeatureState.ps1` | Tests and enables declared Windows optional features without restarting Windows. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
 | `scripts/Set-DefenderState.ps1` | Explicitly enables, disables, or reports Defender runtime protection. |
 | `scripts/Set-SmartScreenState.ps1` | Controls SmartScreen Off, Medium/Warn, and Full/Block modes. |
@@ -85,7 +93,7 @@ Copy-Item .excluded.sample .excluded
 .\Apply-Workstation.ps1 -Mode Reinitialize
 ```
 
-`Ensure` is the normal operation. It leaves compliant profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
+`Ensure` is the normal operation. It leaves compliant Windows features, profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
 
 Defender exclusion paths are read from the ignored local `.excluded` file. Copy `.excluded.sample` after cloning and customize it; native Windows `%ENVIRONMENT_VARIABLE%` references are supported. The repository publishes no workstation-specific exclusion paths, and unrelated existing Defender exclusions are preserved.
 
@@ -95,11 +103,11 @@ WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Wind
 
 The balanced event-log template keeps relevant live logs circular and generously sized, then exports a rolling 48-hour EVTX window every day. Generated ZIP archives are stored in `E:\Logs`, retained for at most 14 days, capped at 768 MiB total, and rotated early if E: has less than 128 MiB free. Staging occurs under ProgramData on C:. The scheduled exporter is copied into an administrator-controlled directory and runs as SYSTEM.
 
-The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, GitHub CLI (`gh`), Tailscale, WSL, and Debian. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, standalone TTD, Debian rsync, and the official PoolMon tag database. The profiling state installs only the Windows Performance Toolkit feature from the ADK, py-spy through an isolated uv environment, dotnet-trace as a global .NET tool, and Speedscope as a local CLI/browser viewer. SkillOpt 0.2.0 is another isolated `uv tool`. None of these use or modify the AMD/PyTorch Python environment.
+The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS with its bundled npm and npx commands, GitHub CLI (`gh`), Tailscale, WSL, and Debian. The Windows-feature declaration enables Hyper-V and Windows Sandbox, includes required parent features, declares Sandbox's dependency on Hyper-V, and never restarts Windows automatically. The feature resource validates its dependency graph and applies it in topological order. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, standalone TTD, Debian rsync, and the official PoolMon tag database. The profiling state installs only the Windows Performance Toolkit feature from the ADK, py-spy through an isolated uv environment, dotnet-trace as a global .NET tool, and Speedscope as a local CLI/browser viewer. SkillOpt 0.2.0 is another isolated `uv tool`. None of these use or modify the AMD/PyTorch Python environment.
 
 ## Automatic versus explicit actions
 
-`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages, developer CLIs, required profiling tools, SkillOpt, and its conservative local configuration. WPT uses a separate idempotent resource so only `OptionId.WindowsPerformanceToolkit` is installed rather than the complete ADK. AMD uProf remains explicit because AMD requires interactive EULA acceptance; `uprof-install` opens the official download page and desired state reports whether it was installed.
+`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages, Hyper-V and Windows Sandbox features, developer CLIs, required profiling tools, SkillOpt, and its conservative local configuration. Windows features are enabled through an explicit elevated resource with `-NoRestart`; rebooting remains a user action. WPT uses a separate idempotent resource so only `OptionId.WindowsPerformanceToolkit` is installed rather than the complete ADK. AMD uProf remains explicit because AMD requires interactive EULA acceptance; `uprof-install` opens the official download page and desired state reports whether it was installed.
 
 Desired state never configures rclone credentials, creates a persistent cloud mount, signs into Semgrep, starts a Semgrep/CodeQL scan, records a performance or TTD trace, attaches a debugger, captures a crash dump, or registers a machine-wide postmortem debugger. Those actions remain explicit shell commands.
 

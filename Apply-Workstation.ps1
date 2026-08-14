@@ -3,6 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [switch] $SkipPackages,
+    [switch] $SkipWindowsFeatures,
     [switch] $SkipDeveloperTools,
     [switch] $SkipProfilingTools,
     [switch] $SkipSkillOpt,
@@ -15,6 +16,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
+$windowsFeaturesScript = Join-Path $PSScriptRoot 'scripts\Set-WindowsFeatureState.ps1'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
 $profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
@@ -27,12 +29,20 @@ $pagefileScript = Join-Path $PSScriptRoot 'scripts\Set-PagefileState.ps1'
 $eventLogScript = Join-Path $PSScriptRoot 'scripts\Set-EventLogState.ps1'
 $firewallScript = Join-Path $PSScriptRoot 'scripts\Set-FirewallState.ps1'
 $pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
+$windowsPowerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
 $failures = [Collections.Generic.List[string]]::new()
 
 function Invoke-CheckedProcess {
     param([string] $Label, [scriptblock] $Command)
     & $Command
     if ($LASTEXITCODE -ne 0) { $failures.Add("$Label failed with exit code $LASTEXITCODE.") }
+}
+
+Invoke-CheckedProcess 'Windows sudo state' {
+    & $pwsh -NoLogo -NoProfile -File $sudoScript -Mode $Mode
+}
+if ($Mode -ne 'Test' -and $failures.Count -gt 0) {
+    throw ($failures -join [Environment]::NewLine)
 }
 
 if (-not $SkipPackages) {
@@ -44,6 +54,12 @@ if (-not $SkipPackages) {
         Invoke-CheckedProcess 'WinGet configuration' {
             & winget configure --file $configurationFile --accept-configuration-agreements --disable-interactivity
         }
+    }
+}
+
+if (-not $SkipWindowsFeatures) {
+    Invoke-CheckedProcess 'Windows optional-feature state' {
+        & sudo.exe $windowsPowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $windowsFeaturesScript -Mode $Mode
     }
 }
 
@@ -67,9 +83,6 @@ if (-not $SkipSkillOpt) {
 
 Invoke-CheckedProcess 'PowerShell profile state' {
     & $pwsh -NoLogo -NoProfile -File $profileScript -Mode $Mode
-}
-Invoke-CheckedProcess 'Windows sudo state' {
-    & $pwsh -NoLogo -NoProfile -File $sudoScript -Mode $Mode
 }
 
 if (-not $SkipDefender) {

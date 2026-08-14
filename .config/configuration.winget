@@ -70,7 +70,7 @@ resources:
       id: Microsoft.DotNet.SDK.10
       source: winget
       useLatest: true
-  - name: Node.js LTS
+  - name: Node.js LTS (node, npm, npx)
     type: Microsoft.WinGet/Package
     properties:
       id: OpenJS.NodeJS.LTS

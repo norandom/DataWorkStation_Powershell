@@ -13,6 +13,13 @@ Copy-Item .excluded.sample .excluded
 ./Apply-Workstation.ps1 -Mode Ensure
 ```
 
+To test or ensure only one managed part, use `-Module`. Inspect automatically included dependencies with `-Plan`:
+
+```powershell
+./Apply-Workstation.ps1 -Mode Test -Module Firewall
+./Apply-Workstation.ps1 -Mode Test -Module Hardening -Plan
+```
+
 Open a new PowerShell session after profile installation. The prompt should show `username@host path>` and commands such as `rg`, `gh`, `uv`, `npx`, `docker`, `mem`, `ports`, and `tricky` should resolve.
 
 Install the repository-local Git hook once after cloning:
@@ -38,10 +45,12 @@ The first invocation lets `uv` create the isolated documentation environment. `d
 
 ```powershell
 ./Apply-Workstation.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test
 profile-status
 firewall-status
 defender-status
 sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test
+sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Test
 tricky capabilities
 ```
 

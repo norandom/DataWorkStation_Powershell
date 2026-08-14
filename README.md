@@ -25,7 +25,7 @@ Windows 11 Pro is required. The managed state uses Client Hyper-V, Windows Sandb
 
 Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
-This repository maintains a Linux-friendly PowerShell environment without using the legacy DSC MOF/LCM model. WinGet Configuration uses the current DSC v3 processor for packages; small idempotent PowerShell resources maintain Windows features, user profiles, Windows sudo, btop preferences, and firewall policy.
+This repository maintains a Linux-friendly PowerShell environment without using the legacy DSC MOF/LCM model. WinGet Configuration uses the current DSC v3 processor for packages; small idempotent PowerShell resources maintain Windows features, a reviewed developer hardening profile, user profiles, Windows sudo, btop preferences, and firewall policy.
 
 ## Layout
 
@@ -33,6 +33,10 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 |---|---|
 | `.config/configuration.winget` | Declarative WinGet package state, including `uv`. |
 | `config/windows-features.psd1` | Declarative Hyper-V and Windows Sandbox optional-feature state. |
+| `config/workstation-modules.psd1` | Module catalog, default selection, dependencies, and execution order. |
+| `config/hardening-profiles.psd1` | Declarative Windows 11 developer hardening profile. |
+| `config/debloat-profiles.psd1` | Opt-in allowlist for consumer-app and legacy-component removal. |
+| `config/focus-follows-mouse.psd1` | Declarative current-user hover-focus behavior without window raising. |
 | `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
 | `config/capabilities.psd1` | Machine-readable investigation and routing catalog. |
@@ -57,6 +61,9 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `scripts/Set-PoolMonState.ps1` | Copies the official WinDbg/WDK pool-tag database beside PoolMon. |
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
 | `scripts/Set-WindowsFeatureState.ps1` | Tests and enables declared Windows optional features without restarting Windows. |
+| `scripts/Set-HardeningState.ps1` | Plans, tests, and ensures the reviewed hardening profile without restarting Windows. |
+| `scripts/Set-DebloatState.ps1` | Plans and tests opt-in removals; Ensure requires explicit confirmation and records a snapshot. |
+| `scripts/Set-FocusFollowsMouseState.ps1` | Gives hovered windows focus without changing their Z-order. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
 | `scripts/Set-DefenderState.ps1` | Explicitly enables, disables, or reports Defender runtime protection. |
 | `scripts/Set-SmartScreenState.ps1` | Controls SmartScreen Off, Medium/Warn, and Full/Block modes. |
@@ -93,7 +100,17 @@ Copy-Item .excluded.sample .excluded
 .\Apply-Workstation.ps1 -Mode Reinitialize
 ```
 
-`Ensure` is the normal operation. It leaves compliant Windows features, profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
+`Ensure` is the normal operation. It leaves compliant Windows features, hardening controls, hover-focus behavior, profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
+
+Run one part at a time with inclusion-based module selection:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Test -Module Firewall
+.\Apply-Workstation.ps1 -Mode Ensure -Module Hardening
+.\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
+```
+
+The module DSL resolves dependencies in compatible order: Hardening pulls in Sudo, while DeveloperTools pulls in Packages. `-Module All` retains the default full run and never includes Debloat.
 
 Defender exclusion paths are read from the ignored local `.excluded` file. Copy `.excluded.sample` after cloning and customize it; native Windows `%ENVIRONMENT_VARIABLE%` references are supported. The repository publishes no workstation-specific exclusion paths, and unrelated existing Defender exclusions are preserved.
 
@@ -107,9 +124,11 @@ The package declaration includes PowerShell 7, Microsoft Coreutils, ripgrep, rcl
 
 ## Automatic versus explicit actions
 
-`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages, Hyper-V and Windows Sandbox features, developer CLIs, required profiling tools, SkillOpt, and its conservative local configuration. Windows features are enabled through an explicit elevated resource with `-NoRestart`; rebooting remains a user action. WPT uses a separate idempotent resource so only `OptionId.WindowsPerformanceToolkit` is installed rather than the complete ADK. AMD uProf remains explicit because AMD requires interactive EULA acceptance; `uprof-install` opens the official download page and desired state reports whether it was installed.
+`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages, Hyper-V and Windows Sandbox features, `DeveloperBaseline` hardening controls, current-user focus-follows-mouse behavior, developer CLIs, required profiling tools, SkillOpt, and its conservative local configuration. Hover focus does not raise or reorder windows. Windows features and hardening are applied through explicit elevated resources and never restart Windows; rebooting remains a user action. WPT uses a separate idempotent resource so only `OptionId.WindowsPerformanceToolkit` is installed rather than the complete ADK. AMD uProf remains explicit because AMD requires interactive EULA acceptance; `uprof-install` opens the official download page and desired state reports whether it was installed.
 
 Desired state never configures rclone credentials, creates a persistent cloud mount, signs into Semgrep, starts a Semgrep/CodeQL scan, records a performance or TTD trace, attaches a debugger, captures a crash dump, or registers a machine-wide postmortem debugger. Those actions remain explicit shell commands.
+
+Debloating is never automatic. The separate `DeveloperMinimal` profile can inventory installed/provisioned apps and legacy components through its direct resource or `-Module Debloat`, but removal always requires `-ConfirmRemoval`. Package management, runtimes, codecs, OpenSSH, Windows Hello, WSL, Debian, and Codex are protected from that profile.
 
 It also never harvests Codex transcripts, contacts a model provider for SkillOpt, schedules optimization, or adopts generated skill edits. Those steps require reviewed task evidence and explicit commands.
 
@@ -121,4 +140,4 @@ The full WDK is not installed automatically because WinDbg supplies the required
 
 Docker Engine and Compose inside Debian WSL remain separate because Linux repository configuration and daemon state belong inside the distribution rather than the Windows package configuration.
 
-See [docs/Aliases.md](docs/Aliases.md) for daily commands and the exact network exposure model.
+See [Workstation modules and dependency order](docs/workstation-modules.md) for focused execution. See [Windows hardening profile and attack surface](docs/hardening.md) for the legacy-script review, compatibility costs, and residual exposure. See [Opt-in Windows debloat profile](docs/debloat.md) for the exact removal allowlist and rollback limits. See [docs/Aliases.md](docs/Aliases.md) for daily commands.

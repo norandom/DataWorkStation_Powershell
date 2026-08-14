@@ -66,6 +66,39 @@
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
+            Id = 'workstation-modules'
+            Title = 'Focused desired-state modules and dependency order'
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Test -Plan'
+                '.\Apply-Workstation.ps1 -Mode Test -Module <name> -Plan'
+            )
+            CaptureCommand = 'tricky add {case} <module-plan.json>'
+        }
+        @{
+            Id = 'windows-hardening'
+            Title = 'Windows hardening baseline and residual attack surface'
+            Triggers = @('hardening', 'uac', 'smb signing', 'netbios', 'llmnr', 'ntlm', 'autorun', 'attack surface')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Plan'
+                'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Test'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
+            Id = 'windows-debloat'
+            Title = 'Opt-in Windows application and legacy-component removal'
+            Triggers = @('debloat', 'bloatware', 'appx removal', 'remove windows apps', 'consumer apps', 'quick assist', 'phone link')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Plan'
+                'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Test'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
             Id = 'windows-virtualization'
             Title = 'Hyper-V and Windows Sandbox optional-feature state'
             Triggers = @('hyper-v', 'hyperv', 'sandbox', 'virtualization', 'windows feature')
@@ -73,6 +106,16 @@
             InspectCommands = @(
                 'powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan'
                 'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
+            Id = 'desktop-focus'
+            Title = 'Mouse-driven window focus without raising'
+            Triggers = @('focus follows mouse', 'xmouse', 'active window tracking', 'raise window', 'hover focus')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test'
             )
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }

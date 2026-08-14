@@ -347,9 +347,20 @@ These community tools are not installed automatically because they do not curren
 | `.\Apply-Workstation.ps1 -Mode Test` | Report package, Windows feature, profile, sudo, and firewall drift without repairing it. |
 | `.\Apply-Workstation.ps1 -Mode Ensure` | Install/update declared packages and Windows features, then repair only drifted local state without restarting Windows. |
 | `.\Apply-Workstation.ps1 -Mode Reinitialize` | Reapply local state and always recreate the firewall rules with a backup. |
+| `.\Apply-Workstation.ps1 -Mode Test -Module MODULE` | Test only one module plus its declared dependencies. |
+| `.\Apply-Workstation.ps1 -Mode Ensure -Module MODULE` | Ensure only one module plus its declared dependencies. |
+| `.\Apply-Workstation.ps1 -Mode Test -Module MODULE -Plan [-Json]` | Validate and display the resolved dependency order without invoking resources. |
+| `.\Apply-Workstation.ps1 -Mode Test -Module MODULE1,MODULE2` | Test several named modules in topological dependency order. |
 | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` | Validate dependencies and show the Windows feature installation order without elevation. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test` | Report Hyper-V and Windows Sandbox state without changing it. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Ensure` | Enable missing declared Windows features without restarting Windows. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Plan` | Show the `DeveloperBaseline` controls without elevation or state changes. |
+| `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Test` | Compare the hardening profile with registry, SMB, feature, and adapter state. |
+| `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Ensure` | Repair only drifted hardening controls without restarting Windows. |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Plan` | Show the opt-in `DeveloperMinimal` removal allowlist without elevation. |
+| `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Test` | Inventory exact matching installed/provisioned apps, capabilities, and features without removal. |
+| `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Ensure -ConfirmRemoval` | Explicitly remove the reviewed targets after writing a pre-removal snapshot. |
+| `.\Apply-Workstation.ps1 -Mode Ensure -Module Debloat -ConfirmRemoval` | Run the same opt-in debloat profile through the general module orchestrator. |
 | `sudo COMMAND` | Run a command elevated in the current terminal; Windows sudo is maintained in `normal` inline mode. |
 
 The workstation state reads Microsoft Defender paths from the ignored `.excluded` file. Start from `.excluded.sample`; native Windows `%ENVIRONMENT_VARIABLE%` references expand before paths are validated. The public repository therefore contains no machine-specific exclusion list, and unrelated Defender exclusions are preserved.

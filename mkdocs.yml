@@ -56,6 +56,9 @@ nav:
       - Skill optimization: workflows/skill-optimization.md
   - Tricky cases: tricky.md
   - Desired state: desired-state.md
+  - Workstation modules: workstation-modules.md
+  - Hardening and attack surface: hardening.md
+  - Opt-in debloat: debloat.md
   - Humans and AI: architecture/humans-and-ai.md
   - Codex skills: skills.md
   - Command reference: Aliases.md

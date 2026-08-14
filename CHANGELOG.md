@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add managed focus-follows-mouse behavior that explicitly preserves window Z-order.
+- Convert the defensible legacy Windows hardening state into a reviewed `DeveloperBaseline` DSL, idempotent resource, and separate attack-surface documentation.
+- Add a separate opt-in `DeveloperMinimal` debloat profile with protected-package checks, pre-removal snapshots, and explicit confirmation.
+- Add inclusion-based workstation modules with a declarative dependency catalog, topological plans, and focused Test/Ensure execution.
+
 ## 0.2.0 - 2026-08-14
 
 - Declare Hyper-V and Windows Sandbox with validated dependency ordering and idempotent test/ensure commands.

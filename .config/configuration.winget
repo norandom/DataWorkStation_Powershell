@@ -4,12 +4,6 @@ metadata:
     processor:
       identifier: dscv3
 resources:
-  - name: PowerShell 7
-    type: Microsoft.WinGet/Package
-    properties:
-      id: Microsoft.PowerShell
-      source: winget
-      useLatest: true
   - name: Microsoft Coreutils
     type: Microsoft.WinGet/Package
     properties:

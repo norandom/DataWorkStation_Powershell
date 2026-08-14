@@ -12,14 +12,64 @@
             Description = 'Windows sudo inline-mode bootstrap used by privileged modules.'
         }
         @{
-            Name = 'Packages'
-            Order = 20
+            Name = 'Git'
+            Order = 15
             Default = $true
             DependsOn = @()
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
+            Description = 'Focused WinGet Configuration state for the Git dependency.'
+        }
+        @{
+            Name = 'Packages'
+            Order = 20
+            Default = $true
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
             Description = 'WinGet Configuration package state.'
+        }
+        @{
+            Name = 'PowerShell7'
+            Order = 18
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Focused WinGet Configuration state for the PowerShell 7 dependency.'
+        }
+        @{
+            Name = 'Scoop'
+            Order = 25
+            Default = $true
+            DependsOn = @('Git')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Per-user Scoop installation with official Main and Extras buckets.'
+        }
+        @{
+            Name = 'TerminalFonts'
+            Order = 26
+            Default = $true
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Hash-pinned per-user Fira Code font installation.'
+        }
+        @{
+            Name = 'ContourTerminal'
+            Order = 27
+            Default = $true
+            DependsOn = @('Sudo', 'PowerShell7', 'TerminalFonts')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Official Contour release MSI with the translated BlueTerm theme and graphics-compatibility gate.'
         }
         @{
             Name = 'WindowsFeatures'
@@ -42,14 +92,34 @@
             Description = 'DeveloperBaseline Windows security controls.'
         }
         @{
-            Name = 'DeveloperTools'
-            Order = 50
-            Default = $true
+            Name = 'LinuxHomebrew'
+            Order = 45
+            Default = $false
             DependsOn = @('Packages')
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'CodeQL, Semgrep, TTD, rsync, and PoolMon support.'
+            Description = 'Homebrew package manager inside the managed Debian WSL distribution.'
+        }
+        @{
+            Name = 'LinuxAutomation'
+            Order = 47
+            Default = $false
+            DependsOn = @('LinuxHomebrew')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Pinned pyinfra executor inside Debian WSL for local Linux deploy files.'
+        }
+        @{
+            Name = 'DeveloperTools'
+            Order = 50
+            Default = $true
+            DependsOn = @('LinuxAutomation')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'CodeQL, Semgrep, Dagger, TTD, rsync, and PoolMon support.'
         }
         @{
             Name = 'ProfilingTools'
@@ -75,7 +145,7 @@
             Name = 'PowerShellProfile'
             Order = 80
             Default = $true
-            DependsOn = @()
+            DependsOn = @('PowerShell7')
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false

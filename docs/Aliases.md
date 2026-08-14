@@ -10,7 +10,11 @@ The managed profile supports Windows PowerShell 5.1 and PowerShell 7. Some entri
 | `Shift+Tab` | Select the previous completion match. |
 | `Up` / `Down` | Search history using the text already entered as a prefix. |
 | `Ctrl+R` | Reverse-search command history. |
-| Prompt | Shows `username@computer path>` using plain characters. |
+| Prompt | Shows `username@computer path>`; in Contour it marks each prompt line and makes a filesystem path clickable. |
+| `terminal-link URI [TEXT]` | Emit an OSC 8 hyperlink in Contour, falling back to plain text elsewhere or when output is redirected. |
+| `workstation-help` / `wshelp` | List managed commands, loaded aliases, and repository skills together. Filter with `-Type Commands|Aliases|Skills`, `-Name PATTERN`, or emit stable data with `-Json`. |
+
+Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
 
 ## Files and text
 
@@ -60,6 +64,7 @@ Semgrep is installed by `uv tool` into its own environment. It does not share th
 | `debug-run -Executable TOOL.exe -Breakpoint module!function` | Launch a target, initialize symbols, set one or more unresolved function breakpoints with `bu`, then continue. |
 | `dump-on-crash TOOL.exe [-Argument ...]` | Launch under ProcDump and write a full dump on an unhandled exception to `./dumps`. |
 | `dump-on-crash -ProcessId PID` | Attach ProcDump to an existing process. |
+| `dump-analyze FILE.dmp [-Module NAME] [-NoisySymbols]` | Analyze a dump headlessly with `cdbX64`, CLI symbol downloads, a bounded timeout, and a retained text log. |
 | `dump-open FILE.dmp` | Open a dump in WinDbg. |
 | `ttd-record TOOL.exe [-Argument ...]` | Record a timestamped 2 GiB ring-buffer TTD trace under `./ttd`; elevation is inline. |
 | `ttd-record -ProcessId PID` | Attach the TTD recorder to an existing process. |
@@ -351,6 +356,9 @@ These community tools are not installed automatically because they do not curren
 | `.\Apply-Workstation.ps1 -Mode Ensure -Module MODULE` | Ensure only one module plus its declared dependencies. |
 | `.\Apply-Workstation.ps1 -Mode Test -Module MODULE -Plan [-Json]` | Validate and display the resolved dependency order without invoking resources. |
 | `.\Apply-Workstation.ps1 -Mode Test -Module MODULE1,MODULE2` | Test several named modules in topological dependency order. |
+| `pwsh -NoProfile -File .\scripts\Set-ScoopState.ps1 -Mode Test` | Verify Scoop prerequisites and official Main/Extras bucket sources. |
+| `pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test` | Verify the official Contour MSI, absence of the legacy Scoop package, native Desktop shortcut, managed BlueTerm config, and bounded graphics gate. |
+| `.\Apply-Workstation.ps1 -Mode Ensure -Module ContourTerminal` | Ensure Sudo, the hash-pinned machine-wide Contour MSI, and the translated theme in dependency order. |
 | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` | Validate dependencies and show the Windows feature installation order without elevation. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test` | Report Hyper-V and Windows Sandbox state without changing it. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Ensure` | Enable missing declared Windows features without restarting Windows. |

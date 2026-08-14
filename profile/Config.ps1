@@ -69,6 +69,45 @@ if (Get-Command curl.exe -CommandType Application -ErrorAction Ignore) {
     function global:wget { & curl.exe @args }
 }
 
+function Test-ContourTerminalSession {
+    -not [Console]::IsOutputRedirected -and (
+        $env:CONTOUR_PROFILE -or
+        $env:TERMINAL_NAME -match '^Contour$'
+    )
+}
+
+function Format-TerminalHyperlink {
+    param(
+        [Parameter(Mandatory = $true)][string] $Text,
+        [Parameter(Mandatory = $true)][uri] $Uri
+    )
+
+    if (-not (Test-ContourTerminalSession)) { return $Text }
+    $escape = [char] 27
+    "$escape]8;;$($Uri.AbsoluteUri)$escape\$Text$escape]8;;$escape\"
+}
+
+function global:Show-TerminalLink {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][uri] $Uri,
+        [Parameter(Position = 1)][string] $Text
+    )
+
+    if (-not $Text) { $Text = $Uri.OriginalString }
+    Format-TerminalHyperlink -Text $Text -Uri $Uri
+}
+Set-Alias -Name terminal-link -Value Show-TerminalLink -Scope Global
+
 function global:prompt {
-    "$env:USERNAME@$env:COMPUTERNAME $($executionContext.SessionState.Path.CurrentLocation)> "
+    $location = $executionContext.SessionState.Path.CurrentLocation
+    $locationText = [string] $location
+    if (Test-ContourTerminalSession) {
+        $escape = [char] 27
+        Write-Host -NoNewline "$escape[>M"
+        if ($location.Provider.Name -eq 'FileSystem') {
+            $locationText = Format-TerminalHyperlink -Text $locationText -Uri ([uri] $location.ProviderPath)
+        }
+    }
+    "$env:USERNAME@$env:COMPUTERNAME $locationText> "
 }

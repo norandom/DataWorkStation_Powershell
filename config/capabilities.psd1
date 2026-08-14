@@ -22,7 +22,7 @@
             Title = 'Crash, hang, and silent process exit'
             Triggers = @('crash', 'segfault', 'fault', 'hang', 'freeze', 'exit', 'exception')
             EvidenceKinds = @('Event log', 'Crash dump')
-            InspectCommands = @('crashes', 'problems', 'dump-open <dump>')
+            InspectCommands = @('crashes', 'problems', 'dump-analyze <dump>', 'dump-open <dump>')
             CaptureCommand = 'dump-on-crash -Name {case} -Executable <path>'
         }
         @{
@@ -66,6 +66,18 @@
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
+            Id = 'workstation-help'
+            Title = 'Managed command, alias, and skill discovery'
+            Triggers = @('list aliases', 'list skills', 'commands', 'workstation help', 'wshelp')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'workstation-help'
+                'workstation-help -Type Skills'
+                'workstation-help -Json'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
             Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module')
@@ -75,6 +87,41 @@
                 '.\Apply-Workstation.ps1 -Mode Test -Module <name> -Plan'
             )
             CaptureCommand = 'tricky add {case} <module-plan.json>'
+        }
+        @{
+            Id = 'linux-developer-packages'
+            Title = 'Homebrew and Dagger inside Debian WSL'
+            Triggers = @('homebrew', 'brew', 'dagger', 'release pipeline', 'developer package')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-LinuxAutomationState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-DeveloperToolsState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
+            Id = 'terminal-fonts'
+            Title = 'Managed terminal fonts'
+            Triggers = @('terminal font', 'fira code', 'font dependency', 'terminal-fonts')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-TerminalFontState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module TerminalFonts -Plan'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
+        }
+        @{
+            Id = 'contour-terminal'
+            Title = 'Official Contour MSI and terminal desired state'
+            Triggers = @('contour', 'contour msi', 'terminal theme', 'terminal font', 'blueterm', 'terminal package', 'scoop contour migration', 'opengl', 'glsl', 'display driver', 'terminal tabs', 'vertical line marks', 'clickable links', 'osc 8')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module ContourTerminal -Plan'
+            )
+            CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
             Id = 'windows-hardening'

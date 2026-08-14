@@ -1,6 +1,6 @@
 # Desired state
 
-`Apply-Workstation.ps1` composes WinGet Configuration with focused idempotent PowerShell resources.
+`Apply-Workstation.ps1` composes WinGet Configuration with focused idempotent PowerShell resources, including separately dependency-ordered Scoop and Contour Terminal paths.
 
 ```powershell
 ./Apply-Workstation.ps1 -Mode Test
@@ -20,11 +20,13 @@ Run only one declared part with `-Module`, and inspect dependency order first wi
 ./Apply-Workstation.ps1 -Mode Test -Module WindowsFeatures,Hardening
 ```
 
-`config/workstation-modules.psd1` declares the module catalog, default selection, supported modes, and dependencies. Dependencies are included automatically in topological order. `-Module All` preserves the complete default run but excludes the destructive Debloat module. See [Workstation modules and dependency order](workstation-modules.md).
+`config/workstation-modules.psd1` declares the module catalog, default selection, supported modes, and dependencies. Dependencies are included automatically in topological order. `-Module All` preserves the complete default run but excludes the destructive Debloat module. See [Workstation modules and dependency order](workstation-modules.md) and [Sample outputs](sample-outputs.md).
 
 ## Automatically maintained
 
-The declared package set, Windows optional features, developer hardening profile, current-user hover-focus behavior, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
+The declared package set, official Scoop buckets, Contour Terminal and its BlueTerm theme, Windows optional features, developer hardening profile, current-user hover-focus behavior, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
+
+`.config/git.winget` provides the focused Git prerequisite for `Git → Scoop`; `.config/powershell7.winget` provides the focused PowerShell 7 prerequisite for packages, profiles, and Contour. `config/scoop.psd1` declares the official per-user Scoop source and Main/Extras bucket repositories. Contour is independent of that package path. `config/terminal-fonts.psd1` pins the official Fira Code 6.2 archive and every installed TTF hash. `config/contour-terminal.psd1` pins the official release MSI, SHA-256, ProductCode, install path, managed user-config paths, local font preference, and a bounded graphics-compatibility gate; `config/contour.yml` is the translated BlueTerm template. The ignored `.terminal-fonts` supplies one local font-family name, with `.terminal-fonts-sample` as the portable Fira Code example. A focused Contour run includes `Sudo`, `PowerShell7`, and `TerminalFonts` before `ContourTerminal`, installs Fira Code per-user without UAC, removes a legacy Scoop Contour package first, installs the machine-wide MSI without restarting Windows, renders the local font into the config, and verifies that its OpenGL-backed window can render and exit cleanly. Inspect or repair it directly with `Set-ContourTerminalState.ps1`, or use `.\Apply-Workstation.ps1 -Mode Ensure -Module ContourTerminal`. See [Contour Terminal and BlueTerm](contour-terminal.md).
 
 `config/windows-features.psd1` declares Hyper-V and Windows Sandbox, with Sandbox explicitly depending on Hyper-V. The resource validates missing dependencies and cycles, then applies features in topological order. Inspect that order without elevation by running `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan`. `Apply-Workstation.ps1` bootstraps the inbox Windows sudo configuration before any resource invokes `sudo`. The feature resource uses inbox Windows PowerShell because the DISM module is not reliably hosted by PowerShell 7. Inspect only the elevated feature state with `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test`, or repair it with the same command and `-Mode Ensure`. Enabling a feature never restarts Windows automatically; restart explicitly if the command reports that one is required. Use `-SkipWindowsFeatures` on `Apply-Workstation.ps1` to omit this resource.
 
@@ -35,6 +37,16 @@ The declared package set, Windows optional features, developer hardening profile
 Defender exclusion paths are local state in ignored `.excluded`; `.excluded.sample` documents the portable format. Desired state refuses to guess paths when the local file is absent.
 
 SkillOpt 0.2.0 is installed automatically through an isolated `uv tool` environment. Desired state also enforces validation gating, mock backend defaults, no auto-adoption, no `CLAUDE.md` evolution, and no evidence log. Use `-SkipSkillOpt` to omit this resource.
+
+The selectable `DeveloperTools` bundle pulls in `LinuxHomebrew` and `LinuxAutomation` after the Debian and package prerequisites. `LinuxAutomation` installs Homebrew `uv` and the pinned pyinfra version, then the developer bundle runs the repository's Debian-native deploy:
+
+```bash
+cd /mnt/c/path/to/DataWorkStation_PowerShell
+PATH="/home/linuxbrew/.linuxbrew/bin:$HOME/.local/bin:$PATH" \
+  pyinfra @local ./linux/developer_tools.py -y
+```
+
+Use `--dry` instead of `-y` to inspect proposed changes. The external equivalent is `./Apply-Workstation.ps1 -Mode Ensure -Module DeveloperTools`. Both paths use the same deploy file to install Dagger with the official `dagger/tap/dagger` formula. The outer test verifies the CLI version and a minimal Dagger Engine call against the existing Docker daemon inside Debian WSL. Run either prerequisite alone with `-Module LinuxHomebrew` or `-Module LinuxAutomation`, or inspect the complete order with `-Mode Test -Module DeveloperTools -Plan`.
 
 Only the stable base package is installed. SkillOpt's source checkout, global plugin, WebUI, benchmark environments, local-model stacks, and optional provider SDK extras are excluded.
 

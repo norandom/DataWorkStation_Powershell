@@ -57,6 +57,9 @@ nav:
   - Tricky cases: tricky.md
   - Desired state: desired-state.md
   - Workstation modules: workstation-modules.md
+  - Sample outputs: sample-outputs.md
+  - Sample outputs: sample-outputs.md
+  - Contour Terminal: contour-terminal.md
   - Hardening and attack surface: hardening.md
   - Opt-in debloat: debloat.md
   - Humans and AI: architecture/humans-and-ai.md

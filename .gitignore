@@ -13,6 +13,9 @@ site/
 .venv/
 .skillopt-sleep/
 .excluded
+.terminal-fonts
+.wsl-env
+pyinfra-debug.log
 
 # PowerShell and editor scratch files
 *.tmp

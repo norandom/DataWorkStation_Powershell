@@ -8,7 +8,9 @@ Run desired state from PowerShell 7:
 git clone https://github.com/norandom/DataWorkStation_Powershell.git "$HOME/Source/PowerShell"
 cd "$HOME/Source/PowerShell"
 Copy-Item .excluded.sample .excluded
+Copy-Item .wsl-env.sample .wsl-env
 # Edit .excluded for this workstation before applying desired state.
+# Set WSL_USER in .wsl-env; the tracked sample selects Debian.
 ./Apply-Workstation.ps1 -Mode Test
 ./Apply-Workstation.ps1 -Mode Ensure
 ```
@@ -18,9 +20,10 @@ To test or ensure only one managed part, use `-Module`. Inspect automatically in
 ```powershell
 ./Apply-Workstation.ps1 -Mode Test -Module Firewall
 ./Apply-Workstation.ps1 -Mode Test -Module Hardening -Plan
+./Apply-Workstation.ps1 -Mode Test -Module ContourTerminal -Plan
 ```
 
-Open a new PowerShell session after profile installation. The prompt should show `username@host path>` and commands such as `rg`, `gh`, `uv`, `npx`, `docker`, `mem`, `ports`, and `tricky` should resolve.
+Open a new PowerShell session after profile installation. The prompt should show `username@host path>` and commands such as `rg`, `gh`, `uv`, `npx`, `contour`, `docker`, `mem`, `ports`, and `tricky` should resolve.
 
 Install the repository-local Git hook once after cloning:
 

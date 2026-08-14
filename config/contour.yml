@@ -1,0 +1,93 @@
+# Managed Contour configuration translated from BlueTerm/Blue.json.
+# Contour requires the first color scheme to be named "default".
+default_profile: main
+
+profiles:
+  main:
+    shell: "pwsh.exe"
+    initial_working_directory: "~"
+    terminal_size:
+      columns: 80
+      lines: 25
+    history:
+      limit: -1
+      auto_scroll_on_update: true
+      scroll_multiplier: 3
+    font:
+      size: 17
+      regular:
+        family: '__TERMINAL_FONT_FAMILY__'
+    draw_bold_text_with_bright_colors: true
+    cursor:
+      shape: "bar"
+      blinking: true
+    bell:
+      sound: "off"
+      alert: true
+    environment:
+      TERM: "xterm-256color"
+    colors: default
+  blue-dark:
+    colors: "Blue Dark"
+
+color_schemes:
+  default:
+    default:
+      background: '#00347F'
+      foreground: '#FFDF99'
+    cursor:
+      default: '#FFFFFF'
+      text: CellBackground
+    selection:
+      foreground: CellForeground
+      foreground_alpha: 1.0
+      background: '#B3D7FF'
+      background_alpha: 1.0
+    normal:
+      black: '#14191E'
+      red: '#B43C2A'
+      green: '#00C200'
+      yellow: '#C7C400'
+      blue: '#E0C3E7'
+      magenta: '#C040BE'
+      cyan: '#00C5C7'
+      white: '#C7C7C7'
+    bright:
+      black: '#686868'
+      red: '#DD7975'
+      green: '#58E790'
+      yellow: '#ECE100'
+      blue: '#A7ABF2'
+      magenta: '#E17EE1'
+      cyan: '#60FDFF'
+      white: '#FFFFFF'
+  Blue Dark:
+    default:
+      background: '#15191F'
+      foreground: '#DCDCDC'
+    cursor:
+      default: '#FFFFFF'
+      text: CellBackground
+    selection:
+      foreground: CellForeground
+      foreground_alpha: 1.0
+      background: '#B3D7FF'
+      background_alpha: 1.0
+    normal:
+      black: '#14191E'
+      red: '#B43C2A'
+      green: '#00C200'
+      yellow: '#C7C400'
+      blue: '#2744C7'
+      magenta: '#C040BE'
+      cyan: '#00C5C7'
+      white: '#C7C7C7'
+    bright:
+      black: '#686868'
+      red: '#DD7975'
+      green: '#58E790'
+      yellow: '#ECE100'
+      blue: '#A7ABF2'
+      magenta: '#E17EE1'
+      cyan: '#60FDFF'
+      white: '#FFFFFF'

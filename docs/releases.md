@@ -18,8 +18,8 @@ Tags matching `v*.*.*` run the release workflow. It builds the same strict site 
 Prepare a release only after the main branch is green:
 
 ```powershell
-git tag -a v0.1.0 -m 'DataWorkStation PowerShell v0.1.0'
-git push origin v0.1.0
+git tag -a v1.0.0 -m 'DataWorkStation PowerShell v1.0.0'
+git push origin v1.0.0
 ```
 
 The workflow uses the tag as the release version and generates release notes from Git history.

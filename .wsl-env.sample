@@ -1,0 +1,3 @@
+# Copy to .wsl-env and select the managed WSL distribution and its normal user.
+WSL_DISTRIBUTION=Debian
+WSL_USER=your-linux-user

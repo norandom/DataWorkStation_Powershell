@@ -11,6 +11,8 @@ The environment is organized around questions, not product names.
 | Profiling | `profile-status`, `profile-view` | native, Python, or .NET profile command | ETL, SVG, nettrace |
 | Security state | status commands | enable/disable/ensure commands | state objects |
 | Workstation modules | `Apply-Workstation.ps1 -Module NAME -Plan` | focused Test/Ensure in dependency order | module plan |
+| Terminal fonts | `Set-TerminalFontState.ps1 -Mode Test` | install hash-pinned Fira Code per-user | state objects and exact font hashes |
+| Contour Terminal | `Set-ContourTerminalState.ps1` | migrate from Scoop, verify/install the official MSI, maintain BlueTerm config, and gate graphics compatibility | state objects, bounded renderer output, active display-driver/INF details on failure, and MSI logs |
 | Windows hardening | `Set-HardeningState.ps1 -Mode Test` | explicit `Ensure` through Windows sudo | state object |
 | Windows debloat | `Set-DebloatState.ps1 -Mode Plan/Test` | explicit `Ensure -ConfirmRemoval` only | state object and pre-removal JSON |
 | Desktop focus | `Set-FocusFollowsMouseState.ps1 -Mode Test` | ensure hover focus without raising | state object |

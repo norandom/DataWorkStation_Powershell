@@ -5,7 +5,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'Import-WslEnvironment.ps1')
+$wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
 $configuration = Import-PowerShellDataFile (Join-Path $PSScriptRoot '..\config\developer-tools.psd1')
+$configuration.DebianDistribution = $wslEnvironment.WSL_DISTRIBUTION
+$pyinfra = "/home/$($wslEnvironment.WSL_USER)/.local/bin/pyinfra"
 $codeqlRoot = Join-Path $env:LOCALAPPDATA "Programs\CodeQL\$($configuration.CodeQL.Version)\codeql"
 $codeql = Join-Path $codeqlRoot 'codeql.exe'
 $uv = (Get-Command uv.exe -ErrorAction Stop).Source
@@ -27,6 +32,29 @@ function Test-Semgrep {
 function Test-Rsync {
     & wsl.exe -d $configuration.DebianDistribution -- sh -lc 'command -v rsync >/dev/null 2>&1'
     $LASTEXITCODE -eq 0
+}
+
+function Test-DaggerCli {
+    $dagger = $configuration.Dagger.Executable
+    $version = & wsl.exe -d $configuration.DebianDistribution -- sh -lc "'$dagger' version 2>/dev/null"
+    $LASTEXITCODE -eq 0 -and "$version" -match "dagger v$([regex]::Escape($configuration.Dagger.Version))(?:\s|$)"
+}
+
+function Test-DaggerEngine {
+    if (-not (Test-DaggerCli)) { return $false }
+    $dagger = $configuration.Dagger.Executable
+    & wsl.exe -d $configuration.DebianDistribution -- sh -lc "'$dagger' core version >/dev/null 2>&1"
+    $LASTEXITCODE -eq 0
+}
+
+function Invoke-LinuxDeveloperDeploy {
+    $deployWindows = Join-Path $PSScriptRoot "..\$($configuration.Dagger.Deploy)"
+    $deployPortable = [IO.Path]::GetFullPath($deployWindows).Replace('\', '/')
+    $deploy = (& wsl.exe -d $configuration.DebianDistribution -- wslpath -a $deployPortable).Trim()
+    if (-not $deploy) { throw 'Failed to resolve the pyinfra deploy path inside WSL.' }
+    $path = "/home/linuxbrew/.linuxbrew/bin:/home/$($wslEnvironment.WSL_USER)/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    & wsl.exe -d $configuration.DebianDistribution -- env "PATH=$path" $pyinfra '@local' $deploy '-y'
+    if ($LASTEXITCODE -ne 0) { throw "pyinfra failed to apply Debian developer tools: $LASTEXITCODE" }
 }
 
 function Test-CodeQL {
@@ -82,6 +110,8 @@ $checks = [ordered]@{
     TrailOfBitsPacks = Test-Path -LiteralPath $packMarker
     SemgrepCE = Test-Semgrep
     DebianRsync = Test-Rsync
+    DaggerCli = Test-DaggerCli
+    DaggerEngine = Test-DaggerEngine
     TTD = Test-Ttd
 }
 
@@ -102,12 +132,16 @@ if (-not $checks.DebianRsync) {
     & wsl.exe -d $configuration.DebianDistribution -u root -- bash -lc 'apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y rsync'
     if ($LASTEXITCODE -ne 0) { throw "Debian failed to install rsync: $LASTEXITCODE" }
 }
+if (-not $checks.DaggerCli -or $Mode -eq 'Reinitialize') {
+    Invoke-LinuxDeveloperDeploy
+}
 if (-not $checks.TTD) { Install-Ttd }
 
 & $poolMonState -Mode $Mode
 if ($LASTEXITCODE -ne 0) { throw "PoolMon state failed: $LASTEXITCODE" }
 
-if (-not (Test-CodeQL) -or -not (Test-Semgrep) -or -not (Test-Rsync) -or -not (Test-Ttd)) {
+if (-not (Test-CodeQL) -or -not (Test-Semgrep) -or -not (Test-Rsync) -or
+    -not (Test-DaggerCli) -or -not (Test-DaggerEngine) -or -not (Test-Ttd)) {
     throw 'Developer tools did not reach the requested state.'
 }
 

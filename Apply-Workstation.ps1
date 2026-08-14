@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Packages', 'WindowsFeatures', 'Hardening', 'DeveloperTools',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'Packages', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'DeveloperTools',
         'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -28,13 +28,20 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
+$gitConfigurationFile = Join-Path $PSScriptRoot '.config\git.winget'
+$powerShell7ConfigurationFile = Join-Path $PSScriptRoot '.config\powershell7.winget'
 $moduleCatalogPath = Join-Path $PSScriptRoot 'config\workstation-modules.psd1'
+$scoopScript = Join-Path $PSScriptRoot 'scripts\Set-ScoopState.ps1'
+$terminalFontScript = Join-Path $PSScriptRoot 'scripts\Set-TerminalFontState.ps1'
+$contourTerminalScript = Join-Path $PSScriptRoot 'scripts\Set-ContourTerminalState.ps1'
 $windowsFeaturesScript = Join-Path $PSScriptRoot 'scripts\Set-WindowsFeatureState.ps1'
 $hardeningScript = Join-Path $PSScriptRoot 'scripts\Set-HardeningState.ps1'
 $debloatScript = Join-Path $PSScriptRoot 'scripts\Set-DebloatState.ps1'
 $focusFollowsMouseScript = Join-Path $PSScriptRoot 'scripts\Set-FocusFollowsMouseState.ps1'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
+$linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
+$linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
 $profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
 $skillOptScript = Join-Path $PSScriptRoot 'scripts\Set-SkillOptState.ps1'
 $sudoScript = Join-Path $PSScriptRoot 'scripts\Set-SudoState.ps1'
@@ -146,6 +153,43 @@ function Invoke-WorkstationModule {
                 }
             }
         }
+        'PowerShell7' {
+            if ($Mode -eq 'Test') {
+                Invoke-CheckedProcess 'PowerShell 7 WinGet configuration test' {
+                    & winget configure test --file $powerShell7ConfigurationFile --accept-configuration-agreements --disable-interactivity
+                }
+            } else {
+                Invoke-CheckedProcess 'PowerShell 7 WinGet configuration' {
+                    & winget configure --file $powerShell7ConfigurationFile --accept-configuration-agreements --disable-interactivity
+                }
+            }
+        }
+        'Git' {
+            if ($Mode -eq 'Test') {
+                Invoke-CheckedProcess 'Git WinGet configuration test' {
+                    & winget configure test --file $gitConfigurationFile --accept-configuration-agreements --disable-interactivity
+                }
+            } else {
+                Invoke-CheckedProcess 'Git WinGet configuration' {
+                    & winget configure --file $gitConfigurationFile --accept-configuration-agreements --disable-interactivity
+                }
+            }
+        }
+        'Scoop' {
+            Invoke-CheckedProcess 'Scoop state' {
+                & $pwsh -NoLogo -NoProfile -File $scoopScript -Mode $Mode
+            }
+        }
+        'TerminalFonts' {
+            Invoke-CheckedProcess 'Terminal font state' {
+                & $pwsh -NoLogo -NoProfile -File $terminalFontScript -Mode $Mode
+            }
+        }
+        'ContourTerminal' {
+            Invoke-CheckedProcess 'Contour Terminal state' {
+                & $pwsh -NoLogo -NoProfile -File $contourTerminalScript -Mode $Mode
+            }
+        }
         'WindowsFeatures' {
             Invoke-CheckedProcess 'Windows optional-feature state' {
                 & sudo.exe $windowsPowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $windowsFeaturesScript -Mode $Mode
@@ -154,6 +198,16 @@ function Invoke-WorkstationModule {
         'Hardening' {
             Invoke-CheckedProcess 'Windows hardening profile' {
                 & sudo.exe $windowsPowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $hardeningScript -Profile DeveloperBaseline -Mode $Mode
+            }
+        }
+        'LinuxHomebrew' {
+            Invoke-CheckedProcess 'Linux Homebrew state' {
+                & $pwsh -NoLogo -NoProfile -File $linuxHomebrewScript -Mode $Mode
+            }
+        }
+        'LinuxAutomation' {
+            Invoke-CheckedProcess 'Linux automation state' {
+                & $pwsh -NoLogo -NoProfile -File $linuxAutomationScript -Mode $Mode
             }
         }
         'DeveloperTools' {

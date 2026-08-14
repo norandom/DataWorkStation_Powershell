@@ -15,6 +15,7 @@ Show the dependencies pulled in for one module:
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module Hardening -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module ContourTerminal -Plan
 ```
 
 Add `-Json` to `-Plan` for machine-readable output. Plan mode validates module names, missing dependencies, cycles, exclusions, and mode compatibility without invoking a resource.
@@ -33,7 +34,7 @@ Select several modules with a comma-separated PowerShell array:
 .\Apply-Workstation.ps1 -Mode Test -Module WindowsFeatures,Hardening,Firewall
 ```
 
-Dependencies are included automatically and run first. For example, `Hardening` resolves to `Sudo → Hardening`, while `DeveloperTools` resolves to `Packages → DeveloperTools`. A dependent module is skipped if its selected dependency fails.
+Dependencies are included automatically and run first. For example, `Hardening` resolves to `Sudo → Hardening`, `DeveloperTools` includes `PowerShell7 → Packages → LinuxHomebrew → LinuxAutomation → DeveloperTools`, `Scoop` resolves to `Git → Scoop`, and `ContourTerminal` includes `Sudo`, `PowerShell7`, and `PowerShell7 → TerminalFonts` before Contour. A dependent module is skipped if its selected dependency fails. See [Sample outputs](sample-outputs.md) for the rendered plan.
 
 ## Module catalog
 
@@ -42,13 +43,20 @@ The routing DSL is `config/workstation-modules.psd1`.
 | Module | Default | Dependency | Purpose |
 |---|---:|---|---|
 | `Sudo` | yes | — | bootstrap Windows sudo inline mode |
-| `Packages` | yes | — | WinGet Configuration packages |
+| `Git` | yes | — | focused WinGet Configuration state for Scoop's Git dependency |
+| `PowerShell7` | yes | — | focused WinGet Configuration state for PowerShell 7 |
+| `Packages` | yes | `PowerShell7` | WinGet Configuration packages |
+| `Scoop` | yes | `Git` | per-user Scoop with official Main and Extras buckets |
+| `TerminalFonts` | yes | `PowerShell7` | hash-pinned per-user Fira Code installation |
+| `ContourTerminal` | yes | `Sudo`, `PowerShell7`, `TerminalFonts` | official machine-wide Contour MSI, translated BlueTerm theme, local font selection, and bounded graphics-compatibility gate |
 | `WindowsFeatures` | yes | `Sudo` | Hyper-V and Windows Sandbox |
 | `Hardening` | yes | `Sudo` | `DeveloperBaseline` security controls |
-| `DeveloperTools` | yes | `Packages` | CodeQL, Semgrep, TTD, rsync, and PoolMon support |
+| `LinuxHomebrew` | no | `Packages` | Homebrew inside Debian WSL; pulled in by the developer bundle |
+| `LinuxAutomation` | no | `LinuxHomebrew` | Homebrew `uv` and pinned pyinfra inside Debian WSL |
+| `DeveloperTools` | yes | `LinuxAutomation` | CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
 | `ProfilingTools` | yes | `Packages` | WPT, py-spy, dotnet-trace, and Speedscope |
 | `SkillOpt` | yes | `Packages` | pinned SkillOpt and conservative defaults |
-| `PowerShellProfile` | yes | — | managed profile components |
+| `PowerShellProfile` | yes | `PowerShell7` | managed profile components |
 | `FocusFollowsMouse` | yes | — | hover focus without raising |
 | `DefenderExclusions` | yes | `Sudo` | local exclusions and performance policy |
 | `SmartScreen` | yes | `Sudo` | warning/override policy |

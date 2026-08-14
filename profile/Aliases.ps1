@@ -1,5 +1,74 @@
 # Short, user-facing command wrappers and Linux-style tool mappings.
 
+function global:Get-WorkstationHelp {
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Commands', 'Aliases', 'Skills')]
+        [string] $Type = 'All',
+        [string] $Name = '*',
+        [switch] $Json
+    )
+
+    $repositoryRoot = Join-Path $env:USERPROFILE 'Source\PowerShell'
+    $items = [Collections.Generic.List[object]]::new()
+    $managedCommands = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+
+    if ($Type -in @('All', 'Commands', 'Aliases')) {
+        foreach ($profileFile in Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'profile') -Filter '*.ps1' -File) {
+            $tokens = $null
+            $errors = $null
+            $ast = [Management.Automation.Language.Parser]::ParseFile($profileFile.FullName, [ref] $tokens, [ref] $errors)
+            if ($errors.Count -gt 0) { throw "Cannot inventory managed commands because $($profileFile.FullName) has parse errors." }
+            foreach ($functionAst in $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+                $commandName = $functionAst.Name -replace '^global:', ''
+                [void] $managedCommands.Add($commandName)
+                if ($Type -in @('All', 'Commands') -and $commandName -like $Name) {
+                    $items.Add([pscustomobject]@{
+                        Kind = 'Command'
+                        Name = $commandName
+                        Description = ''
+                        Source = "profile/$($profileFile.Name)"
+                    })
+                }
+            }
+        }
+    }
+
+    if ($Type -in @('All', 'Aliases')) {
+        foreach ($alias in Get-Alias | Where-Object { $managedCommands.Contains($_.Definition) -and $_.Name -like $Name }) {
+            $items.Add([pscustomobject]@{
+                Kind = 'Alias'
+                Name = $alias.Name
+                Description = "Alias for $($alias.Definition)"
+                Source = 'loaded profile'
+            })
+        }
+    }
+
+    if ($Type -in @('All', 'Skills')) {
+        $skillRoot = Join-Path $repositoryRoot '.agents\skills'
+        foreach ($skillFile in Get-ChildItem -LiteralPath $skillRoot -Filter 'SKILL.md' -File -Recurse -ErrorAction SilentlyContinue) {
+            $content = Get-Content -LiteralPath $skillFile.FullName -Raw
+            $skillName = [regex]::Match($content, '(?m)^name:\s*(.+)$').Groups[1].Value.Trim()
+            $description = [regex]::Match($content, '(?m)^description:\s*(.+)$').Groups[1].Value.Trim()
+            if ($skillName -and $skillName -like $Name) {
+                $items.Add([pscustomobject]@{
+                    Kind = 'Skill'
+                    Name = $skillName
+                    Description = $description
+                    Source = [IO.Path]::GetRelativePath($repositoryRoot, $skillFile.FullName).Replace('\', '/')
+                })
+            }
+        }
+    }
+
+    $result = @($items | Sort-Object Kind, Name -Unique)
+    if ($Json) { return $result | ConvertTo-Json -Depth 4 }
+    $result | Format-Table Kind, Name, Description, Source -AutoSize -Wrap
+}
+Set-Alias -Name workstation-help -Value Get-WorkstationHelp -Scope Global
+Set-Alias -Name wshelp -Value Get-WorkstationHelp -Scope Global
+
 function global:tricky {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-Tricky.ps1') @args
 }
@@ -104,6 +173,9 @@ function global:windbg { & WinDbgX.exe @args }
 function global:dump-open {
     param([Parameter(Mandatory = $true, Position = 0)][string] $Path)
     & WinDbgX.exe -z (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
+}
+function global:dump-analyze {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-HeadlessDumpAnalysis.ps1') @args
 }
 function global:debug-run { Start-WinDbgSession @args }
 function global:dump-on-crash { Invoke-CrashDumpCapture @args }

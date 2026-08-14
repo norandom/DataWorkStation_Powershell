@@ -16,6 +16,12 @@ eventlog-check repro1
 eventlog-stop repro1
 ```
 
-If events identify an exception but not the responsible stack, use `dump-on-crash`. Open an existing dump with `dump-open`. Use `ttd-record` only when the failure requires execution history and the WinDbg package exposes TTD on the machine.
+If events identify an exception but not the responsible stack, use `dump-on-crash`. Analyze an existing dump without opening the GUI:
+
+```powershell
+dump-analyze .\dumps\tool.dmp -Module tool,FaultingLibrary
+```
+
+`dump-analyze` runs `cdbX64.exe` headlessly, downloads public symbols through Microsoft's symbol server into `%LocalAppData%\DataWorkStation\symbols`, writes a sibling `.windbg.txt` log, and stops after a bounded timeout. Missing application or third-party PDBs are reported separately from debugger failure. Use `-NoisySymbols` when a symbol request stalls. Use `dump-open` only when interactive WinDbg inspection is needed. Use `ttd-record` only when the failure requires execution history and the WinDbg package exposes TTD on the machine.
 
 Attach the resulting folder or dump to a case with `tricky add`. Reports should distinguish observations, inferences, and the next evidence gap.

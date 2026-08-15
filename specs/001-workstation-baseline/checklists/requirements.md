@@ -33,5 +33,5 @@
 
 - This is a brownfield characterization. State-dependent requirements initially use justified
   manual verification; the task plan introduces automated characterization before future changes.
-- The two coverage baselines account for all 32 modules and all 22 capability routes present at
+- The two coverage baselines account for all 35 modules and all 24 capability routes present at
   migration time.

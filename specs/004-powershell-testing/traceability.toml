@@ -1,0 +1,57 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#RunnerContract", "tests/pester/RootlessPodman.Tests.ps1"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#RunnerContract"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#JsonContract"]
+
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#FailureContract"]
+
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#ParallelContract"]
+
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#ParallelContract"]
+
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#ParallelContract"]
+
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#CompatibilityContract"]
+
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#CompatibilityContract"]
+
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#StateContract"]
+
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#StateContract"]
+
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#RunnerContract"]
+
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#Adapters", "tests/pester/MalwareAnalysis.Tests.ps1", "tests/pester/MalwareContainerAnalysis.Tests.ps1"]
+
+[requirements.REQ-014]
+verification = "automated"
+tests = ["tests/Test-PowerShellTestingState.ps1#CommandSurface"]

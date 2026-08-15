@@ -1,34 +1,37 @@
-# A Windows workstation you can interrogate
+# Operate and diagnose the workstation
 
-DataWorkStation PowerShell turns a Windows engineering machine into an evidence-driven environment for administration, development, data science, quant work, and occasional forensics. Every workflow is available as a direct shell command and as structured output an AI tool can reason over.
+DataWorkStation PowerShell gives developers one command surface for workstation state, diagnostics,
+development tools, and bounded security analysis. Start with `Plan` or `Test`. Use `Ensure`, capture,
+debugger attachment, or removal only when you intend to change state.
 
-## Start with the question
+## Choose a task
 
-| Question | First command | Escalation |
+| What you need to do | Go here | Safe first action |
 |---|---|---|
-| What is consuming memory? | `mem`, `memapps`, `memproc` | `memtop`, `poolmon`, native ETW profile |
-| Why did this program disappear? | `crashes`, `problems` | scoped event session, crash dump, WinDbg |
-| Why can it not connect? | `ports`, `connections` | PktMon capture, DNS/IPv6/firewall triage |
-| Where is CPU time going? | `profile-status` | WPR/WPA, py-spy, or dotnet-trace |
-| Is workstation policy still correct? | `./Apply-Workstation.ps1 -Mode Test` | `Ensure` or `Reinitialize` |
-| How do I keep the investigation together? | `tricky new ...` | inspect and render a portable case report |
-| How do skills improve safely? | `skills-validate`, `skillopt-status` | reviewed tasks, held-out gate, staged adoption |
+| Install or verify the workstation | [Install and verify](getting-started.md) | `./Apply-Workstation.ps1 -Mode Test -Plan` |
+| Change one managed component | [Select modules and dependencies](workstation-modules.md) | `./Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` |
+| Understand managed and explicit state | [Choose desired state](desired-state.md) | Review the mode and privilege boundary |
+| Diagnose a failure | [Choose a capability](capabilities/index.md) | Inspect current state and existing evidence |
+| Keep investigation evidence together | [Keep evidence in Tricky cases](tricky.md) | `tricky new NAME -Problem '...'` |
+| Assess a suspicious file | [Analyze a suspicious file](malware-analysis.md) | `is-this-malware PATH` |
+| Extend the project test-first | [Specification-driven development](spec-driven-development.md) | Validate the current specification state |
+| Look up a command | [Commands and aliases](Aliases.md) | Search by task or command name |
 
-## Evidence before instrumentation
+## Work safely
 
-The normal order is:
+1. Define the target and expected state or behavior.
+2. Inspect the dependency plan or existing EVTX, ETL, PCAPNG, dump, profile, and snapshot evidence.
+3. Run the observational `Test` or inspection command.
+4. Identify the exact state or evidence gap.
+5. Run the smallest explicit repair or capture command that closes that gap.
 
-1. State the failing behavior and target.
-2. Attach or reference existing EVTX, ETL, PCAPNG, dumps, profiles, and snapshots.
-3. Inspect and visualize what is already known.
-4. Identify a concrete evidence gap.
-5. Start the smallest tracer that can fill that gap.
+This order keeps privilege, restart, capture, and destructive boundaries visible. It also avoids a
+new trace when the answer already exists in retained evidence.
 
-This avoids collecting another large trace when the answer is already in an event log or packet capture.
+## Use one interface
 
-## The two interfaces
+Humans use the default readable output. Automation uses the same commands with `-Json` or
+`-AsObject` where supported. Repository-local Codex skills compose those commands but do not hide a
+second implementation.
 
-- Humans use memorable PowerShell commands and standalone HTML reports.
-- Automation uses the same commands with `-Json` or `-AsObject`.
-
-`tricky` is the shared case interface. It does not silently start privileged capture.
+`tricky` is the shared case and routing interface. Capability discovery never starts capture.

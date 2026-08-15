@@ -12,6 +12,18 @@ A human- and AI-operable Windows engineering workstation for quant finance, data
 Windows 11 Pro is required. The managed state uses Client Hyper-V, Windows Sandbox, native Windows sudo, and other Windows 11 workstation capabilities.
 Managed developer commands remain callable from both PowerShell 7 and inbox Windows PowerShell where documented; the Spec Kit EARS/TDD state resource is explicitly tested in both.
 
+### Native development
+
+The `NativeDevelopment` module supplies standalone MSVC/MSBuild, CMake/Ninja, stable Rust MSVC,
+and Microsoft OpenJDK 21 without the Visual Studio IDE or a Unix-emulation shell. `JavaToolchain`
+is independently selectable and exposes `java` and `javac`; optional Ghidra tooling reuses the same
+JDK package.
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan
+.\Apply-Workstation.ps1 -Mode Ensure -Module NativeDevelopment
+```
+
 ## Capabilities
 
 | Need | Commands and artifacts |
@@ -56,6 +68,7 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `config/go.psd1` | Go minimum version, workspace, command path, and built-in toolchain-selection policy. |
 | `config/malware-hashes.psd1` | Pinned `malware_hashes` GitHub release asset, SHA-256, and narrow install paths. |
 | `config/spec-driven-development.psd1` | Pinned Spec Kit EARS/TDD release wheel, hash, and upstream CLI version. |
+| `config/pester.psd1` | Pinned Pester release, shared module path, test discovery, output bounds, and parallel throttle. |
 | `config/native-text-tools.psd1` | Declares the native BusyBox applet host and the two exposed PowerShell commands. |
 | `config/caffeine.psd1` | Declares the real Caffeine package and installed executable names. |
 | `config/malware-analysis.psd1` | Bounded host-inspection rules, indicators, supported files, and case defaults. |
@@ -63,7 +76,7 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `config/linux-homebrew.psd1` | Homebrew location and prerequisites inside the managed Debian WSL distribution. |
 | `config/linux-automation.psd1` | Homebrew `uv` and pinned pyinfra state for Debian-local deploys. |
 | `config/developer-docker.psd1` | Adopted rootful Docker state for Dagger in developer Debian. |
-| `config/rootless-docker.psd1` | Dedicated clean Debian-MW and rootless Docker state for untrusted parsers. |
+| `config/rootless-podman.psd1` | Dedicated clean Debian-MW and daemonless rootless Podman state for untrusted parsers. |
 | `config/malware-container.psd1` | Pinned static-container image inventory, runtime boundary, and resource limits. |
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
 | `config/capabilities.psd1` | Machine-readable investigation and routing catalog. |
@@ -76,11 +89,14 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `scripts/Set-LinuxHomebrewState.ps1` | Maintains Homebrew inside Debian WSL as a focused developer-package prerequisite. |
 | `scripts/Set-LinuxAutomationState.ps1` | Maintains the Debian-local pyinfra executor without installing it into Windows Python. |
 | `scripts/Set-DeveloperDockerState.ps1` | Maintains the existing rootful Dagger Docker daemon through local pyinfra. |
-| `scripts/Set-RootlessDockerState.ps1` | Provisions Debian-MW and maintains its rootless daemon through local pyinfra. |
+| `scripts/Set-RootlessPodmanState.ps1` | Provisions Debian-MW and maintains local rootless Podman through local pyinfra. |
+| `scripts/Remove-LegacyDockerMwState.ps1` | Reports retained Debian-MW Docker data and removes it only with explicit destructive confirmation. |
 | `scripts/Set-DeveloperToolsState.ps1` | Maintains CodeQL, Trail of Bits packs, Semgrep CE, pyinfra-managed Dagger through Homebrew, TTD, Debian rsync, and PoolMon tags. |
 | `scripts/Set-GoState.ps1` | Maintains the official Go package, `GOPATH`, command path, and `GOTOOLCHAIN=auto` behavior without overriding MSI-owned `GOROOT`. |
 | `scripts/Set-MalwareHashesState.ps1` | Installs and verifies the pinned `malware_hashes` Windows release for host and Sandbox use. |
 | `scripts/Set-SpecDrivenDevelopmentState.ps1` | Maintains the release-pinned EARS/TDD Spec Kit tool in an isolated `uv tool` environment. |
+| `scripts/Set-PesterState.ps1` | Observes or explicitly installs the exact per-user Pester release for both PowerShell runtimes. |
+| `scripts/Invoke-PowerShellTests.ps1` | Runs standard test files through one human/JSON Pester command with bounded parallel and compatibility lanes. |
 | `linux/developer_tools.py` | Human-runnable pyinfra desired state for Debian developer packages. |
 | `scripts/Set-ProfilingToolsState.ps1` | Maintains WPT/WPA, py-spy, dotnet-trace, and the local Speedscope viewer. |
 | `scripts/Invoke-NativeCpuProfile.ps1` | Records native/system CPU traces with WPR for WPA. |
@@ -158,13 +174,17 @@ Run one part at a time with inclusion-based module selection:
 .\Apply-Workstation.ps1 -Mode Test -Module Firewall
 .\Apply-Workstation.ps1 -Mode Ensure -Module Hardening
 .\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module PowerShellTesting -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module Go -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module MalwareHashes -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module ContourTerminal -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module MalwareAnalysisTools -Plan
 ```
 
-The module DSL resolves dependencies in compatible order: Hardening pulls in Sudo; DeveloperTools pulls in Go, DeveloperDocker, LinuxAutomation, LinuxHomebrew, Packages, and PowerShell 7; Scoop pulls in Git; ContourTerminal pulls in Sudo, PowerShell 7, and TerminalFonts; MalwareAnalysisTools pulls in the verified `malware_hashes` release, Windows Sandbox, WPT, and package prerequisites; and MalwareContainerImage pulls in RootlessDocker. `-Module All` retains the default full run and includes neither Debloat, MalwareAnalysisTools, nor MalwareContainerImage. [Sample outputs](docs/sample-outputs.md) show the human and JSON forms.
+The module DSL has three dependency stages. `Inbox` uses only Windows PowerShell 5.1 and native Windows commands already present on a fresh Windows 11 Pro host; it configures Sudo and installs/tests PowerShell 7 without resolving `pwsh.exe`. `Core` begins only after the PowerShell 7 gate succeeds and provides foundational packages, profiles, testing, fonts, and terminals. `Extended` contains the remaining workstation capabilities. A failure in an earlier selected stage blocks later stages, and a dependency from an earlier stage to a later one is rejected. Planning is available before PowerShell 7 is installed.
+
+Within those stages, Hardening pulls in Sudo; PowerShellTesting pulls in PowerShell 7; DeveloperTools pulls in Go, DeveloperDocker, LinuxAutomation, LinuxHomebrew, Packages, and PowerShell 7; Scoop pulls in Git; ContourTerminal pulls in Sudo, PowerShell 7, and TerminalFonts; WindowsTerminal pulls in PowerShell 7; MalwareAnalysisTools pulls in the verified `malware_hashes` release, Windows Sandbox, WPT, and package prerequisites; and MalwareContainerImage pulls in RootlessPodman. `-Module All` retains the default full run and includes neither Debloat, MalwareAnalysisTools, MalwareContainerImage, nor destructive LegacyDockerCleanup. [Sample outputs](docs/sample-outputs.md) show the human and JSON forms.
 
 Defender exclusion paths are read from the ignored local `.excluded` file. Copy `.excluded.sample` after cloning and customize it; native Windows `%ENVIRONMENT_VARIABLE%` references are supported. The repository publishes no workstation-specific exclusion paths, and unrelated existing Defender exclusions are preserved.
 
@@ -174,7 +194,7 @@ WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Wind
 
 The balanced event-log template keeps relevant live logs circular and generously sized, then exports a rolling 48-hour EVTX window every day. Generated ZIP archives are stored in `E:\Logs`, retained for at most 14 days, capped at 768 MiB total, and rotated early if E: has less than 128 MiB free. Staging occurs under ProgramData on C:. The scheduled exporter is copied into an administrator-controlled directory and runs as SYSTEM.
 
-The package declarations include PowerShell 7, Go, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS with its bundled npm and npx commands, Git, GitHub CLI (`gh`), Tailscale, WSL, and Debian. Go uses its official MSI-backed WinGet package; projects select compatible released toolchains through Go's built-in `go.mod`/`go.work` and `GOTOOLCHAIN=auto` behavior. `GOROOT` remains owned by the MSI. Git has a focused declaration so Scoop can depend on it without testing every unrelated package. Scoop is maintained per-user with official Main and Extras buckets. Contour Terminal is installed separately from the exact official release MSI after SHA-256 verification; any legacy Scoop Contour package is removed first. The translated BlueTerm default and `blue-dark` profiles remain managed, and a bounded minimized-window gate verifies that Contour can initialize its graphics stack before the module reports compliance. The Windows-feature declaration enables Hyper-V and Windows Sandbox, includes required parent features, declares Sandbox's dependency on Hyper-V, and never restarts Windows automatically. The feature resource validates its dependency graph and applies it in topological order. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, Dagger through Homebrew inside Debian WSL, standalone TTD, Debian rsync, and the official PoolMon tag database. The profiling state installs only the Windows Performance Toolkit feature from the ADK, py-spy through an isolated uv environment, dotnet-trace as a global .NET tool, and Speedscope as a local CLI/browser viewer. SkillOpt 0.2.0 is another isolated `uv tool`. None of these use or modify the AMD/PyTorch Python environment.
+The package declarations include PowerShell 7, Windows Terminal, Go, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS with its bundled npm and npx commands, Git, GitHub CLI (`gh`), Tailscale, WSL, and Debian. Both Windows PowerShell 5.1 and the newest installed PowerShell Core load the same managed prompt, aliases, tools, and readline-compatible behavior. Windows Terminal starts PowerShell Core by default, keeps Windows PowerShell selectable, and applies the shared Blue appearance through `profiles.defaults` while preserving unrelated profiles, keybindings, themes, and settings. Go uses its official MSI-backed WinGet package; projects select compatible released toolchains through Go's built-in `go.mod`/`go.work` and `GOTOOLCHAIN=auto` behavior. `GOROOT` remains owned by the MSI. Git has a focused declaration so Scoop can depend on it without testing every unrelated package. Scoop is maintained per-user with official Main and Extras buckets. Contour Terminal is installed separately from the exact official release MSI after SHA-256 verification; any legacy Scoop Contour package is removed first. The translated BlueTerm default and `blue-dark` profiles remain managed, and a bounded minimized-window gate verifies that Contour can initialize its graphics stack before the module reports compliance. The Windows-feature declaration enables Hyper-V and Windows Sandbox, includes required parent features, declares Sandbox's dependency on Hyper-V, and never restarts Windows automatically. The feature resource validates its dependency graph and applies it in topological order. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, Dagger through Homebrew inside Debian WSL, standalone TTD, Debian rsync, and the official PoolMon tag database. The profiling state installs only the Windows Performance Toolkit feature from the ADK, py-spy through an isolated uv environment, dotnet-trace as a global .NET tool, and Speedscope as a local CLI/browser viewer. SkillOpt 0.2.0 is another isolated `uv tool`. None of these use or modify the AMD/PyTorch Python environment.
 
 Native `awk.exe` and `sed.exe` are maintained through the focused `NativeTextTools` WinGet module for PowerShell. This does not install or use Git Bash, MinGit, Cygwin, MSYS, or MSYS2. The native BusyBox host is not Bash; it contains an unused `ash`-style shell applet, while desired state exposes only `awk` and `sed`. See [Native awk and sed for PowerShell](docs/native-text-tools.md).
 
@@ -197,6 +217,8 @@ It also never harvests Codex transcripts, contacts a model provider for SkillOpt
 The SkillOpt resource pins the stable PyPI package only. It does not install the mutable source tree, global SkillOpt plugin, WebUI, benchmark extras, or local-model stacks.
 
 Repository hooks are explicit because `.git/hooks` is local state. Run `precommit-install` once per clone; it installs `pre-commit==4.6.2` as an isolated uv tool and PSScriptAnalyzer 1.25.0 for the current user. The hook lints staged PowerShell files, while `precommit-run` checks the complete tracked tree.
+
+PowerShell tests use exact Pester 6.1.0 from the shared per-user WindowsPowerShell module tree so PowerShell 7 and inbox Windows PowerShell resolve the same framework. `test-powershell` discovers standard `*.Tests.ps1` files and uses bounded file-level parallel execution under PowerShell 7.4 or newer. `test-powershell -Compatibility` dispatches the compatible suite sequentially through Windows PowerShell 5.1. Files needing exclusive or live-state access use `#pester:no-parallel`. Test execution never installs Pester; inspect or repair it separately with the `PowerShellTesting` module.
 
 The full WDK is not installed automatically because WinDbg supplies the required `pooltag.txt`. If that source disappears, `Set-PoolMonState.ps1` reports the explicit fallback command instead of silently installing the large WDK.
 

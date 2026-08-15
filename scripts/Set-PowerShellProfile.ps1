@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $profileSourceDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\profile'))
 $templatePath = Join-Path $profileSourceDirectory 'Shell.ps1'
-$componentNames = @('Config.ps1', 'Tools.ps1', 'Aliases.ps1')
+$componentNames = @('Config.ps1', 'Tools.ps1', 'Aliases.ps1', 'NativeDevelopment.ps1')
 $beginMarker = '# BEGIN CODEX LINUX SHELL'
 $endMarker = '# END CODEX LINUX SHELL'
 $blockPattern = '(?s)' + [regex]::Escape($beginMarker) + '.*?' + [regex]::Escape($endMarker)

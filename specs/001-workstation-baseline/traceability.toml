@@ -45,8 +45,8 @@ verification = "manual"
 rationale = "Inspect the default module plan and verify that the opt-in Debloat module is absent."
 
 [requirements.REQ-012]
-verification = "manual"
-rationale = "Run each declared dual-shell command under PowerShell 7 and Windows PowerShell 5.1 and compare results."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
 
 [requirements.REQ-013]
 verification = "manual"
@@ -97,8 +97,8 @@ verification = "manual"
 rationale = "Inspect isolated tool environments and verify unrelated Python environments are not modified."
 
 [requirements.REQ-025]
-verification = "manual"
-rationale = "Load the managed profile in both documented runtimes and exercise command and skill discovery."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
 
 [requirements.REQ-026]
 verification = "manual"
@@ -171,3 +171,35 @@ tests = ["tests/Test-GoState.ps1"]
 [requirements.REQ-043]
 verification = "automated"
 tests = ["tests/Test-MalwareHashesState.ps1"]
+
+[requirements.REQ-044]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-045]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-046]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-047]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-048]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-049]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-050]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]
+
+[requirements.REQ-051]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1"]

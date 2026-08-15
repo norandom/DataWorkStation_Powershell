@@ -1,5 +1,53 @@
 # Sample outputs
 
+## Native development plan and Java state
+
+```text
+PS> .\Apply-Workstation.ps1 -Mode Test -Module JavaToolchain -Plan
+Stage     Order Module         Runtime     Privileged Dependencies
+Extended  176   JavaToolchain PowerShell7 False      PowerShell7
+```
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Set-JavaState.ps1 -Mode Test
+Java toolchain: compliant
+  package: Microsoft.OpenJDK.21
+  JAVA_HOME: C:\Program Files\Microsoft\jdk-21.x.x-hotspot
+  runtime/compiler major: 21/21
+```
+
+The aggregate `NativeDevelopment` smoke output reports separate C/C++, CMake, MSBuild, Rust, Cargo,
+and Java fixtures so a compiler failure is not hidden behind package presence.
+
+## PowerShell test framework
+
+Framework inspection is observational and reports the exact repair impact:
+
+```text
+PS> .\scripts\Set-PesterState.ps1 -Mode Test
+PowerShellTesting: compliant
+  Declared Pester: 6.1.0
+  PowerShell 7: 6.1.0
+  Windows PowerShell: 6.1.0
+  Shared module base: C:\Users\user\Documents\WindowsPowerShell\Modules
+```
+
+The ordinary suite uses bounded file-level parallelism on a supported PowerShell 7 runtime:
+
+```text
+PS> test-powershell
+PowerShell tests: passed; 27 passed, 0 failed, 0 skipped in 8120 ms
+  Runtime: Core 7.6.4; Pester 6.1.0; parallel=True; throttle=4
+
+PS> test-powershell -Compatibility
+PowerShell tests: passed; 27 passed, 0 failed, 0 skipped in 24110 ms
+  Runtime: Desktop 5.1.26100.4652; Pester 6.1.0; parallel=False; throttle=1
+  Sequential reason: Windows PowerShell compatibility lane is sequential.
+```
+
+Exact counts and timings vary with the selected files. A failure is named in the aggregate result
+and returns a nonzero process exit code.
+
 These sanitized transcripts show the shape of successful human-facing and machine-facing commands. Versions, timings, paths, and the set of installed skills can change.
 
 ## Dependency plan
@@ -10,15 +58,15 @@ Planning is read-only. Selecting `DeveloperTools` includes its package-manager p
 PS> .\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
 Workstation module plan for mode 'Test':
 
-Order Name             DependsOn       Privileged Destructive
------ ----             ---------       ---------- -----------
-   18 PowerShell7                       False      False
-   19 Go                                False      False
-   20 Packages         PowerShell7      False      False
-   45 LinuxHomebrew    Packages         False      False
-   47 LinuxAutomation  LinuxHomebrew    False      False
-   49 DeveloperDocker  LinuxAutomation  True       False
-   50 DeveloperTools   DeveloperDocker, Go  False  False
+Stage    Order Name             Runtime     DependsOn
+-----    ----- ----             -------     ---------
+Inbox       18 PowerShell7      Native
+Core        19 Go               PowerShell7
+Core        20 Packages         Native      PowerShell7
+Extended    45 LinuxHomebrew    PowerShell7 Packages
+Extended    47 LinuxAutomation  PowerShell7 LinuxHomebrew
+Extended    49 DeveloperDocker  PowerShell7 LinuxAutomation
+Extended    50 DeveloperTools   PowerShell7 DeveloperDocker, Go
 ```
 
 Go and the released hash command are independently selectable Windows resources:
@@ -26,9 +74,10 @@ Go and the released hash command are independently selectable Windows resources:
 ```text
 PS> .\Apply-Workstation.ps1 -Mode Test -Module Go -Plan
 
-Order Name DependsOn Privileged Destructive
------ ---- --------- ---------- -----------
-   19 Go             False      False
+Stage Order Name        Runtime     DependsOn
+----- ----- ----        -------     ---------
+Inbox    18 PowerShell7 Native
+Core     19 Go          PowerShell7
 
 PS> pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test
 Go: compliant (1.26.5, auto)
@@ -39,7 +88,7 @@ Go: compliant (1.26.5, auto)
   GoRootUnmanaged: compliant
 
 PS> pwsh -NoProfile -File .\scripts\Set-MalwareHashesState.ps1 -Mode Test
-malware_hashes: compliant (v2.4.0)
+malware_hashes: compliant (v2.5.0)
   ReleaseAsset: compliant
   ReleaseHash: compliant
   CommandHash: compliant
@@ -53,11 +102,11 @@ The Spec Kit policy tool is independently selectable and does not pull in WSL or
 PS> .\Apply-Workstation.ps1 -Mode Test -Module SpecDrivenDevelopment -Plan
 Workstation module plan for mode 'Test':
 
-Order Name                    DependsOn  Privileged Destructive
------ ----                    ---------  ---------- -----------
-   18 PowerShell7                         False      False
-   20 Packages                PowerShell7 False      False
-   55 SpecDrivenDevelopment  Packages    False      False
+Stage    Order Name                   Runtime     DependsOn
+-----    ----- ----                   -------     ---------
+Inbox       18 PowerShell7            Native
+Core        20 Packages               Native      PowerShell7
+Extended    55 SpecDrivenDevelopment  PowerShell7 Packages
 ```
 
 After `Ensure`, its narrow test reports the release and command independently:
@@ -72,6 +121,30 @@ EarsSddCommand              compliant   ...\uv\tools\spec-kit-ears-tdd\Scripts\e
 ```
 
 The same resource test returns the same state under inbox Windows PowerShell 5.1.
+
+## Staged PowerShell and Windows Terminal
+
+The bootstrap plan works from the inbox shell before `pwsh.exe` exists:
+
+```text
+PS> powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan
+Workstation module plan for mode 'Test':
+
+Stage Order Name        Runtime DependsOn
+----- ----- ----        ------- ---------
+Inbox    18 PowerShell7 Native
+```
+
+The profile smoke test launches both runtimes, while the focused Terminal test is observational:
+
+```text
+PS> powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes
+PASS PowerShellRuntimes
+Workstation baseline tests passed (14 assertions).
+
+PS> pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test
+Windows Terminal settings: compliant (...\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json).
+```
 
 ## Focused desired-state test
 
@@ -177,7 +250,7 @@ Execution            : not-run
 Target plans retain the host report and arrange an independent guest report from the same verified release:
 
 ```text
-MalwareHashes : @{Release=v2.4.0; ToolMappedReadOnly=True; HostState=complete; SandboxState=planned}
+MalwareHashes : @{Release=v2.5.0; ToolMappedReadOnly=True; HostState=complete; SandboxState=planned}
 ```
 
 After an approved Sandbox run, bounded evidence ingestion reports only validated cross-boundary fields:
@@ -256,11 +329,22 @@ PS> .\Apply-Workstation.ps1 -Mode Test -Module MalwareContainerImage -Plan
 
 Order Name                  DependsOn       Privileged Destructive
 ----- ----                  ---------       ---------- -----------
-   49 RootlessDocker                         True       False
-   66 MalwareContainerImage RootlessDocker   False      False
+   49 RootlessPodman                         True       False
+   66 MalwareContainerImage RootlessPodman   False      False
 
 PS> lint-python
 All checks passed!
+```
+
+A compliant image state reports matching reviewed identities:
+
+```text
+Status                           : compliant
+Image                            : dataworkstation/malware-static:2026.08.14-1
+ExpectedToolInventoryFingerprint : 10EDCAD1...
+ActualToolInventoryFingerprint   : 10EDCAD1...
+ExpectedBuildContextFingerprint  : 2917BC1C...
+ActualBuildContextFingerprint    : 2917BC1C...
 ```
 
 Only `malware-container ... -Run -ConfirmContainer` starts the static parser. It cannot enable
@@ -277,7 +361,7 @@ Command host-static    profile/Aliases.ps1
 Command sandbox-static profile/Aliases.ps1
 
 PS> wsl-dev uname -a
-PS> wsl-mw docker info --format '{{json .SecurityOptions}}'
+PS> wsl-mw podman info --format json
 ```
 
 The explicitly approved benign integration check produces local, ignored evidence and requires an

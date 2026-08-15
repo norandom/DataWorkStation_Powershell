@@ -3,8 +3,8 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'DeveloperDocker', 'RootlessDocker', 'DeveloperTools', 'SpecDrivenDevelopment',
-        'MalwareHashes', 'MalwareAnalysisTools', 'MalwareContainerImage', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'FocusFollowsMouse',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
+        'MalwareHashes', 'MalwareAnalysisTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -12,6 +12,7 @@ param(
     [switch] $Plan,
     [switch] $Json,
     [switch] $ConfirmRemoval,
+    [switch] $ConfirmDestructive,
     [switch] $SkipPackages,
     [switch] $SkipWindowsFeatures,
     [switch] $SkipHardening,
@@ -31,7 +32,15 @@ $ErrorActionPreference = 'Stop'
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
 $gitConfigurationFile = Join-Path $PSScriptRoot '.config\git.winget'
 $powerShell7ConfigurationFile = Join-Path $PSScriptRoot '.config\powershell7.winget'
+$windowsTerminalConfigurationFile = Join-Path $PSScriptRoot '.config\windows-terminal.winget'
+$windowsTerminalStateScript = Join-Path $PSScriptRoot 'scripts\Set-WindowsTerminalState.ps1'
+$pesterStateScript = Join-Path $PSScriptRoot 'scripts\Set-PesterState.ps1'
 $goStateScript = Join-Path $PSScriptRoot 'scripts\Set-GoState.ps1'
+$msvcBuildToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MsvcBuildToolsState.ps1'
+$cmakeStateScript = Join-Path $PSScriptRoot 'scripts\Set-CMakeState.ps1'
+$rustStateScript = Join-Path $PSScriptRoot 'scripts\Set-RustState.ps1'
+$javaStateScript = Join-Path $PSScriptRoot 'scripts\Set-JavaState.ps1'
+$nativeDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-NativeDevelopmentState.ps1'
 $malwareHashesScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareHashesState.ps1'
 $moduleCatalogPath = Join-Path $PSScriptRoot 'config\workstation-modules.psd1'
 $nativeTextToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeTextToolsState.ps1'
@@ -50,7 +59,8 @@ $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalys
 $malwareContainerImageScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareContainerImageState.ps1'
 $linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
 $linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
-$rootlessDockerScript = Join-Path $PSScriptRoot 'scripts\Set-RootlessDockerState.ps1'
+$rootlessPodmanScript = Join-Path $PSScriptRoot 'scripts\Set-RootlessPodmanState.ps1'
+$legacyDockerCleanupScript = Join-Path $PSScriptRoot 'scripts\Remove-LegacyDockerMwState.ps1'
 $developerDockerScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperDockerState.ps1'
 $profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
 $skillOptScript = Join-Path $PSScriptRoot 'scripts\Set-SkillOptState.ps1'
@@ -61,10 +71,28 @@ $wslScript = Join-Path $PSScriptRoot 'scripts\Set-WslState.ps1'
 $pagefileScript = Join-Path $PSScriptRoot 'scripts\Set-PagefileState.ps1'
 $eventLogScript = Join-Path $PSScriptRoot 'scripts\Set-EventLogState.ps1'
 $firewallScript = Join-Path $PSScriptRoot 'scripts\Set-FirewallState.ps1'
-$pwsh = (Get-Command pwsh.exe -ErrorAction Stop).Source
 $windowsPowerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
+$script:powerShell7Path = $null
 $failures = [Collections.Generic.List[string]]::new()
 $moduleCatalog = Import-PowerShellDataFile -LiteralPath $moduleCatalogPath
+
+function Get-PowerShell7Path {
+    if ($script:powerShell7Path) { return $script:powerShell7Path }
+
+    $command = Get-Command pwsh.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+    if ($command) {
+        $script:powerShell7Path = $command.Source
+        return $script:powerShell7Path
+    }
+
+    $standardPath = Join-Path $env:ProgramFiles 'PowerShell\7\pwsh.exe'
+    if (Test-Path -LiteralPath $standardPath -PathType Leaf) {
+        $script:powerShell7Path = $standardPath
+        return $script:powerShell7Path
+    }
+
+    throw 'PowerShell 7 is required for this module but pwsh.exe was not found. Run the PowerShell7 module first.'
+}
 
 function Get-SelectedModuleDefinitions {
     param(
@@ -74,15 +102,44 @@ function Get-SelectedModuleDefinitions {
     )
 
     $definitions = @($Catalog.Modules)
+    $stageByName = @{}
+    $stageOrder = @{}
+    foreach ($stage in @($Catalog.Stages)) {
+        if (-not $stage.Name) { throw 'Every workstation dependency stage requires a name.' }
+        if ($stageByName.ContainsKey($stage.Name)) { throw "Duplicate workstation dependency stage: $($stage.Name)" }
+        if ($stageOrder.ContainsKey([string] $stage.Order)) { throw "Duplicate workstation dependency stage order: $($stage.Order)" }
+        $stageByName[$stage.Name] = $stage
+        $stageOrder[[string] $stage.Order] = $stage.Name
+    }
+    if ($stageByName.Count -eq 0) { throw 'The workstation module catalog declares no dependency stages.' }
     $byName = @{}
     foreach ($definition in $definitions) {
         if ($byName.ContainsKey($definition.Name)) { throw "Duplicate workstation module: $($definition.Name)" }
         $byName[$definition.Name] = $definition
     }
     foreach ($definition in $definitions) {
+        if (-not $stageByName.ContainsKey($definition.Stage)) {
+            throw "Workstation module '$($definition.Name)' has unknown stage '$($definition.Stage)'."
+        }
+        if ($definition.Runtime -notin @('Inbox', 'PowerShell7', 'Native')) {
+            throw "Workstation module '$($definition.Name)' has unsupported runtime '$($definition.Runtime)'."
+        }
         foreach ($dependency in @($definition.DependsOn)) {
             if (-not $byName.ContainsKey($dependency)) {
                 throw "Workstation module '$($definition.Name)' has unknown dependency '$dependency'."
+            }
+            if ([int] $stageByName[$byName[$dependency].Stage].Order -gt [int] $stageByName[$definition.Stage].Order) {
+                throw "Workstation module '$($definition.Name)' in stage '$($definition.Stage)' cannot depend on later-stage module '$dependency'."
+            }
+        }
+    }
+    foreach ($stage in @($Catalog.Stages)) {
+        foreach ($dependency in @($stage.DependsOn)) {
+            if (-not $byName.ContainsKey($dependency)) {
+                throw "Workstation dependency stage '$($stage.Name)' has unknown gate module '$dependency'."
+            }
+            if ([int] $stageByName[$byName[$dependency].Stage].Order -gt [int] $stage.Order) {
+                throw "Workstation dependency stage '$($stage.Name)' cannot depend on later-stage module '$dependency'."
             }
         }
     }
@@ -92,7 +149,7 @@ function Get-SelectedModuleDefinitions {
 
     $requestedNames = [Collections.Generic.List[string]]::new()
     if ($Requested -contains 'All') {
-        foreach ($definition in @($definitions | Where-Object Default | Sort-Object Order,Name)) {
+        foreach ($definition in @($definitions | Where-Object Default | Sort-Object @{ Expression = { [int] $stageByName[$_.Stage].Order } },Order,Name)) {
             $requestedNames.Add($definition.Name)
         }
     }
@@ -108,7 +165,12 @@ function Get-SelectedModuleDefinitions {
     do {
         $changed = $false
         foreach ($name in @($included)) {
-            foreach ($dependency in @($byName[$name].DependsOn)) {
+            $definition = $byName[$name]
+            $dependencies = @($definition.DependsOn) + @($stageByName[$definition.Stage].DependsOn)
+            foreach ($dependency in $dependencies) {
+                if ($excludedSet.Contains($dependency)) {
+                    throw "Workstation module '$name' requires excluded stage dependency '$dependency'."
+                }
                 if (-not $excludedSet.Contains($dependency) -and $included.Add($dependency)) {
                     $changed = $true
                 }
@@ -126,7 +188,7 @@ function Get-SelectedModuleDefinitions {
                 @($definition.DependsOn | Where-Object {
                     $included.Contains($_) -and -not $completed.Contains($_)
                 }).Count -eq 0
-        } | Sort-Object Order,Name)
+        } | Sort-Object @{ Expression = { [int] $stageByName[$_.Stage].Order } },Order,Name | Select-Object -First 1)
         if ($ready.Count -eq 0) { throw 'Workstation module dependency cycle detected.' }
         foreach ($definition in $ready) {
             $ordered.Add($definition)
@@ -134,7 +196,9 @@ function Get-SelectedModuleDefinitions {
         }
     }
 
-    return @($ordered)
+    foreach ($definition in $ordered) {
+        Write-Output -InputObject $definition -NoEnumerate
+    }
 }
 
 function Invoke-CheckedProcess {
@@ -149,7 +213,7 @@ function Invoke-WorkstationModule {
     switch ($Name) {
         'Sudo' {
             Invoke-CheckedProcess 'Windows sudo state' {
-                & $pwsh -NoLogo -NoProfile -File $sudoScript -Mode $Mode
+                & $windowsPowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $sudoScript -Mode $Mode
             }
         }
         'Packages' {
@@ -165,12 +229,12 @@ function Invoke-WorkstationModule {
         }
         'NativeTextTools' {
             Invoke-CheckedProcess 'Native awk and sed state' {
-                & $pwsh -NoLogo -NoProfile -File $nativeTextToolsScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nativeTextToolsScript -Mode $Mode
             }
         }
         'Caffeine' {
             Invoke-CheckedProcess 'Caffeine package state' {
-                & $pwsh -NoLogo -NoProfile -File $caffeineScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $caffeineScript -Mode $Mode
             }
         }
         'PowerShell7' {
@@ -186,12 +250,46 @@ function Invoke-WorkstationModule {
         }
         'Go' {
             Invoke-CheckedProcess 'Go package and environment state' {
-                & $pwsh -NoLogo -NoProfile -File $goStateScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $goStateScript -Mode $Mode
+            }
+        }
+        'MsvcBuildTools' {
+            Invoke-CheckedProcess 'Standalone MSVC Build Tools state' {
+                if ($Mode -eq 'Test') {
+                    & (Get-PowerShell7Path) -NoLogo -NoProfile -File $msvcBuildToolsScript -Mode Test
+                } else {
+                    & sudo.exe (Get-PowerShell7Path) -NoLogo -NoProfile -File $msvcBuildToolsScript -Mode $Mode
+                }
+            }
+        }
+        'CMake' {
+            Invoke-CheckedProcess 'CMake and Ninja state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $cmakeStateScript -Mode $Mode
+            }
+        }
+        'RustToolchain' {
+            Invoke-CheckedProcess 'Rust MSVC toolchain state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $rustStateScript -Mode $Mode
+            }
+        }
+        'JavaToolchain' {
+            Invoke-CheckedProcess 'Microsoft OpenJDK state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $javaStateScript -Mode $Mode
+            }
+        }
+        'NativeDevelopment' {
+            Invoke-CheckedProcess 'Native development integration state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nativeDevelopmentScript -Mode Test
+            }
+        }
+        'PowerShellTesting' {
+            Invoke-CheckedProcess 'PowerShell test framework state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $pesterStateScript -Mode $Mode
             }
         }
         'MalwareHashes' {
             Invoke-CheckedProcess 'malware_hashes GitHub release state' {
-                & $pwsh -NoLogo -NoProfile -File $malwareHashesScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $malwareHashesScript -Mode $Mode
             }
         }
         'Git' {
@@ -207,17 +305,31 @@ function Invoke-WorkstationModule {
         }
         'Scoop' {
             Invoke-CheckedProcess 'Scoop state' {
-                & $pwsh -NoLogo -NoProfile -File $scoopScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $scoopScript -Mode $Mode
             }
         }
         'TerminalFonts' {
             Invoke-CheckedProcess 'Terminal font state' {
-                & $pwsh -NoLogo -NoProfile -File $terminalFontScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $terminalFontScript -Mode $Mode
             }
         }
         'ContourTerminal' {
             Invoke-CheckedProcess 'Contour Terminal state' {
-                & $pwsh -NoLogo -NoProfile -File $contourTerminalScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $contourTerminalScript -Mode $Mode
+            }
+        }
+        'WindowsTerminal' {
+            if ($Mode -eq 'Test') {
+                Invoke-CheckedProcess 'Windows Terminal package test' {
+                    & winget configure test --file $windowsTerminalConfigurationFile --accept-configuration-agreements --disable-interactivity
+                }
+            } else {
+                Invoke-CheckedProcess 'Windows Terminal package state' {
+                    & winget configure --file $windowsTerminalConfigurationFile --accept-configuration-agreements --disable-interactivity
+                }
+            }
+            Invoke-CheckedProcess 'Windows Terminal settings state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $windowsTerminalStateScript -Mode $Mode
             }
         }
         'WindowsFeatures' {
@@ -232,97 +344,106 @@ function Invoke-WorkstationModule {
         }
         'LinuxHomebrew' {
             Invoke-CheckedProcess 'Linux Homebrew state' {
-                & $pwsh -NoLogo -NoProfile -File $linuxHomebrewScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $linuxHomebrewScript -Mode $Mode
             }
         }
         'LinuxAutomation' {
             Invoke-CheckedProcess 'Linux automation state' {
-                & $pwsh -NoLogo -NoProfile -File $linuxAutomationScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $linuxAutomationScript -Mode $Mode
             }
         }
-        'RootlessDocker' {
-            Invoke-CheckedProcess 'Rootless Docker state' {
-                & $pwsh -NoLogo -NoProfile -File $rootlessDockerScript -Mode $Mode
+        'RootlessPodman' {
+            Invoke-CheckedProcess 'Rootless Podman state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $rootlessPodmanScript -Mode $Mode
             }
         }
         'DeveloperDocker' {
             Invoke-CheckedProcess 'Developer Docker state' {
-                & $pwsh -NoLogo -NoProfile -File $developerDockerScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $developerDockerScript -Mode $Mode
             }
         }
         'DeveloperTools' {
             Invoke-CheckedProcess 'Developer tool state' {
-                & $pwsh -NoLogo -NoProfile -File $developerToolsScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $developerToolsScript -Mode $Mode
             }
         }
         'SpecDrivenDevelopment' {
             Invoke-CheckedProcess 'Spec-driven development state' {
-                & $pwsh -NoLogo -NoProfile -File $specDrivenDevelopmentScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $specDrivenDevelopmentScript -Mode $Mode
             }
         }
         'MalwareAnalysisTools' {
             Invoke-CheckedProcess 'Optional malware analysis tool state' {
-                & $pwsh -NoLogo -NoProfile -File $malwareAnalysisToolsScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $malwareAnalysisToolsScript -Mode $Mode
             }
         }
         'MalwareContainerImage' {
             Invoke-CheckedProcess 'Rootless malware parser image state' {
-                & $pwsh -NoLogo -NoProfile -File $malwareContainerImageScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $malwareContainerImageScript -Mode $Mode
+            }
+        }
+        'LegacyDockerCleanup' {
+            Invoke-CheckedProcess 'Retained Debian-MW Docker data cleanup' {
+                if ($ConfirmDestructive) {
+                    & (Get-PowerShell7Path) -NoLogo -NoProfile -File $legacyDockerCleanupScript -Mode $Mode -ConfirmDestructive
+                } else {
+                    & (Get-PowerShell7Path) -NoLogo -NoProfile -File $legacyDockerCleanupScript -Mode $Mode
+                }
             }
         }
         'ProfilingTools' {
             Invoke-CheckedProcess 'Profiling tool state' {
-                & $pwsh -NoLogo -NoProfile -File $profilingToolsScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $profilingToolsScript -Mode $Mode
             }
         }
         'SkillOpt' {
             Invoke-CheckedProcess 'SkillOpt state' {
-                & $pwsh -NoLogo -NoProfile -File $skillOptScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $skillOptScript -Mode $Mode
             }
         }
         'PowerShellProfile' {
             Invoke-CheckedProcess 'PowerShell profile state' {
-                & $pwsh -NoLogo -NoProfile -File $profileScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $profileScript -Mode $Mode
             }
         }
         'FocusFollowsMouse' {
             Invoke-CheckedProcess 'Focus-follows-mouse state' {
-                & $pwsh -NoLogo -NoProfile -File $focusFollowsMouseScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $focusFollowsMouseScript -Mode $Mode
             }
         }
         'DefenderExclusions' {
             Invoke-CheckedProcess 'Microsoft Defender exclusion state' {
-                & sudo.exe $pwsh -NoLogo -NoProfile -File $defenderScript -Mode $Mode
+                & sudo.exe (Get-PowerShell7Path) -NoLogo -NoProfile -File $defenderScript -Mode $Mode
             }
         }
         'SmartScreen' {
             Invoke-CheckedProcess 'Microsoft Defender SmartScreen state' {
-                & sudo.exe $pwsh -NoLogo -NoProfile -File $smartScreenScript -Mode $Mode
+                & sudo.exe (Get-PowerShell7Path) -NoLogo -NoProfile -File $smartScreenScript -Mode $Mode
             }
         }
         'WslMemory' {
             Invoke-CheckedProcess 'WSL memory state' {
-                & $pwsh -NoLogo -NoProfile -File $wslScript -Mode $Mode
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $wslScript -Mode $Mode
             }
         }
         'Pagefile' {
             Invoke-CheckedProcess 'Windows pagefile state' {
-                & sudo.exe $pwsh -NoLogo -NoProfile -File $pagefileScript -Mode $Mode
+                & sudo.exe (Get-PowerShell7Path) -NoLogo -NoProfile -File $pagefileScript -Mode $Mode
             }
         }
         'EventLogs' {
             Invoke-CheckedProcess 'Windows event-log state' {
-                & sudo.exe $pwsh -NoLogo -NoProfile -File $eventLogScript -Mode $Mode
+                & sudo.exe (Get-PowerShell7Path) -NoLogo -NoProfile -File $eventLogScript -Mode $Mode
             }
         }
         'Firewall' {
             if ($Mode -eq 'Test') {
                 Invoke-CheckedProcess 'Firewall state' {
-                    & $pwsh -NoLogo -NoProfile -File $firewallScript -Mode Test
+                    & (Get-PowerShell7Path) -NoLogo -NoProfile -File $firewallScript -Mode Test
                 }
             } else {
                 Invoke-CheckedProcess 'Firewall state' {
-                    & sudo.exe $pwsh -NoLogo -NoProfile -File $firewallScript -Mode $Mode
+                    & sudo.exe (Get-PowerShell7Path) -NoLogo -NoProfile -File $firewallScript -Mode $Mode
                 }
             }
         }
@@ -375,6 +496,12 @@ foreach ($definition in $selectedModules) {
 if ($ConfirmRemoval -and 'Debloat' -notin @($selectedModules.Name)) {
     throw '-ConfirmRemoval is valid only when the Debloat module is selected.'
 }
+if ($ConfirmDestructive -and @($selectedModules | Where-Object Destructive).Count -eq 0) {
+    throw '-ConfirmDestructive is valid only when a destructive module is selected.'
+}
+if (-not $Plan -and $Mode -eq 'Ensure' -and @($selectedModules | Where-Object Destructive).Count -gt 0 -and -not $ConfirmDestructive -and 'Debloat' -notin @($selectedModules.Name)) {
+    throw 'Destructive module Ensure requires -ConfirmDestructive. No workstation module was invoked.'
+}
 if (-not $Plan -and $Mode -eq 'Ensure' -and 'Debloat' -in @($selectedModules.Name) -and -not $ConfirmRemoval) {
     throw 'Debloat Ensure requires -ConfirmRemoval. No workstation module was invoked.'
 }
@@ -385,22 +512,42 @@ if ($Plan) {
         Mode = $Mode
         Requested = @($Module)
         Excluded = @($excludedModules)
-        ExecutionOrder = @($selectedModules | Select-Object Name,Order,DependsOn,Privileged,Destructive,Description)
+        ExecutionOrder = @($selectedModules | ForEach-Object {
+            [pscustomobject]@{
+                Name = $_.Name
+                Stage = $_.Stage
+                Runtime = $_.Runtime
+                Order = $_.Order
+                DependsOn = @($_.DependsOn)
+                Privileged = $_.Privileged
+                Destructive = $_.Destructive
+                Description = $_.Description
+            }
+        })
     }
     if ($Json) {
         $planResult | ConvertTo-Json -Depth 6
     } else {
         Write-Host "Workstation module plan for mode '$Mode':"
-        $planResult.ExecutionOrder | Format-Table Order,Name,@{ Name='DependsOn'; Expression={ $_.DependsOn -join ', ' } },Privileged,Destructive,Description -AutoSize -Wrap | Out-Host
+        $planResult.ExecutionOrder | Format-Table Stage,Order,Name,Runtime,@{ Name='DependsOn'; Expression={ $_.DependsOn -join ', ' } },Privileged,Destructive,Description -AutoSize -Wrap | Out-Host
     }
     exit 0
 }
 if ($Json) { throw '-Json is supported only with -Plan.' }
 
 $moduleStatus = @{}
+$failedStages = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+$stageByName = @{}
+foreach ($stage in @($moduleCatalog.Stages)) { $stageByName[$stage.Name] = $stage }
 foreach ($definition in $selectedModules) {
-    $blockedDependencies = @($definition.DependsOn | Where-Object {
-        $moduleStatus.ContainsKey($_) -and $moduleStatus[$_] -ne 'Succeeded'
+    $blockedStages = @($failedStages | Where-Object { [int] $stageByName[$_].Order -lt [int] $stageByName[$definition.Stage].Order })
+    if ($blockedStages.Count -gt 0) {
+        $moduleStatus[$definition.Name] = 'Skipped'
+        $failures.Add("$($definition.Name) skipped because earlier stages failed: $($blockedStages -join ', ').")
+        continue
+    }
+    $blockedDependencies = @(@($definition.DependsOn) | Where-Object {
+        $_ -and $moduleStatus.ContainsKey($_) -and $moduleStatus[$_] -ne 'Succeeded'
     })
     if ($blockedDependencies.Count -gt 0) {
         $moduleStatus[$definition.Name] = 'Skipped'
@@ -411,6 +558,7 @@ foreach ($definition in $selectedModules) {
     $failureCount = $failures.Count
     Invoke-WorkstationModule -Name $definition.Name
     $moduleStatus[$definition.Name] = if ($failures.Count -eq $failureCount) { 'Succeeded' } else { 'Failed' }
+    if ($moduleStatus[$definition.Name] -eq 'Failed') { [void] $failedStages.Add($definition.Stage) }
 }
 
 if ($failures.Count -gt 0) { throw ($failures -join [Environment]::NewLine) }

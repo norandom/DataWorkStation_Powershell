@@ -2,6 +2,12 @@
 
 The managed profile supports Windows PowerShell 5.1 and PowerShell 7. Some entries are functions or native executables rather than PowerShell `Alias` objects; this document groups them as shell commands.
 
+## Native development commands
+
+The native development toolchain exposes vendor commands directly instead of hiding them behind
+aliases: `cl`, `link`, `msbuild`, `cmake`, `ninja`, `rustc`, `cargo`, `java`, and `javac`. A normal
+PowerShell 5.1 or Core session receives the same environment from the managed profile.
+
 ## Input and prompt
 
 | Key or command | Purpose |
@@ -241,21 +247,19 @@ SmartScreen and SaveZone are intentionally independent. Disabling SaveZone affec
 
 Taildrive is a persistent WebDAV file server inside the Tailnet, locally reachable at `http://100.100.100.100:8080`. Before creating a share, merge the entries from `config/taildrive-policy.hujson` into the existing Tailnet policy. Existing `nodeAttrs` and `grants` must not be replaced.
 
-## Docker in Debian WSL
+## Container engines in Debian WSL
 
 | Command | Purpose |
 |---|---|
 | `docker ps` | Run the Debian Docker CLI from PowerShell. WSL starts on demand. |
 | `docker compose ...` | Use the installed Docker Compose plugin inside Debian. |
 | `docker-compose ...` | Compatibility wrapper for `docker compose`. |
-| `docker-mw info` | Inspect the separate rootless daemon in `Debian-MW`. |
-| `docker-mw ...` | Run an explicitly chosen container command against `Debian-MW`; malware policy still gates arguments. |
-| `docker-mw-compose ...` | Run Compose against the rootless `Debian-MW` daemon. |
+| `wsl-mw podman info --format json` | Inspect local rootless Podman in `Debian-MW`. |
 | `wsl --terminate Debian` | Stop Debian and its Docker daemon. A later Docker command starts Debian again. |
 
-The ordinary wrappers are defined only when the corresponding native Windows executable is absent. This means Docker Desktop or another Windows Docker CLI can take precedence if installed later. The `docker-mw` wrapper is always explicit and reads its dedicated distro/user from `.wsl-env`.
+The ordinary Docker wrappers are defined only when the corresponding native Windows executable is absent. This means Docker Desktop or another Windows Docker CLI can take precedence if installed later. Direct malware-runtime diagnosis uses the generic `wsl-mw` boundary and its dedicated distro/user from `.wsl-env`; there is no runtime-specific malware alias or Compose wrapper.
 
-`Debian` runs the pyinfra-managed rootful daemon required by Dagger. `Debian-MW` is a clean, separately managed distro whose daemon reports Docker rootless mode and stores state beneath `/home/mc/.local/share/docker`. Do not use `Debian` for untrusted analysis, and do not add Dagger to `Debian-MW`. For best filesystem performance, keep ordinary container projects in Debian's Linux filesystem rather than under `/mnt/c`.
+`Debian` currently runs the pyinfra-managed engine required by Dagger. `Debian-MW` is a clean, separately managed distro with daemonless rootless Podman and user-scoped storage beneath `/home/mc/.local/share/containers`. Its Podman API socket remains disabled. Do not use `Debian` for untrusted analysis, and do not add Dagger to `Debian-MW`. For best filesystem performance, keep ordinary container projects in Debian's Linux filesystem rather than under `/mnt/c`.
 
 ## Windows event logs
 
@@ -371,6 +375,9 @@ These community tools are not installed automatically because they do not curren
 | `pwsh -NoProfile -File .\scripts\Set-ScoopState.ps1 -Mode Test` | Verify Scoop prerequisites and official Main/Extras bucket sources. |
 | `pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test` | Verify the official Contour MSI, absence of the legacy Scoop package, native Desktop shortcut, managed BlueTerm config, and bounded graphics gate. |
 | `.\Apply-Workstation.ps1 -Mode Ensure -Module ContourTerminal` | Ensure Sudo, the hash-pinned machine-wide Contour MSI, and the translated theme in dependency order. |
+| `pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test` | Inspect the PowerShell Core default, retained Windows PowerShell profile, and shared Terminal appearance without changing settings or installing a package. |
+| `.\Apply-Workstation.ps1 -Mode Ensure -Module WindowsTerminal` | Ensure the stable Terminal package, back up drifted settings, and merge only the declared PowerShell defaults. |
+| `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes` | Smoke-test the managed profile in both Windows PowerShell 5.1 and the newest installed PowerShell Core. |
 | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` | Validate dependencies and show the Windows feature installation order without elevation. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test` | Report Hyper-V and Windows Sandbox state without changing it. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Ensure` | Enable missing declared Windows features without restarting Windows. |
@@ -426,11 +433,14 @@ Desired state installs `skillopt==0.2.0` through `uv tool`. It never harvests tr
 | Command | Purpose |
 |---|---|
 | `lint-powershell [PATH ...]` | Run PSScriptAnalyzer 1.25.0 on selected files, or all tracked PowerShell files when no paths are supplied. |
+| `test-powershell [-Path PATH] [-ThrottleLimit N]` | Run standard PowerShell test files through pinned Pester with bounded file-level parallelism when supported. |
+| `test-powershell -Compatibility` | Run the compatible test suite sequentially through inbox Windows PowerShell 5.1. |
+| `test-powershell -Json` | Return the bounded aggregate test result for machine consumption. |
 | `precommit-install` | Install pinned pre-commit and PSScriptAnalyzer dependencies, validate the hook configuration, and install `.git/hooks/pre-commit`. |
 | `precommit-run` | Execute every configured pre-commit hook against all tracked files. |
 
 The PowerShell hook examines only staged `.ps1`, `.psm1`, and `.psd1` files during an ordinary commit. The same lint script runs in GitHub Actions. Hook installation is explicit per clone because `.git/hooks` is intentionally untracked.
-# Suspicious-file commands
+## Suspicious-file commands
 
 These commands plan potentially dangerous work before they run it. `-Json` provides the machine-readable form.
 
@@ -477,5 +487,5 @@ it does not make arbitrary containers safe. Both commands read ignored `.wsl-env
 selection, and refuse to use the same distribution for developer and malware state. With no
 arguments they open the selected distribution; with arguments they execute that command directly.
 
-`docker`, `docker-compose`, `rsync`, and `wslpath` use `wsl-dev`. `docker-mw` and
-`docker-mw-compose` use `wsl-mw`.
+`docker`, `docker-compose`, `rsync`, and `wslpath` use `wsl-dev`. Direct Podman diagnosis uses
+`wsl-mw podman ...`; malware analysis itself uses the policy-gated `malware-container` commands.

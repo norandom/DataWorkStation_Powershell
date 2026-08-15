@@ -2,6 +2,40 @@
     SchemaVersion = 1
     Capabilities = @(
         @{
+            Id = 'powershell-environment'
+            Title = 'Staged PowerShell bootstrap, dual-runtime profile, and Windows Terminal'
+            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan'
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section BootstrapStages'
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes'
+                'pwsh -NoProfile -File .\scripts\Set-PowerShellProfile.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module PowerShellProfile'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module WindowsTerminal'
+            )
+            CaptureCommand = 'tricky add {case} <powershell-environment-state.json>'
+        }
+        @{
+            Id = 'powershell-testing'
+            Title = 'PowerShell test discovery, parallel execution, and compatibility'
+            Triggers = @('pester', 'powershell test', 'parallel tests', 'test framework', 'windows powershell compatibility')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'test-powershell'
+                'test-powershell -Json'
+                'test-powershell -Compatibility'
+                'pwsh -NoProfile -File .\scripts\Invoke-PowerShellTests.ps1 -Json'
+                'pwsh -NoProfile -File .\scripts\Set-PesterState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module PowerShellTesting -Plan'
+            )
+            CaptureCommand = 'tricky add {case} <test-result.json>'
+        }
+        @{
             Id = 'memory-pressure'
             Title = 'Memory pressure'
             Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory')
@@ -81,7 +115,7 @@
                 'malware-container-image -Mode Test'
                 'malware-container <path>'
                 'malware-container-control <path>'
-                'docker-mw info'
+                'wsl-mw podman info --format json'
                 'disass <path>'
                 'decomp <path>'
                 'malware-sandbox <path> -Mode Dissect'
@@ -101,6 +135,7 @@
                 'pwsh -NoProfile -File .\scripts\Set-MalwareAnalysisToolsState.ps1 -Mode Test -Tool Handle'
                 'pwsh -NoProfile -File .\scripts\Set-MalwareAnalysisToolsState.ps1 -Mode Ensure -Tool Handle'
                 'pwsh -NoProfile -File .\scripts\Set-MalwareContainerImageState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-RootlessPodmanState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module MalwareContainerImage -Plan'
             )
             CaptureCommand = 'malware-sandbox <path> -Mode Detonate -Run -ConfirmSandbox -ConfirmExecution'
@@ -149,7 +184,7 @@
                 'pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-LinuxAutomationState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test'
-                'pwsh -NoProfile -File .\scripts\Set-RootlessDockerState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-RootlessPodmanState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperToolsState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan'
             )
@@ -170,6 +205,29 @@
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module Go'
             )
             CaptureCommand = 'tricky add {case} <go-state.json>'
+        }
+        @{
+            Id = 'native-development'
+            Title = 'Native Windows C/C++, CMake, Rust, and Java development'
+            Triggers = @('msvc', 'cl.exe', 'msbuild', 'cmake', 'ninja', 'rust', 'rustup', 'java', 'javac', 'jdk', 'JAVA_HOME', 'native development')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan'
+                'pwsh -NoProfile -File .\scripts\Set-NativeDevelopmentState.ps1 -Mode Test'
+                'Get-Command cl.exe,link.exe,msbuild.exe,cmake.exe,ninja.exe,rustc.exe,cargo.exe,java.exe,javac.exe'
+                'Get-ChildItem Env:CC,Env:CXX,Env:CMAKE_GENERATOR,Env:CARGO_HOME,Env:RUSTUP_HOME,Env:JAVA_HOME'
+            )
+            ValidationCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-NativeDevelopmentState.ps1 -Mode Smoke'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module MsvcBuildTools'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module CMake'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module RustToolchain'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module JavaToolchain'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module NativeDevelopment'
+            )
+            CaptureCommand = 'tricky add {case} <native-development-state.json>'
         }
         @{
             Id = 'spec-driven-development'

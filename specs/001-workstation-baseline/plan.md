@@ -7,17 +7,17 @@
 ## Summary
 
 Characterize the existing Windows workstation repository as a stable Spec Kit baseline. Preserve
-the existing focused desired-state and evidence-first architecture, freeze the current 32-module
-and 22-capability inventories, and introduce deterministic EARS/TDD traceability. Static catalog,
+the existing focused desired-state and evidence-first architecture, freeze the current 40-module
+and 25-capability inventories, and introduce deterministic EARS/TDD traceability. Static catalog,
 documentation, and workflow contracts will receive repository-local automated characterization;
 host-dependent, privileged, destructive, graphics, reboot, and evidence-order behavior retains
 explicit manual verification until an isolated Windows test harness is available.
 
 ## Technical Context
 
-**Language/Version**: PowerShell 7 for orchestration and cross-platform-compatible resources;
-inbox Windows PowerShell 5.1 for Windows-only components; Python 3.12 for Spec Kit helpers and the
-EARS validator
+**Language/Version**: Inbox Windows PowerShell 5.1 for bootstrap and Windows-only components;
+the newest installed PowerShell 7 for post-Core orchestration and compatible resources; Python
+3.12 for Spec Kit helpers and the EARS validator
 
 **Primary Dependencies**: WinGet Configuration, Windows sudo, uv, `specify-cli==0.16.3`,
 `spec-kit-ears-tdd==0.1.0`, PSScriptAnalyzer 1.25.0, MkDocs Material, and Debian WSL for Linux-local
@@ -26,9 +26,10 @@ automation
 **Storage**: Versioned PowerShell data files, WinGet YAML, Markdown, TOML, HJSON, and generated
 diagnostic evidence outside the source tree
 
-**Testing**: PSScriptAnalyzer; deterministic EARS/TDD gates; repository-local PowerShell
-characterization tests; Tricky human/JSON smoke tests; strict MkDocs build; bounded manual host
-verification for privileged or hardware-dependent state
+**Testing**: PSScriptAnalyzer; Pester 6 parallel and Windows PowerShell compatibility lanes;
+deterministic EARS/TDD gates; repository-local PowerShell characterization tests; Tricky human/JSON
+smoke tests; strict MkDocs build; bounded manual host verification for privileged or
+hardware-dependent state
 
 **Target Platform**: Windows 11 Pro, with PowerShell 7 and inbox Windows PowerShell 5.1 where
 declared; Debian under WSL 2 for Linux-local resources
@@ -42,7 +43,7 @@ developer checkout; module planning and capability discovery remain interactive
 reinitialization, or reboot; no machine-local secrets or licenses in version control; no
 requirement prose or identifiers in production roots
 
-**Scale/Scope**: 32 desired-state modules, 22 routed capabilities, 43 baseline requirements,
+**Scale/Scope**: 40 desired-state modules, 25 routed capabilities, 51 baseline requirements,
 separate focused skills, and one Windows workstation per operator
 
 ## Constitution Check
@@ -70,7 +71,8 @@ specs/001-workstation-baseline/
 ├── checklists/requirements.md
 ├── contracts/
 │   ├── capability-routing.md
-│   └── workstation-cli.md
+│   ├── workstation-cli.md
+│   └── windows-terminal.md
 ├── data-model.md
 ├── plan.md
 ├── quickstart.md
@@ -86,10 +88,12 @@ specs/001-workstation-baseline/
 Apply-Workstation.ps1              # module selection, planning, and dispatch
 config/
 ├── workstation-modules.psd1       # desired-state dependency catalog
+├── windows-terminal.psd1          # default profile and shared appearance
 ├── capabilities.psd1              # diagnostic and discovery routing catalog
 └── *.psd1                          # focused resource declarations
 scripts/
 ├── Set-*State.ps1                 # focused desired-state resources
+├── Set-WindowsTerminalState.ps1   # merge-preserving Terminal state
 ├── Get-*.ps1                      # evidence inspection
 ├── Invoke-*.ps1                   # explicit capture, profiling, and tooling
 └── Test-RepositorySkills.ps1      # skill package validation
@@ -101,7 +105,8 @@ profile/
 linux/
 └── developer_tools.py             # Debian-local pyinfra state
 tests/
-└── Test-WorkstationBaseline.ps1   # planned static characterization harness
+├── Test-WorkstationBaseline.ps1   # dependency-free characterization harness
+└── pester/WorkstationBaseline.Tests.ps1 # standard suite adapter
 docs/                              # operator documentation and samples
 .agents/skills/                    # focused human-command orchestration
 .specify/                          # Spec Kit policy, templates, and integrations
@@ -124,7 +129,9 @@ Pro support, and TDD task ordering. It will run without elevation or workstation
 
 Existing human commands will cover planning, capability discovery, Tricky human/JSON parsing,
 repository-skill validation, EARS gates, PowerShell lint, and strict documentation. Dual-shell
-smoke checks will cover commands explicitly documented for both runtimes.
+smoke checks will cover commands explicitly documented for both runtimes. A child Windows
+PowerShell process whose PATH excludes PowerShell 7 proves bootstrap planning does not resolve Core
+early. Synthetic Terminal settings prove merge preservation without touching user state.
 
 ### Tier C: Bounded manual or isolated-host verification
 
@@ -181,6 +188,14 @@ VM harness can replace these entries without changing requirement intent.
 | REQ-042 | focused Go package, environment, and built-in toolchain state | B and C |
 | REQ-043 | pinned malware_hashes release state and narrow command directory | B and C |
 | REQ-041 | SkillOpt safe configuration and mock workflow | A and B |
+| REQ-044 | declared dependency stages and runtime boundary per module | A and B |
+| REQ-045 | stage-aware plan validation and ordering | A and B |
+| REQ-046 | inbox-only bootstrap with PowerShell 7 absent from PATH | B |
+| REQ-047 | lazy PowerShell 7 resolution after the Core prerequisite succeeds | A and B |
+| REQ-048 | equivalent managed profile smoke in both shells | B |
+| REQ-049 | merge-preserving Windows Terminal default-profile state | A and B |
+| REQ-050 | shared PowerShell appearance with unrelated settings retained | A and B |
+| REQ-051 | observational Windows Terminal Test mode | A and B |
 
 ## Complexity Tracking
 

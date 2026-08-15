@@ -12,7 +12,7 @@ Capture bounded EventPipe evidence and view the converted Speedscope profile.
 1. Read `../../../docs/workflows/performance-profiling.md`; run `profile-status` and `profile-dotnet-ps`.
 2. Inspect existing `.nettrace` or `.speedscope.json` evidence first and attach it to the Tricky case.
 3. Select the managed process and representative interval. Check whether child processes or native work require a system-wide profile instead.
-4. Consult `profile-dotnet -?` and run a bounded capture with `-ProcessId` or `-Executable`, `-Seconds`, and an explicit `-OutputBase`. Do not guess wrapper syntax.
+4. Do not start any capture without explicit operator authorization. If capture is approved, consult `profile-dotnet -?` and run a bounded capture with `-ProcessId` or `-Executable`, `-Seconds`, and an explicit `-OutputBase`. Do not guess wrapper syntax.
 5. Open the generated Speedscope JSON with `profile-view`. Compare total and self weight, thread/process context, GC/runtime frames, and application frames.
 6. Update the Tricky report with capture interval, runtime version, hot stacks, and limitations.
 

@@ -178,9 +178,9 @@ if ($Mode -eq 'Plan') {
         SchemaVersion = 1
         Profile = $ProfileName
         DisplayName = $profileConfiguration.DisplayName
-        AppxPackages = @($profileConfiguration.AppxPackages)
-        Capabilities = @($profileConfiguration.Capabilities)
-        OptionalFeatures = @($profileConfiguration.OptionalFeatures)
+        AppxPackages = @($profileConfiguration.AppxPackages | ForEach-Object { [pscustomobject] $_ })
+        Capabilities = @($profileConfiguration.Capabilities | ForEach-Object { [pscustomobject] $_ })
+        OptionalFeatures = @($profileConfiguration.OptionalFeatures | ForEach-Object { [pscustomobject] $_ })
         ProtectedAppxPatterns = @($profileConfiguration.ProtectedAppxPatterns)
         EnsureRequires = '-ConfirmRemoval'
     }

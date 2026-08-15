@@ -14,6 +14,8 @@ Represents one focused desired-state boundary.
 | `Privileged` | boolean | Indicates an explicit elevated execution boundary. |
 | `Destructive` | boolean | Indicates opt-in state loss or difficult rollback. |
 | `Description` | string | Human-readable purpose. |
+| `Stage` | DependencyStage name | Exactly one declared stage. |
+| `Runtime` | enum | Inbox, PowerShell7, or Native. |
 
 ### State transitions
 
@@ -23,6 +25,39 @@ unknown/drifted --Ensure--> compliant or actionable failure
 compliant       --Ensure--> compliant without replacement
 any state       --Reinitialize--> backup if required, then rebuilt state
 ```
+
+## DependencyStage
+
+Defines what may be assumed to exist while modules in the stage run.
+
+| Field | Type | Rules |
+|---|---|---|
+| `Name` | unique enum | Inbox, Core, or Extended. |
+| `Order` | unique integer | Strictly increasing bootstrap order. |
+| `DependsOn` | list of WorkstationModule names | Stage gates that must succeed before the stage may run. |
+| `Description` | nonempty string | States the availability boundary. |
+
+Stage transitions are monotonic during one apply operation:
+
+```text
+Inbox -> Core -> Extended
+```
+
+A failed stage blocks later selected stages. A module dependency may target the same stage or an
+earlier stage, never a later stage.
+
+## WindowsTerminalState
+
+Represents the narrow managed subset of the user's Terminal configuration.
+
+| Field | Type | Rules |
+|---|---|---|
+| `SettingsPath` | local path | Stable package settings or explicit test fixture. |
+| `DefaultProfile` | GUID | PowerShell Core dynamic profile. |
+| `RetainedProfile` | GUID | Inbox Windows PowerShell remains visible. |
+| `SharedAppearance` | object | Declared color scheme and scrollbar behavior. |
+| `UnmanagedSettings` | object | Preserved values after semantic round-trip. |
+| `BackupPath` | optional local path | Created immediately before a changed settings write. |
 
 ## ModulePlan
 
@@ -76,6 +111,7 @@ Associates one EARS requirement with evidence.
 
 - A `ModulePlan` contains many `WorkstationModule` entries.
 - A `WorkstationModule` depends on zero or more other `WorkstationModule` entries.
+- A `DependencyStage` contains many `WorkstationModule` entries.
 - A `CapabilityRoute` inspects zero or more existing `EvidenceArtifact` instances and exposes one
   explicit capture command.
 - A `RequirementTrace` belongs to exactly one EARS requirement and points to its verification

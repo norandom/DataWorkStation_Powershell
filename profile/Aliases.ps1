@@ -88,6 +88,9 @@ function global:skills-validate { skillopt validate @args }
 function global:lint-powershell {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PowerShellLint.ps1') @args
 }
+function global:test-powershell {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PowerShellTests.ps1') @args
+}
 function global:precommit-install {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Install-PreCommitHook.ps1') @args
 }
@@ -342,9 +345,9 @@ function global:tailunshare {
     & tailscale.exe drive unshare $Name.ToLowerInvariant()
 }
 
-# Docker Engine runs natively inside Debian WSL. Calling wsl.exe starts the
-# distribution on demand; systemd then starts the enabled Docker service.
-# A future native Windows Docker CLI takes precedence automatically.
+# Generic WSL boundaries keep the developer and malware distributions explicit.
+# Developer Docker remains a temporary fallback until Docker Desktop is declared;
+# Debian-MW uses local daemonless Podman only through its high-level analysis tools.
 function global:Invoke-ConfiguredWsl {
     [CmdletBinding()]
     param(
@@ -360,7 +363,7 @@ function global:Invoke-ConfiguredWsl {
     $distribution = if ($Target -eq 'Developer') { $wslEnvironment.WSL_DISTRIBUTION } else { $wslEnvironment.WSL_MALWARE_DISTRIBUTION }
     $user = if ($Target -eq 'Developer') { $wslEnvironment.WSL_USER } else { $wslEnvironment.WSL_MALWARE_USER }
     if ($ArgumentList.Count -gt 0) {
-        & wsl.exe -d $distribution --user $user -- @ArgumentList
+        & wsl.exe -d $distribution --user $user --exec @ArgumentList
     } else {
         & wsl.exe -d $distribution --user $user
     }
@@ -368,12 +371,12 @@ function global:Invoke-ConfiguredWsl {
 
 function global:wsl-dev {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
-    Invoke-ConfiguredWsl -Target Developer @ArgumentList
+    Invoke-ConfiguredWsl -Target Developer -ArgumentList $ArgumentList
 }
 
 function global:wsl-mw {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
-    Invoke-ConfiguredWsl -Target Malware @ArgumentList
+    Invoke-ConfiguredWsl -Target Malware -ArgumentList $ArgumentList
 }
 
 if (-not (Get-Command docker.exe -CommandType Application -ErrorAction Ignore)) {
@@ -382,17 +385,11 @@ if (-not (Get-Command docker.exe -CommandType Application -ErrorAction Ignore)) 
     }
 }
 
-function global:docker-mw {
-    wsl-mw docker @args
-}
-
 if (-not (Get-Command docker-compose.exe -CommandType Application -ErrorAction Ignore)) {
     function global:docker-compose {
         wsl-dev docker compose @args
     }
 }
-
-function global:docker-mw-compose { docker-mw compose @args }
 
 if (-not (Get-Command ssh-copy-id.exe -CommandType Application -ErrorAction Ignore)) {
     function global:ssh-copy-id {

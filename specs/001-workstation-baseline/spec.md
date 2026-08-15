@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-14
 
-**Status**: Baseline migration
+**Status**: In progress — brownfield characterization and staged bootstrap extension
 
 **Input**: User description: "Gaplessly migrate the existing workstation project into Spec Kit with EARS requirements and TDD traceability."
 
@@ -86,6 +86,10 @@ documented shell, package, graphics, WSL, and platform boundaries.
 2. **Given** a dual-shell resource, **When** it is tested from both supported PowerShell runtimes, **Then** both invocations report equivalent compliance.
 3. **Given** a Debian-local tool, **When** it is ensured, **Then** its Linux package management remains inside the selected distribution.
 4. **Given** a terminal graphics mismatch, **When** the terminal gate runs, **Then** the module reports failure instead of claiming compliance.
+5. **Given** a fresh host with only inbox Windows tooling, **When** the workstation bootstrap starts, **Then** the inbox stage can plan, test, and install the Core prerequisite without resolving a command that does not exist yet.
+6. **Given** the Core stage is compliant, **When** later modules run, **Then** they use the declared modern shell or the explicitly required inbox shell in stage order.
+7. **Given** both supported PowerShell runtimes, **When** the managed profile is loaded, **Then** the documented prompt, aliases, key bindings, and discovery surface are equivalent except for guarded runtime-specific enhancements.
+8. **Given** Windows Terminal and both PowerShell runtimes, **When** terminal state is ensured, **Then** the newest installed Core profile is the default while inbox Windows PowerShell remains selectable with the same managed appearance.
 
 ---
 
@@ -111,6 +115,10 @@ the feature artifacts, and confirm that every future behavior task names its req
 - A selected module depends on a module whose default selection is disabled.
 - The module graph contains a missing dependency or cycle.
 - Inbox Windows PowerShell is required for a Windows component that is unavailable through PowerShell 7.
+- PowerShell 7 is absent from both `PATH` and its standard installation location during bootstrap.
+- A module in an earlier bootstrap stage declares a dependency on a later stage.
+- Windows Terminal contains unrelated profiles, key bindings, actions, or local appearance settings.
+- The PowerShell 7 dynamic Terminal profile is absent until Terminal is reopened after installation.
 - Elevation is unavailable, denied, or not yet configured.
 - A package or release hash differs from the declared value.
 - An optional Windows feature is enabled but pending a restart.
@@ -166,6 +174,14 @@ the feature artifacts, and confirm that every future behavior task names its req
 - REQ-041: When SkillOpt is used, the optimization workflow shall target one explicit skill, retain gating, stage its proposal, and require explicit adoption.
 - REQ-042: Where Go development is selected, the workstation resource shall maintain the official MSI-backed package, user workspace command path, built-in compatible toolchain selection, and an unset user GOROOT.
 - REQ-043: When released malware hash tooling is selected, the workstation resource shall install the pinned GitHub release asset into a narrow per-user directory and reject a mismatched SHA-256 or embedded version.
+- REQ-044: The workstation module catalog shall assign every module to one declared dependency stage with an explicit stage order and runtime boundary.
+- REQ-045: When a module plan is requested, the planner shall order selected modules by nondecreasing dependency stage and reject a dependency from an earlier stage to a later stage.
+- REQ-046: While the Core stage is not compliant, the workstation orchestrator shall use only inbox Windows PowerShell and built-in Windows commands without resolving or invoking PowerShell 7.
+- REQ-047: When the Core stage becomes compliant, the workstation orchestrator shall resolve the installed PowerShell 7 executable before dispatching a module that declares the modern runtime.
+- REQ-048: When the managed profile is tested, it shall load successfully in inbox Windows PowerShell 5.1 and the newest installed PowerShell Core with equivalent documented shell behavior.
+- REQ-049: When Windows Terminal state is ensured, the terminal resource shall select the installed PowerShell Core profile by default while retaining inbox Windows PowerShell as a selectable profile.
+- REQ-050: When shared PowerShell appearance is managed in Windows Terminal, the terminal resource shall apply the same declared appearance to both PowerShell profiles while preserving unrelated terminal settings.
+- REQ-051: When Windows Terminal state is tested, the terminal resource shall report settings drift without installing a package or changing the settings file.
 
 ### Key Entities
 
@@ -180,12 +196,15 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 32 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 22 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 40 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 25 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
 - **SC-006**: The release validation suite completes with zero lint, routing-smoke, or strict-documentation errors.
+- **SC-007**: One hundred percent of module dependencies point to the same or an earlier dependency stage, and a plan produced without PowerShell 7 installed reaches the Core prerequisite without command-resolution failure.
+- **SC-008**: The managed profile smoke suite passes with equivalent documented behavior in both supported PowerShell runtimes.
+- **SC-009**: Windows Terminal opens PowerShell Core by default, retains inbox Windows PowerShell, gives both the same managed appearance, and preserves all unrelated synthetic settings in automated tests.
 
 ## Assumptions
 
@@ -202,6 +221,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | Sudo | REQ-009 |
 | Git | REQ-002, REQ-007 |
 | PowerShell7 | REQ-002, REQ-012 |
+| PowerShellTesting | REQ-002, REQ-012 |
 | Go | REQ-002, REQ-007, REQ-042 |
 | Packages | REQ-002, REQ-007 |
 | NativeTextTools | REQ-022 |
@@ -209,20 +229,27 @@ the feature artifacts, and confirm that every future behavior task names its req
 | Scoop | REQ-002, REQ-007 |
 | TerminalFonts | REQ-002, REQ-007 |
 | ContourTerminal | REQ-020, REQ-021 |
+| WindowsTerminal | REQ-044, REQ-049, REQ-050, REQ-051 |
 | WindowsFeatures | REQ-014, REQ-015 |
 | Hardening | REQ-016, REQ-017 |
 | LinuxHomebrew | REQ-023 |
 | LinuxAutomation | REQ-023 |
 | DeveloperDocker | REQ-023 |
-| RootlessDocker | REQ-023, REQ-029 |
+| RootlessPodman | REQ-023, REQ-029 |
 | DeveloperTools | REQ-023, REQ-024 |
 | SpecDrivenDevelopment | REQ-038, REQ-039, REQ-040 |
 | MalwareHashes | REQ-002, REQ-007, REQ-043 |
 | MalwareAnalysisTools | REQ-026, REQ-029 |
 | MalwareContainerImage | REQ-023, REQ-026, REQ-029 |
+| LegacyDockerCleanup | REQ-010, REQ-023 |
 | ProfilingTools | REQ-033 |
 | SkillOpt | REQ-041 |
-| PowerShellProfile | REQ-012, REQ-025 |
+| PowerShellProfile | REQ-012, REQ-025, REQ-048 |
+| MsvcBuildTools | REQ-001, REQ-002 |
+| CMake | REQ-001, REQ-002 |
+| RustToolchain | REQ-001, REQ-002 |
+| JavaToolchain | REQ-001, REQ-002 |
+| NativeDevelopment | REQ-001, REQ-002, REQ-012 |
 | FocusFollowsMouse | REQ-001, REQ-006 |
 | DefenderExclusions | REQ-016 |
 | SmartScreen | REQ-016 |
@@ -246,10 +273,13 @@ the feature artifacts, and confirm that every future behavior task names its req
 | security-state | REQ-026, REQ-029 |
 | malware-triage | REQ-026, REQ-028, REQ-029, REQ-043 |
 | workstation-help | REQ-025, REQ-026 |
+| powershell-testing | REQ-012, REQ-026 |
+| powershell-environment | REQ-025, REQ-044, REQ-048, REQ-049, REQ-050, REQ-051 |
 | idle-sleep-inhibition | REQ-025, REQ-026 |
 | workstation-modules | REQ-001, REQ-003, REQ-004 |
 | linux-developer-packages | REQ-023, REQ-026 |
 | go-development | REQ-026, REQ-042 |
+| native-development | REQ-002, REQ-012, REQ-026 |
 | spec-driven-development | REQ-038, REQ-039, REQ-040 |
 | terminal-fonts | REQ-026 |
 | native-text-tools | REQ-022, REQ-026 |

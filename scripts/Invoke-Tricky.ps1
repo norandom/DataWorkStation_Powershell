@@ -399,6 +399,18 @@ switch ($Action.ToLowerInvariant()) {
     }
     'capabilities' {
         $catalog = Import-PowerShellDataFile -LiteralPath $script:CapabilityFile
-        if ($Json) { $catalog | ConvertTo-Json -Depth 8 } else { $catalog.Capabilities | Select-Object Id, Title, @{ Name = 'Inspect'; Expression = { $_.InspectCommands -join '; ' } } | Format-Table -Wrap }
+        if ($Json) {
+            $catalog | ConvertTo-Json -Depth 8
+        } else {
+            $rows = foreach ($capability in @($catalog.Capabilities)) {
+                [pscustomobject]@{
+                    Id = [string] $capability.Id
+                    Title = [string] $capability.Title
+                    Inspect = @($capability.InspectCommands) -join '; '
+                    Capture = [string] $capability.CaptureCommand
+                }
+            }
+            $rows | Format-List
+        }
     }
 }

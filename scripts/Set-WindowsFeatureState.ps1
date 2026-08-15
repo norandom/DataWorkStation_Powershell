@@ -74,11 +74,31 @@ function Get-DeclaredFeatureState {
     }
 }
 
+function Save-WindowsFeatureSnapshot {
+    param([object[]] $State)
+
+    $snapshotDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\state\windows-feature-snapshots'))
+    New-Item -ItemType Directory -Path $snapshotDirectory -Force | Out-Null
+    $snapshotPath = Join-Path $snapshotDirectory ("windows-features-before-{0}.json" -f (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+    [pscustomobject]@{
+        SchemaVersion = 1
+        CapturedUtc = (Get-Date).ToUniversalTime().ToString('o')
+        Mode = 'Reinitialize'
+        Features = @($State)
+    } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $snapshotPath -Encoding UTF8
+    $snapshotPath
+}
+
 $states = @(Get-DeclaredFeatureState)
 if ($Mode -eq 'Test') {
     $states | Format-Table -AutoSize
     if (@($states | Where-Object State -ne 'Enabled').Count -gt 0) { exit 1 }
     exit 0
+}
+
+$snapshotPath = $null
+if ($Mode -eq 'Reinitialize') {
+    $snapshotPath = Save-WindowsFeatureSnapshot -State $states
 }
 
 $restartRequired = $false
@@ -107,6 +127,7 @@ if ($unresolved.Count -gt 0) {
 }
 
 $states | Format-Table -AutoSize
+if ($snapshotPath) { Write-Host "Pre-reinitialize feature state: $snapshotPath" }
 if ($restartRequired -or @($states | Where-Object State -eq 'EnablePending').Count -gt 0) {
     Write-Warning 'A Windows restart is required before all declared optional features are active.'
 }

@@ -1,8 +1,30 @@
 @{
-    SchemaVersion = 1
+    SchemaVersion = 2
+    Stages = @(
+        @{
+            Name = 'Inbox'
+            Order = 0
+            DependsOn = @()
+            Description = 'Bootstrap using only Windows PowerShell 5.1 and native Windows commands already on the host.'
+        }
+        @{
+            Name = 'Core'
+            Order = 10
+            DependsOn = @('PowerShell7')
+            Description = 'Foundational state applied only after the PowerShell 7 dependency is compliant.'
+        }
+        @{
+            Name = 'Extended'
+            Order = 20
+            DependsOn = @('PowerShell7')
+            Description = 'Remaining workstation capabilities applied after every selected earlier stage succeeds.'
+        }
+    )
     Modules = @(
         @{
             Name = 'Sudo'
+            Stage = 'Inbox'
+            Runtime = 'Inbox'
             Order = 10
             Default = $true
             DependsOn = @()
@@ -13,6 +35,8 @@
         }
         @{
             Name = 'Git'
+            Stage = 'Core'
+            Runtime = 'Native'
             Order = 15
             Default = $true
             DependsOn = @()
@@ -23,6 +47,8 @@
         }
         @{
             Name = 'Packages'
+            Stage = 'Core'
+            Runtime = 'Native'
             Order = 20
             Default = $true
             DependsOn = @('PowerShell7')
@@ -33,6 +59,8 @@
         }
         @{
             Name = 'PowerShell7'
+            Stage = 'Inbox'
+            Runtime = 'Native'
             Order = 18
             Default = $true
             DependsOn = @()
@@ -43,6 +71,8 @@
         }
         @{
             Name = 'Go'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 19
             Default = $true
             DependsOn = @()
@@ -52,7 +82,21 @@
             Description = 'Official Go package, user workspace, command PATH, and built-in toolchain selection.'
         }
         @{
+            Name = 'PowerShellTesting'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
+            Order = 21
+            Default = $true
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Pinned Pester framework shared by the parallel PowerShell 7 and sequential Windows PowerShell test lanes.'
+        }
+        @{
             Name = 'NativeTextTools'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 23
             Default = $true
             DependsOn = @()
@@ -63,6 +107,8 @@
         }
         @{
             Name = 'Caffeine'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 24
             Default = $true
             DependsOn = @()
@@ -73,6 +119,8 @@
         }
         @{
             Name = 'Scoop'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 25
             Default = $true
             DependsOn = @('Git')
@@ -83,6 +131,8 @@
         }
         @{
             Name = 'TerminalFonts'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 26
             Default = $true
             DependsOn = @('PowerShell7')
@@ -93,6 +143,8 @@
         }
         @{
             Name = 'ContourTerminal'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 27
             Default = $true
             DependsOn = @('Sudo', 'PowerShell7', 'TerminalFonts')
@@ -102,7 +154,21 @@
             Description = 'Official Contour release MSI with the translated BlueTerm theme and graphics-compatibility gate.'
         }
         @{
+            Name = 'WindowsTerminal'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
+            Order = 28
+            Default = $true
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Windows Terminal package and merge-preserving PowerShell Core default with shared Blue appearance.'
+        }
+        @{
             Name = 'WindowsFeatures'
+            Stage = 'Extended'
+            Runtime = 'Inbox'
             Order = 30
             Default = $true
             DependsOn = @('Sudo')
@@ -113,6 +179,8 @@
         }
         @{
             Name = 'Hardening'
+            Stage = 'Extended'
+            Runtime = 'Inbox'
             Order = 40
             Default = $true
             DependsOn = @('Sudo')
@@ -123,6 +191,8 @@
         }
         @{
             Name = 'LinuxHomebrew'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 45
             Default = $false
             DependsOn = @('Packages')
@@ -133,6 +203,8 @@
         }
         @{
             Name = 'LinuxAutomation'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 47
             Default = $false
             DependsOn = @('LinuxHomebrew')
@@ -142,17 +214,21 @@
             Description = 'Pinned pyinfra executor inside Debian WSL for local Linux deploy files.'
         }
         @{
-            Name = 'RootlessDocker'
+            Name = 'RootlessPodman'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 49
             Default = $true
             DependsOn = @()
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $true
             Destructive = $false
-            Description = 'Dedicated Debian-MW WSL distro with a rootless Docker user daemon for untrusted parsers.'
+            Description = 'Dedicated Debian-MW WSL distro with local daemonless rootless Podman for untrusted parsers.'
         }
         @{
             Name = 'DeveloperDocker'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 49
             Default = $false
             DependsOn = @('LinuxAutomation')
@@ -163,6 +239,8 @@
         }
         @{
             Name = 'DeveloperTools'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 50
             Default = $true
             DependsOn = @('DeveloperDocker', 'Go')
@@ -173,6 +251,8 @@
         }
         @{
             Name = 'SpecDrivenDevelopment'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 55
             Default = $true
             DependsOn = @('Packages')
@@ -183,6 +263,8 @@
         }
         @{
             Name = 'MalwareHashes'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 56
             Default = $true
             DependsOn = @()
@@ -193,9 +275,11 @@
         }
         @{
             Name = 'MalwareAnalysisTools'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 65
             Default = $false
-            DependsOn = @('Packages', 'WindowsFeatures', 'ProfilingTools', 'MalwareHashes')
+            DependsOn = @('Packages', 'WindowsFeatures', 'ProfilingTools', 'MalwareHashes', 'JavaToolchain')
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
@@ -203,16 +287,32 @@
         }
         @{
             Name = 'MalwareContainerImage'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 66
             Default = $false
-            DependsOn = @('RootlessDocker')
+            DependsOn = @('RootlessPodman')
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
             Description = 'Opt-in, locally built rootless static parser image for documents, PDFs, and binaries.'
         }
         @{
+            Name = 'LegacyDockerCleanup'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 67
+            Default = $false
+            DependsOn = @('RootlessPodman')
+            SupportedModes = @('Test', 'Ensure')
+            Privileged = $false
+            Destructive = $true
+            Description = 'Opt-in deletion of retained Debian-MW Docker user data after Podman migration.'
+        }
+        @{
             Name = 'ProfilingTools'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 60
             Default = $true
             DependsOn = @('Packages')
@@ -223,6 +323,8 @@
         }
         @{
             Name = 'SkillOpt'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 70
             Default = $true
             DependsOn = @('Packages')
@@ -233,6 +335,8 @@
         }
         @{
             Name = 'PowerShellProfile'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
             Order = 80
             Default = $true
             DependsOn = @('PowerShell7')
@@ -242,7 +346,69 @@
             Description = 'PowerShell 7 and Windows PowerShell profile components.'
         }
         @{
+            Name = 'MsvcBuildTools'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 170
+            Default = $false
+            DependsOn = @('Sudo', 'PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Standalone MSVC x64/x86 tools, Windows SDK, and MSBuild without the Visual Studio IDE.'
+        }
+        @{
+            Name = 'CMake'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 172
+            Default = $false
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Native Windows CMake and Ninja with a compact default generator.'
+        }
+        @{
+            Name = 'RustToolchain'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 174
+            Default = $false
+            DependsOn = @('MsvcBuildTools', 'PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Official rustup with stable x64 MSVC Rust and project override support.'
+        }
+        @{
+            Name = 'JavaToolchain'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 176
+            Default = $false
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Microsoft OpenJDK 21 LTS with JAVA_HOME and Java development commands.'
+        }
+        @{
+            Name = 'NativeDevelopment'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 178
+            Default = $true
+            DependsOn = @('MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'PowerShellProfile')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Aggregate native Windows C/C++, CMake, Rust, Java, and dual-shell environment gate.'
+        }
+        @{
             Name = 'FocusFollowsMouse'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 90
             Default = $true
             DependsOn = @()
@@ -253,6 +419,8 @@
         }
         @{
             Name = 'DefenderExclusions'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 100
             Default = $true
             DependsOn = @('Sudo')
@@ -263,6 +431,8 @@
         }
         @{
             Name = 'SmartScreen'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 110
             Default = $true
             DependsOn = @('Sudo')
@@ -273,6 +443,8 @@
         }
         @{
             Name = 'WslMemory'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 120
             Default = $true
             DependsOn = @()
@@ -283,6 +455,8 @@
         }
         @{
             Name = 'Pagefile'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 130
             Default = $true
             DependsOn = @('Sudo')
@@ -293,6 +467,8 @@
         }
         @{
             Name = 'EventLogs'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 140
             Default = $true
             DependsOn = @('Sudo')
@@ -303,6 +479,8 @@
         }
         @{
             Name = 'Firewall'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
             Order = 150
             Default = $true
             DependsOn = @('Sudo')
@@ -313,6 +491,8 @@
         }
         @{
             Name = 'Debloat'
+            Stage = 'Extended'
+            Runtime = 'Inbox'
             Order = 160
             Default = $false
             DependsOn = @('Sudo')

@@ -11,10 +11,14 @@ Human-readable plan:
 
 Contract:
 
-- `-Plan` emits ordered module rows with dependency, privilege, destructive, and description data.
+- `-Plan` emits ordered module rows with stage, runtime, dependency, privilege, destructive, and
+  description data.
 - `-Plan` does not invoke resource scripts or package configuration.
 - Focused selection includes transitive dependencies and excludes unrelated modules.
 - A missing dependency or dependency cycle is an error.
+- A module dependency on a later stage is an error.
+- Planning and the Inbox stage do not resolve PowerShell 7.
+- Later stages are blocked when an earlier selected stage fails.
 
 ## Test and mutation
 
@@ -43,6 +47,16 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-Sp
 
 Both supported invocations return the same resource states and differ only in normal host-shell
 formatting.
+
+## Bootstrap stages
+
+```powershell
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan
+```
+
+The Inbox stage relies only on Windows PowerShell 5.1 and built-in Windows commands. After the
+PowerShell 7 module succeeds, Core and Extended modules may resolve `pwsh.exe`. A plan remains
+available even when PowerShell 7 is absent.
 
 ## Result conventions
 

@@ -5,11 +5,6 @@
         DeveloperBaseline = @{
             DisplayName = 'Windows 11 developer hardening baseline'
             RegistryValues = @(
-                @{ Id = 'uac-enabled'; Category = 'UAC'; Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'EnableLUA'; Type = 'DWord'; Value = 1; RestartRequired = $true }
-                @{ Id = 'uac-admin-consent'; Category = 'UAC'; Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'ConsentPromptBehaviorAdmin'; Type = 'DWord'; Value = 2 }
-                @{ Id = 'uac-secure-desktop'; Category = 'UAC'; Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'PromptOnSecureDesktop'; Type = 'DWord'; Value = 1 }
-                @{ Id = 'uac-filter-remote-local-admin'; Category = 'UAC'; Path = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; Name = 'LocalAccountTokenFilterPolicy'; Type = 'DWord'; Value = 0 }
-
                 @{ Id = 'disable-llmnr'; Category = 'Name resolution'; Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient'; Name = 'EnableMulticast'; Type = 'DWord'; Value = 0 }
                 @{ Id = 'disable-smart-name-resolution'; Category = 'Name resolution'; Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient'; Name = 'DisableSmartNameResolution'; Type = 'DWord'; Value = 1 }
                 @{ Id = 'ignore-netbios-name-release'; Category = 'Name resolution'; Path = 'HKLM:\SYSTEM\CurrentControlSet\Services\NetBT\Parameters'; Name = 'NoNameReleaseOnDemand'; Type = 'DWord'; Value = 1 }

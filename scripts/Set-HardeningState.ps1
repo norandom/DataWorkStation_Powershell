@@ -203,17 +203,37 @@ function Write-HumanState {
     }
 }
 
+function Save-HardeningSnapshot {
+    param([object] $State)
+
+    $snapshotDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\state\hardening-snapshots'))
+    New-Item -ItemType Directory -Path $snapshotDirectory -Force | Out-Null
+    $snapshotPath = Join-Path $snapshotDirectory ("hardening-before-{0}.json" -f (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+    [pscustomobject]@{
+        SchemaVersion = 1
+        CapturedUtc = (Get-Date).ToUniversalTime().ToString('o')
+        Mode = 'Reinitialize'
+        Profile = $ProfileName
+        State = $State
+    } | ConvertTo-Json -Depth 9 | Set-Content -LiteralPath $snapshotPath -Encoding UTF8
+    $snapshotPath
+}
+
 if ($Mode -eq 'Plan') {
     $plan = [pscustomobject]@{
         SchemaVersion = 1
         Profile = $ProfileName
         DisplayName = $profileConfiguration.DisplayName
-        RegistryControls = @($profileConfiguration.RegistryValues | Select-Object Id,Category,Path,Name,Type,Value)
-        OptionalFeatures = @($profileConfiguration.OptionalFeatures | Select-Object Id,FeatureName,DesiredState,AllowAbsent)
+        RegistryControls = @($profileConfiguration.RegistryValues | ForEach-Object {
+            [pscustomobject]@{ Id = $_.Id; Category = $_.Category; Path = $_.Path; Name = $_.Name; Type = $_.Type; Value = $_.Value }
+        })
+        OptionalFeatures = @($profileConfiguration.OptionalFeatures | ForEach-Object {
+            [pscustomobject]@{ Id = $_.Id; FeatureName = $_.FeatureName; DesiredState = $_.DesiredState; AllowAbsent = $_.AllowAbsent }
+        })
         SmbClient = $profileConfiguration.SmbClient
         SmbServer = $profileConfiguration.SmbServer
         Netbios = $profileConfiguration.Netbios
-        ObservedRegistryValues = @($profileConfiguration.ObservedRegistryValues)
+        ObservedRegistryValues = @($profileConfiguration.ObservedRegistryValues | ForEach-Object { [pscustomobject] $_ })
     }
     if ($Json) {
         $plan | ConvertTo-Json -Depth 7
@@ -237,6 +257,11 @@ $before = Get-HardeningState
 if ($Mode -eq 'Test') {
     if ($Json) { $before | ConvertTo-Json -Depth 7 } else { Write-HumanState -State $before }
     if ($before.Compliant) { exit 0 } else { exit 1 }
+}
+
+$snapshotPath = $null
+if ($Mode -eq 'Reinitialize') {
+    $snapshotPath = Save-HardeningSnapshot -State $before
 }
 
 $changes = [Collections.Generic.List[string]]::new()
@@ -307,8 +332,10 @@ foreach ($adapter in Get-CimInstance Win32_NetworkAdapterConfiguration -Filter '
 $after = Get-HardeningState
 $after | Add-Member -NotePropertyName Changes -NotePropertyValue @($changes)
 $after | Add-Member -NotePropertyName RestartRequired -NotePropertyValue $restartRequired
+$after | Add-Member -NotePropertyName SnapshotPath -NotePropertyValue $snapshotPath
 if (-not $after.Compliant) {
     if ($Json) { $after | ConvertTo-Json -Depth 7 } else { Write-HumanState -State $after -Changes @($changes) }
+    if ($snapshotPath -and -not $Json) { Write-Host "Pre-reinitialize hardening state: $snapshotPath" }
     throw "Hardening profile did not converge; $($after.DriftCount) control(s) remain drifted."
 }
 
@@ -316,5 +343,6 @@ if ($Json) {
     $after | ConvertTo-Json -Depth 7
 } else {
     Write-HumanState -State $after -Changes @($changes)
+    if ($snapshotPath) { Write-Host "Pre-reinitialize hardening state: $snapshotPath" }
     if ($restartRequired) { Write-Warning 'A Windows restart is required before every changed control is fully effective.' }
 }

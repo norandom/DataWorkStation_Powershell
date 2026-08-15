@@ -17,7 +17,7 @@ sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-Hardening
 sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Ensure
 ```
 
-Add `-Json` for machine-readable Plan, Test, or Ensure output. The full workstation orchestrator runs `DeveloperBaseline` automatically after Windows sudo and optional features; use `-SkipHardening` to omit it. The resource never restarts Windows.
+Add `-Json` for machine-readable Plan, Test, Ensure, or Reinitialize output. The full workstation orchestrator runs `DeveloperBaseline` automatically after Windows sudo and optional features; use `-SkipHardening` to omit it. `Reinitialize` saves the complete observed pre-change state under `state/hardening-snapshots/` before writing. The resource never restarts Windows.
 
 For a narrow orchestrated run, use `.\Apply-Workstation.ps1 -Mode Test -Module Hardening`. Its module plan automatically places `Sudo` first.
 
@@ -25,7 +25,6 @@ For a narrow orchestrated run, use `.\Apply-Workstation.ps1 -Mode Test -Module H
 
 | Area | Desired state | Security effect | Compatibility cost |
 |---|---|---|---|
-| UAC | UAC enabled, administrator consent on the secure desktop, remote local-admin tokens filtered | preserves the elevation boundary and limits pass-the-hash use of local administrator accounts | legacy installers or remote administration that assume an unrestricted token can fail |
 | Name resolution | LLMNR and smart multi-homed fallback disabled; NetBIOS disabled on every IP-enabled adapter | reduces Responder-style local name-poisoning and credential-relay opportunities | legacy short-name discovery must use DNS or an explicit address |
 | TCP/IP | IPv4/IPv6 source routing and ICMP redirects disabled | rejects attacker-controlled routing shortcuts | unusual routed lab networks might require exceptions |
 | SMB | SMB1 disabled, signing required on client and server, insecure guest and plaintext-password fallback disabled | blocks SMB1 exploitation and impairs SMB relay/on-path tampering | old NAS devices and guest-only shares may stop working; signing adds some CPU cost |
@@ -46,9 +45,10 @@ The old script was not rerun. Each class of mutation was reviewed against the cu
 
 | Disposition | Legacy controls |
 |---|---|
-| Managed here | UAC, LLMNR/NetBIOS, source routing, SMB1/signing/guest fallback, anonymous and legacy authentication, WDigest, Remote Assistance/RDP/WinRM transport, autorun, web printing, Wi-Fi connection policy, and lock-screen sensors |
+| Managed here | LLMNR/NetBIOS, source routing, SMB1/signing/guest fallback, anonymous and legacy authentication, WDigest, Remote Assistance/RDP/WinRM transport, autorun, web printing, Wi-Fi connection policy, and lock-screen sensors |
 | Managed elsewhere | firewall rules, event/audit logging, Defender runtime/exclusions, SmartScreen, download zone marking, Windows features, packages, and profiling tools |
 | Observed only | `RunAsPPL` and LSASS audit level; the current values are reported but not written |
+| Outside this profile | UAC policy, including `EnableLUA`, consent prompts, secure-desktop prompts, and remote local-admin token filtering |
 | Moved to a separate opt-in profile | reviewed AppX, capability, and optional-feature removals; see [Opt-in Windows debloat profile](debloat.md) |
 | Excluded | file-association hijacks, old Chrome/Edge/Office policy trees, telemetry/privacy preferences, broad service/task disabling, remote SCM/task-scheduler endpoint removal, and optional smart-card/domain-only policy |
 | Rejected as harmful or obsolete | Chrome minimum TLS 1.0, `DisableParallelAandAAAA`, multicast suppression, destructive removal of Desktop App Installer/OpenSSH/codecs, and blanket removal of Windows capabilities |

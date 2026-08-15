@@ -12,7 +12,7 @@ host-dependent checks; no Ensure or Reinitialize command is part of this guide.
 .\ears-sdd.ps1 validate --project . --phase final
 ```
 
-Expected outcome: one feature, 43 requirements, and zero findings at each completed phase.
+Expected outcome: one feature, 51 requirements, and zero findings at each completed phase.
 
 ## 2. Inspect dependency plans
 
@@ -25,6 +25,13 @@ Expected outcome: one feature, 43 requirements, and zero findings at each comple
 
 Expected outcome: dependencies precede dependants; unrelated modules are absent from focused plans;
 Debloat is marked privileged and destructive.
+
+Inspect the shell bootstrap boundary from inbox Windows PowerShell. This must work even before
+`pwsh.exe` exists:
+
+```powershell
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan
+```
 
 ## 3. Inspect capability routing
 
@@ -44,6 +51,15 @@ powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-Sp
 ```
 
 Expected outcome: both runtimes report the released package and `ears-sdd` command as compliant.
+
+Verify the shared managed profile and Windows Terminal state:
+
+```powershell
+pwsh.exe -NoLogo -NoProfile -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes
+pwsh.exe -NoLogo -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test
+.\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan
+```
 
 ## 5. Run publication gates
 

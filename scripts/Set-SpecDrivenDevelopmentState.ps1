@@ -10,6 +10,23 @@ $uv = (Get-Command uv.exe -CommandType Application -ErrorAction Stop).Source
 $downloadDirectory = Join-Path $env:LOCALAPPDATA 'PowerShellWorkstation\downloads'
 $wheel = Join-Path $downloadDirectory (Split-Path -Leaf $configuration.Url)
 
+function Get-SpecifyCliVersion {
+    $toolRoot = (& $uv tool dir 2>$null | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $toolRoot) { return $null }
+
+    $toolEnvironment = Join-Path $toolRoot $configuration.Package
+    $python = @(
+        (Join-Path $toolEnvironment 'Scripts\python.exe')
+        (Join-Path $toolEnvironment 'bin\python')
+    ) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if (-not $python) { return $null }
+
+    $pythonCode = "import importlib.metadata as metadata; print(metadata.version('specify-cli'))"
+    $version = (& $python -c $pythonCode 2>$null | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $version) { return $null }
+    $version
+}
+
 function Get-SpecDrivenDevelopmentState {
     $toolList = & $uv tool list --show-version-specifiers 2>$null | Out-String
     $toolListOk = $LASTEXITCODE -eq 0
@@ -23,12 +40,19 @@ function Get-SpecDrivenDevelopmentState {
         $help = & $command.Source --help 2>$null | Out-String
         $commandOk = $LASTEXITCODE -eq 0 -and $help -match 'EARS/TDD Spec Kit policy'
     }
+    $specifyCliVersion = Get-SpecifyCliVersion
+    $specifyCliOk = $specifyCliVersion -eq $configuration.SpecifyCliVersion
 
     @(
         [pscustomobject]@{
             Resource = 'SpecKitEarsTddPackage'
             State = if ($packageOk) { 'compliant' } else { 'drift detected' }
             Detail = "release $($configuration.ReleaseTag); specify-cli==$($configuration.SpecifyCliVersion)"
+        }
+        [pscustomobject]@{
+            Resource = 'SpecifyCliDependency'
+            State = if ($specifyCliOk) { 'compliant' } else { 'drift detected' }
+            Detail = if ($specifyCliVersion) { "$specifyCliVersion installed; $($configuration.SpecifyCliVersion) required" } else { "$($configuration.SpecifyCliVersion) required" }
         }
         [pscustomobject]@{
             Resource = 'EarsSddCommand'

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a plan-first `update` command for Windows software servicing, WinGet, Scoop, WSL, both declared Debian distributions, managed Homebrew instances, Docker/Podman reconciliation, and final current-release drift correction.
+- Add general clean-versus-target Windows Sandbox behavior commands and graph-first binary
+  differencing through Ghidra, BinExport, and BinDiff, retaining canonical `.BinDiff` SQLite plus a
+  separate bounded address-keyed analysis sidecar without raw/version/decompiler fallback.
+
 ## 2.0.0 - 2026-08-15
 
 - Expand the staged workstation DSL with PowerShell 7 bootstrap gates, native development toolchains, Java, Go, Rust, CMake, MSBuild, Pester, and compatible shared profiles for Windows PowerShell 5.1 and PowerShell Core.

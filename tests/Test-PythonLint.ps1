@@ -21,6 +21,7 @@ $source = Get-Content -LiteralPath $scriptPath -Raw
 Assert-True ($source -match 'uv(?:\.exe)?') 'Python lint uses the locked repository environment'
 Assert-True ($source -match 'ruff') 'Python lint invokes Ruff'
 Assert-True ($source -match 'linux') 'default Python lint includes pyinfra and the container runner'
+Assert-True ($source -match 'test_binary_diff_runner\.py') 'default Python lint includes the graph SQL regression test'
 $aliases = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Aliases.ps1') -Raw
 Assert-True ($aliases -match 'function global:lint-python') 'managed profile exposes lint-python'
 $precommit = Get-Content -LiteralPath (Join-Path $repositoryRoot '.pre-commit-config.yaml') -Raw

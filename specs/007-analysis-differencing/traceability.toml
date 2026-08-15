@@ -1,0 +1,68 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BehaviorInterfaces"]
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BehaviorPlanning"]
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BehaviorSafety"]
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BehaviorSafety"]
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BehaviorDifferential"]
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BehaviorSafety"]
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BinaryPlanning"]
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BinaryIsolation"]
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#GraphArtifacts"]
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#GraphArtifacts"]
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BinaryReporting"]
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#GraphSafety"]
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#GraphSchema"]
+[requirements.REQ-014]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#QuerySchema"]
+[requirements.REQ-015]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#QuerySchema"]
+[requirements.REQ-016]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#BinaryReporting"]
+[requirements.REQ-017]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#EvidenceBoundary"]
+[requirements.REQ-018]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#Interfaces"]
+[requirements.REQ-019]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#Interfaces"]
+[requirements.REQ-020]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#Documentation"]
+[requirements.REQ-021]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#Documentation"]
+[requirements.REQ-022]
+verification = "automated"
+tests = ["tests/Test-AnalysisDifferencing.ps1#Compatibility"]

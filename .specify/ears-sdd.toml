@@ -4,7 +4,7 @@ traceability_file = "traceability.toml"
 require_test_files = true
 
 # Publishing still runs these commands explicitly; the validator records the reviewed gate.
-test_command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\tests\\Test-WorkstationBaseline.ps1; pwsh -NoProfile -File .\\tests\\Test-NativeDevelopmentState.ps1; lint-powershell; tricky capabilities; tricky capabilities -Json; uv run --group docs mkdocs build --strict"
+test_command = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\tests\\Test-WorkstationBaseline.ps1; powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\tests\\Test-WorkstationUpdate.ps1; powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\\tests\\Test-AnalysisDifferencing.ps1; pwsh -NoProfile -File .\\tests\\Test-NativeDevelopmentState.ps1; pwsh -NoProfile -File .\\tests\\Test-AnalysisDifferencing.ps1; lint-powershell; tricky capabilities; tricky capabilities -Json; uv run --group docs mkdocs build --strict"
 
 # Requirement prose and IDs must not be copied into these production-code roots.
 production_roots = ["scripts", "profile", "linux"]

@@ -1,0 +1,77 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#CommandSurface"]
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#PlanContract"]
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#OutputContract"]
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#TargetContract"]
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#SafetyContract"]
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#DependencyContract"]
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#WindowsContract"]
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#WindowsContract", "tests/Test-WorkstationUpdate.ps1#SafetyContract"]
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#WinGetContract"]
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#ScoopContract"]
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#WslContract"]
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#LinuxContract"]
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#LinuxContract", "tests/Test-WorkstationUpdate.ps1#SafetyContract"]
+[requirements.REQ-014]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#HomebrewContract"]
+[requirements.REQ-015]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#HomebrewContract"]
+[requirements.REQ-016]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#ContainerContract"]
+[requirements.REQ-017]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#ContainerContract"]
+[requirements.REQ-018]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#DependencyContract"]
+[requirements.REQ-019]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#ReconciliationContract"]
+[requirements.REQ-020]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#ReconciliationContract", "tests/Test-WorkstationUpdate.ps1#DualShellContract"]
+[requirements.REQ-021]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#SafetyContract"]
+[requirements.REQ-022]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#PrivilegeContract"]
+[requirements.REQ-023]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#OutputContract", "tests/Test-WorkstationUpdate.ps1#ExecutionContract"]
+[requirements.REQ-024]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#CommandSurface"]
+[requirements.REQ-025]
+verification = "automated"
+tests = ["tests/Test-WorkstationUpdate.ps1#DualShellContract"]

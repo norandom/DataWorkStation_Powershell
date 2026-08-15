@@ -12,6 +12,8 @@ tricky-*/
 evidence/malware/
 site/
 .venv/
+__pycache__/
+*.pyc
 .skillopt-sleep/
 .excluded
 .terminal-fonts

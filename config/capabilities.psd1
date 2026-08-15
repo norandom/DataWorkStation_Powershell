@@ -102,8 +102,8 @@
         @{
             Id = 'malware-triage'
             Title = 'Suspicious file triage and isolated analysis'
-            Triggers = @('malware', 'suspicious file', 'pdf dissection', 'document dissection', 'disassembly', 'decompile', 'detonate', 'sandbox diff', 'clean sandbox', 'control case')
-            EvidenceKinds = @('Snapshot', 'Sandbox report', 'Canonical evidence', 'Unified diff', 'Disassembly', 'Decompilation', 'File-handle trace', 'Packet capture', 'Event log', 'ETW trace')
+            Triggers = @('malware', 'suspicious file', 'pdf dissection', 'document dissection', 'disassembly', 'decompile', 'detonate', 'sandbox diff', 'clean sandbox', 'control case', 'behavior diff', 'binary diff', 'patch diff', 'BinExport', 'BinDiff')
+            EvidenceKinds = @('Snapshot', 'Sandbox report', 'Canonical evidence', 'Unified diff', 'Disassembly', 'Decompilation', 'Graph export', 'Semantic match database', 'Query sidecar', 'File-handle trace', 'Packet capture', 'Event log', 'ETW trace')
             InspectCommands = @(
                 'is-this-malware <path>'
                 'malware_hashes <path> [--json]'
@@ -121,6 +121,11 @@
                 'malware-sandbox <path> -Mode Dissect'
                 'malware-control <path> -Mode <Dissect|Disassemble|Decompile|Detonate>'
                 'malware-diff -ControlCase <control-case> -TargetCase <target-case> [-ShowDiff]'
+                'sandbox-behavior-control <path> [-DurationSeconds <seconds>]'
+                'sandbox-behavior-target <path> [-DurationSeconds <seconds>]'
+                'sandbox-behavior-diff -ControlCase <control-case> -TargetCase <target-case> [-ShowDiff]'
+                'binary-diff -Baseline <old-binary> -Candidate <new-binary>'
+                'binary-diff-report -Case <case>'
                 'pwsh -NoProfile -File .\scripts\Read-MalwareEvidence.ps1 -Case <case>'
                 'pwsh -NoProfile -File .\scripts\Invoke-MalwareAnalysis.ps1 -Action Report -Case <case>'
             )
@@ -137,6 +142,9 @@
                 'pwsh -NoProfile -File .\scripts\Set-MalwareContainerImageState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-RootlessPodmanState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module MalwareContainerImage -Plan'
+                'sandbox-behavior-control <path> -Run -ConfirmSandbox'
+                'sandbox-behavior-target <path> -Run -ConfirmSandbox -ConfirmExecution'
+                'binary-diff -Baseline <old-binary> -Candidate <new-binary> -Run -ConfirmContainer'
             )
             CaptureCommand = 'malware-sandbox <path> -Mode Detonate -Run -ConfirmSandbox -ConfirmExecution'
         }
@@ -167,12 +175,15 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'windows update', 'update wsl', 'update homebrew', 'update docker')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
                 '.\Apply-Workstation.ps1 -Mode Test -Module <name> -Plan'
+                'update'
+                'update -Json'
             )
+            StateCommands = @('update -Run', 'update -Target <name> -Run')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{

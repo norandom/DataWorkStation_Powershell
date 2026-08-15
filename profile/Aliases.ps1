@@ -99,6 +99,18 @@ function global:precommit-run {
     try { & pre-commit.exe run --all-files @args } finally { Pop-Location }
 }
 
+function global:update {
+    [CmdletBinding()]
+    param(
+        [ValidateSet('All', 'Windows', 'WinGet', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
+        [string[]] $Target = @('All'),
+        [switch] $Run,
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-WorkstationUpdate.ps1'
+    & $script -Target $Target -Run:$Run -Json:$Json
+}
+
 function global:docs-serve {
     Push-Location (Join-Path $env:USERPROFILE 'Source\PowerShell')
     try { & uv.exe run --group docs mkdocs serve @args } finally { Pop-Location }
@@ -678,6 +690,85 @@ function global:malware-diff {
     $parameters = @{ ControlCase = $ControlCase; TargetCase = $TargetCase; ShowDiff = $ShowDiff; Json = $Json }
     if ($OutputRoot) { $parameters.OutputRoot = $OutputRoot }
     & $script @parameters
+}
+
+# General-purpose names for the same reviewed clean-control Sandbox engine.
+# Planning remains the default; these wrappers do not introduce another runner.
+function global:sandbox-behavior-control {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [ValidateRange(5, 900)][int] $DurationSeconds = 30,
+        [switch] $Run,
+        [switch] $ConfirmSandbox,
+        [switch] $AllowNetwork,
+        [switch] $KeepSandboxOpen,
+        [switch] $Json
+    )
+    malware-control -Path $Path -Mode Detonate -DurationSeconds $DurationSeconds -Run:$Run `
+        -ConfirmSandbox:$ConfirmSandbox -AllowNetwork:$AllowNetwork `
+        -KeepSandboxOpen:$KeepSandboxOpen -Json:$Json
+}
+
+function global:sandbox-behavior-target {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Path,
+        [ValidateRange(5, 900)][int] $DurationSeconds = 30,
+        [switch] $Run,
+        [switch] $ConfirmSandbox,
+        [switch] $ConfirmExecution,
+        [switch] $AllowNetwork,
+        [switch] $KeepSandboxOpen,
+        [switch] $Json
+    )
+    malware-sandbox -Path $Path -Mode Detonate -DurationSeconds $DurationSeconds -Run:$Run `
+        -ConfirmSandbox:$ConfirmSandbox -ConfirmExecution:$ConfirmExecution `
+        -AllowNetwork:$AllowNetwork -KeepSandboxOpen:$KeepSandboxOpen -Json:$Json
+}
+
+function global:sandbox-behavior-diff {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string] $ControlCase,
+        [Parameter(Mandatory = $true)][string] $TargetCase,
+        [string] $OutputRoot,
+        [switch] $ShowDiff,
+        [switch] $Json
+    )
+    $parameters = @{
+        ControlCase = $ControlCase
+        TargetCase = $TargetCase
+        ShowDiff = $ShowDiff
+        Json = $Json
+    }
+    if ($OutputRoot) { $parameters.OutputRoot = $OutputRoot }
+    malware-diff @parameters
+}
+
+function global:binary-diff {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Baseline,
+        [Parameter(Mandatory = $true, Position = 1)][string] $Candidate,
+        [switch] $Run,
+        [switch] $ConfirmContainer,
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-BinaryDiffAnalysis.ps1'
+    $action = if ($Run) { 'Run' } else { 'Plan' }
+    & $script -Action $action -Baseline $Baseline -Candidate $Candidate `
+        -ConfirmContainer:$ConfirmContainer -Json:$Json
+}
+
+function global:binary-diff-report {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string] $Case,
+        [switch] $Json
+    )
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-BinaryDiffAnalysis.ps1'
+    & $script -Action Report -Case $Case -Json:$Json
 }
 
 function global:disass {

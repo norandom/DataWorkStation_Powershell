@@ -24,6 +24,24 @@ Run only one declared part with `-Module`, and inspect dependency order first wi
 
 `config/workstation-modules.psd1` declares the module catalog, default selection, supported modes, and dependencies. Dependencies are included automatically in topological order. `-Module All` preserves the complete default run but excludes the destructive Debloat module. See [Workstation modules and dependency order](workstation-modules.md) and [Sample outputs](sample-outputs.md).
 
+## Update installed systems
+
+`update` is a separate plan-first servicing workflow. It does not replace the desired-state module
+catalog: external updaters run in their own declared order, then the last stage returns to
+`Apply-Workstation.ps1 -Mode Ensure` and `-Mode Test` so the current checkout remains authoritative.
+
+```powershell
+update
+update -Target Homebrew,Containers
+update -Run
+```
+
+Only `-Run` mutates state. The complete execution covers accepted Windows software updates,
+known-version unpinned WinGet applications, Scoop and its installed apps, the WSL runtime, packages
+in the two `.wsl-env` distributions, declared Homebrew instances, developer Docker, rootless Podman,
+and current-release reconciliation. See [Managed workstation update](workstation-update.md) for
+privilege, restart, package-pin, and trust-boundary details.
+
 The catalog also declares a runtime boundary for every module. `Inbox` is limited to Windows PowerShell 5.1 and native Windows commands, so a fresh host can reach the `PowerShell7` prerequisite without first resolving it. `Core` and `Extended` both have an explicit `PowerShell7` stage gate. The orchestrator resolves `pwsh.exe` lazily only when a modern-runtime module is dispatched, checks the standard installation path in case the current process has a stale `PATH`, and blocks every later selected stage if an earlier stage fails.
 
 ## Native development state

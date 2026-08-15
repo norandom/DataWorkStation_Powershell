@@ -1,5 +1,43 @@
 # Sample outputs
 
+## Workstation update plan
+
+The short command is observational until `-Run` is explicit:
+
+```text
+PS> update
+Workstation update plan (release 2.0.0)
+
+Order Name                  Privilege            Status  DependsOn
+----- ----                  ---------            ------  ---------
+   10 Windows               WindowsAdministrator planned
+   20 WinGet                CurrentUser          planned
+   30 Scoop                 CurrentUser          planned WinGet
+   40 Wsl                   CurrentUser          planned WinGet
+   50 Linux                 WslRoot              planned Wsl
+   60 Homebrew              CurrentUser          planned Linux
+   70 Containers            WslRoot              planned Linux
+   80 PowerShellEnvironment Mixed                planned WinGet,Scoop,Wsl,Linux,Homebrew,Containers
+
+No updates were installed. Run update -Run to execute this plan.
+```
+
+A focused selection includes hard prerequisites but no unrelated roots:
+
+```text
+PS> update -Target Homebrew,Containers
+Order Name       Privilege   Status  DependsOn
+----- ----       ---------   ------  ---------
+   20 WinGet     CurrentUser planned
+   40 Wsl        CurrentUser planned WinGet
+   50 Linux      WslRoot     planned Wsl
+   60 Homebrew   CurrentUser planned Linux
+   70 Containers WslRoot     planned Linux
+```
+
+Execution reports one terminal status per stage. `restart-required` is successful but remains an
+operator action; a failed prerequisite gives dependants `skipped` with `BlockedBy` in JSON.
+
 ## Native development plan and Java state
 
 ```text
@@ -314,13 +352,58 @@ Status             : planned
 Backend            : RootlessContainer
 Distribution       : Debian-MW
 Role               : Target
-Image              : dataworkstation/malware-static:2026.08.14-1
+Image              : dataworkstation/malware-static:2026.08.15-graph1
 Network            : none
 ReadOnlyRoot       : True
 Execution          : not-run
 Verdict            : undetermined
 ContainerPlan      : ...\container-plan.json
 ```
+
+A two-binary plan makes the structural primary result and two read-only inputs visible:
+
+```text
+PS> binary-diff C:\Samples\product-1.exe C:\Samples\product-2.exe
+
+Status              : planned
+AnalysisKind        : BinaryDiff
+Backend             : RootlessContainer
+Distribution        : Debian-MW
+BaselineSha256      : 4A7E...
+CandidateSha256     : 991C...
+PrimaryComparison   : structural-graph
+Network             : none
+Inputs              : read-only
+Execution           : not-run
+Verdict             : undetermined
+ContainerPlan       : ...\container-plan.json
+```
+
+After a separately confirmed parser run, the bounded report summarizes graph relationships. It
+does not render hostile disassembly or decompiler output:
+
+```text
+PS> binary-diff-report .\evidence\malware\binary-diff-...
+
+Status             : complete
+AnalysisKind       : BinaryDiff
+PrimaryComparison  : structural-graph
+OverallSimilarity  : 0.9184
+OverallConfidence  : 0.9631
+MatchedFunctions   : 214
+ChangedFunctions   : 17
+AddedFunctions     : 6
+RemovedFunctions   : 3
+AmbiguousFunctions : 2
+Execution          : not-run
+Verdict            : undetermined
+```
+
+The retained `baseline.BinExport` and `candidate.BinExport` graphs feed the immutable
+`baseline_vs_candidate.BinDiff` SQLite result. `binary-analysis.sqlite` is a separate query
+sidecar; file versions, byte changes, assembly text, and decompiled text are never used as a
+fallback primary comparison. Missing or timed-out graph tooling changes `Status` to `partial` and
+appears in `ToolStatus` and `Failures`.
 
 The local image is a separate opt-in state resource:
 
@@ -340,7 +423,7 @@ A compliant image state reports matching reviewed identities:
 
 ```text
 Status                           : compliant
-Image                            : dataworkstation/malware-static:2026.08.14-1
+Image                            : dataworkstation/malware-static:2026.08.15-graph1
 ExpectedToolInventoryFingerprint : 10EDCAD1...
 ActualToolInventoryFingerprint   : 10EDCAD1...
 ExpectedBuildContextFingerprint  : 2917BC1C...

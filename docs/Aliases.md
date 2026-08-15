@@ -23,6 +23,21 @@ PowerShell 5.1 or Core session receives the same environment from the managed pr
 
 Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
 
+## Workstation updates
+
+| Command | Purpose |
+|---|---|
+| `update` | Show the complete ordered workstation update plan without invoking an updater. |
+| `update -Json` | Emit the same plan as bounded structured data. |
+| `update -Target WinGet,Scoop` | Plan only the selected targets and their declared prerequisites. |
+| `update -Run` | Explicitly run Windows, package-manager, WSL, Linux, Homebrew, container, and current-release reconciliation stages. |
+
+`update -Run` may install packages, restart Linux services or the developer Docker daemon, and leave
+Windows with a pending restart. It displays each Windows administrator or WSL-root boundary first.
+It never restarts Windows, shuts down WSL, updates drivers, discovers unrelated distributions,
+overrides pins, cleans Scoop versions/caches, or prunes container data. See
+[Managed workstation update](workstation-update.md).
+
 ## Files and text
 
 Microsoft Coreutils executables take precedence over same-named PowerShell aliases:
@@ -460,6 +475,12 @@ These commands plan potentially dangerous work before they run it. `-Json` provi
 | `malware-container-control <path>` | plan the clean control for a matched static-container comparison |
 | `host-static <path>` | explicit alias for bounded host byte inspection (`is-this-malware`) |
 | `sandbox-static <path> -Mode Dissect` | explicit alias for Windows Sandbox planning (`malware-sandbox`) |
+| `sandbox-behavior-control <path>` | plan a clean Windows Sandbox behavior baseline without reading or executing the target |
+| `sandbox-behavior-target <path>` | plan the target half of a general Windows Sandbox behavior comparison |
+| `sandbox-behavior-diff -ControlCase <case> -TargetCase <case>` | compare completed compatible behavior cases through the bounded standard-diff path |
+| `binary-diff <baseline> <candidate>` | plan a graph-based Ghidra/BinExport/BinDiff comparison in the rootless static container |
+| `binary-diff <baseline> <candidate> -Run -ConfirmContainer` | explicitly run non-executing graph parsers with two read-only inputs and networking disabled |
+| `binary-diff-report <case>` | show the bounded validated summary for an existing binary-diff case |
 
 Add `-Run -ConfirmSandbox` only after reviewing `analysis.wsb`. Detonation additionally requires `-ConfirmExecution`. `-AllowNetwork` is separate because it exposes networks reachable from the host. Documents are never opened automatically. Sandbox jobs close the guest after the terminal result is persisted; add `-KeepSandboxOpen` only when an interactive guest is intentionally required.
 
@@ -471,6 +492,12 @@ Bash, MSYS, Cygwin, or BusyBox. Raw trace/parser/decompiler output is never pars
 the bounded Python boundary canonicalizes only known schemas and records other files by path, size,
 and SHA-256. Default output gives the diff path; `-ShowDiff` prints only escaped canonical content.
 The canonical directories remain available for another ordinary directory-diff program.
+
+`binary-diff` retains `baseline.BinExport`, `candidate.BinExport`, and the canonical read-only
+`baseline_vs_candidate.BinDiff` SQLite result. `binary-analysis.sqlite` is a separate query sidecar
+for functions, instructions, blocks, edges, calls, best-effort decompilation, and a bounded match
+projection. Raw bytes, file versions, assembly text, and decompiler text never replace graph
+matching. See [Analysis and differencing cases](analysis-differencing.md) for artifact roles and SQL.
 
 ## Execution-boundary and WSL commands
 

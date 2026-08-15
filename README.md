@@ -12,6 +12,17 @@ A human- and AI-operable Windows engineering workstation for quant finance, data
 Windows 11 Pro is required. The managed state uses Client Hyper-V, Windows Sandbox, native Windows sudo, and other Windows 11 workstation capabilities.
 Managed developer commands remain callable from both PowerShell 7 and inbox Windows PowerShell where documented; the Spec Kit EARS/TDD state resource is explicitly tested in both.
 
+<table>
+  <tr>
+    <td><img src="docs/assets/workstation/powershell-workstation.png" alt="PowerShell workstation showing memory and managed firewall commands"></td>
+    <td><img src="docs/assets/workstation/contour-neovim.png" alt="Contour Terminal running Neovim with the configured terminal appearance"></td>
+  </tr>
+  <tr>
+    <td>Operational PowerShell commands for memory, containers, and managed firewall state.</td>
+    <td>Contour Terminal running Neovim with the configured terminal and editor appearance.</td>
+  </tr>
+</table>
+
 ### Native development
 
 The `NativeDevelopment` module supplies standalone MSVC/MSBuild, CMake/Ninja, stable Rust MSVC,
@@ -61,6 +72,7 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `config/contour.yml` | Managed Contour configuration translated from BlueTerm. |
 | `config/windows-features.psd1` | Declarative Hyper-V and Windows Sandbox optional-feature state. |
 | `config/workstation-modules.psd1` | Module catalog, default selection, dependencies, and execution order. |
+| `config/workstation-update.psd1` | Plan-first host, package-manager, WSL, Homebrew, container, and release-reconciliation update stages. |
 | `config/hardening-profiles.psd1` | Declarative Windows 11 developer hardening profile. |
 | `config/debloat-profiles.psd1` | Opt-in allowlist for consumer-app and legacy-component removal. |
 | `config/focus-follows-mouse.psd1` | Declarative current-user hover-focus behavior without window raising. |
@@ -86,6 +98,8 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `profile/Tools.ps1` | Reusable diagnostics and command implementations. |
 | `profile/Aliases.ps1` | Short user-facing wrappers and Linux-style mappings. |
 | `scripts/Set-PowerShellProfile.ps1` | Deploys and verifies the loader and components for both PowerShell runtimes. |
+| `scripts/Invoke-WorkstationUpdate.ps1` | Plans or explicitly runs the complete dependency-ordered workstation update. |
+| `scripts/Invoke-WindowsUpdate.ps1` | Scans or installs accepted Windows software updates without drivers or automatic restart. |
 | `scripts/Set-LinuxHomebrewState.ps1` | Maintains Homebrew inside Debian WSL as a focused developer-package prerequisite. |
 | `scripts/Set-LinuxAutomationState.ps1` | Maintains the Debian-local pyinfra executor without installing it into Windows Python. |
 | `scripts/Set-DeveloperDockerState.ps1` | Maintains the existing rootful Dagger Docker daemon through local pyinfra. |
@@ -166,6 +180,21 @@ Copy-Item .wsl-env.sample .wsl-env
 .\Apply-Workstation.ps1 -Mode Reinitialize
 ```
 
+Update every managed surface with the same plan-first boundary:
+
+```powershell
+update
+update -Json
+update -Run
+```
+
+The first two commands are read-only plans. `update -Run` explicitly services Windows software
+updates, ordinary WinGet and Scoop applications, WSL, both declared Debian distributions, the
+declared developer Homebrew instance, developer Docker, and Debian-MW rootless Podman. It then
+ensures and tests the current checkout's default non-destructive desired state. Drivers, automatic
+reboots, WSL shutdown, container pruning, Scoop cleanup, pinned/unknown package overrides, and
+undeclared distributions remain outside the command. See [Managed workstation update](docs/workstation-update.md).
+
 `Ensure` is the normal operation. It leaves compliant Windows features, hardening controls, hover-focus behavior, profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
 
 Run one part at a time with inclusion-based module selection:
@@ -200,7 +229,7 @@ Native `awk.exe` and `sed.exe` are maintained through the focused `NativeTextToo
 
 Zhorn Software Caffeine is maintained as a focused WinGet module. Desired state installs the real portable utility and registers it to start active at sign-in, with no `-startoff` flag. The `caffeine` wrapper launches its verified 64-bit executable on demand, and the tray icon toggles inhibition.
 
-Suspicious-file commands begin with bounded byte inspection: `is-this-malware <path>`. Target Sandbox plans also run the hash-pinned `malware_hashes` release against the bounded host source and arrange an independent run against the read-only guest copy; clean controls skip both. Raw host and guest reports remain segregated evidence, and only the bounded Python ingestor compares their deterministic hashes or exposes their source paths. `disass`, `decomp`, and `malware-sandbox` create reviewable Windows Sandbox plans by default; `-Run -ConfirmSandbox` is required to launch, detonation also requires `-ConfirmExecution`, and networking remains off unless separately enabled. `malware-container` similarly plans non-executing rootless Office/PDF/binary parsing and requires `-Run -ConfirmContainer`; its large local image is a separate opt-in module. `malware-control` and `malware-container-control` create matched clean controls. `malware-diff` retains canonical evidence trees and uses native Git's ordinary no-index unified diff without deserializing raw traces or parser output in PowerShell. Same-hash static and dynamic cases are cross-linked without treating static indicators as proof of execution. Documents are dissected as inert containers and never opened automatically in licensed Office. See [Suspicious-file analysis](docs/malware-analysis.md).
+Suspicious-file commands begin with bounded byte inspection: `is-this-malware <path>`. Target Sandbox plans also run the hash-pinned `malware_hashes` release against the bounded host source and arrange an independent run against the read-only guest copy; clean controls skip both. Raw host and guest reports remain segregated evidence, and only the bounded Python ingestor compares their deterministic hashes or exposes their source paths. `disass`, `decomp`, and `malware-sandbox` create reviewable Windows Sandbox plans by default; `-Run -ConfirmSandbox` is required to launch, detonation also requires `-ConfirmExecution`, and networking remains off unless separately enabled. `malware-container` similarly plans non-executing rootless Office/PDF/binary parsing and requires `-Run -ConfirmContainer`; its large local image is a separate opt-in module. `sandbox-behavior-control`, `sandbox-behavior-target`, and `sandbox-behavior-diff` expose the same differential engine for general programs. `binary-diff OLD NEW` uses Ghidra/BinExport call and control-flow graphs plus BinDiff as its canonical comparison; the separate SQLite code sidecar never replaces graph matching with raw bytes, versions, or decompiler text. `malware-control` and `malware-container-control` create matched clean controls. `malware-diff` retains canonical evidence trees and uses native Git's ordinary no-index unified diff without deserializing raw traces or parser output in PowerShell. Same-hash static and dynamic cases are cross-linked without treating static indicators as proof of execution. Documents are dissected as inert containers and never opened automatically in licensed Office. See [Suspicious-file analysis](docs/malware-analysis.md) and [Analysis and differencing cases](docs/analysis-differencing.md).
 
 ## Automatic versus explicit actions
 
@@ -224,4 +253,4 @@ The full WDK is not installed automatically because WinDbg supplies the required
 
 Docker Engine and Compose remain Linux-native but are now reached through the PowerShell module DSL and applied by local pyinfra inside each distribution. `Debian` keeps a rootful daemon for Dagger; `Debian-MW` keeps a separate rootless daemon for the implemented inert static parser. Python deploy and container code is checked through the pinned `lint-python` Ruff command.
 
-See [Workstation modules and dependency order](docs/workstation-modules.md) for focused execution. See [Suspicious-file analysis](docs/malware-analysis.md) for isolation, telemetry limits, and residual attack surface. See [Contour Terminal and BlueTerm](docs/contour-terminal.md) for the official MSI, Scoop migration, and theme translation. See [Windows hardening profile and attack surface](docs/hardening.md) for the legacy-script review, compatibility costs, and residual exposure. See [Opt-in Windows debloat profile](docs/debloat.md) for the exact removal allowlist and rollback limits. See [docs/Aliases.md](docs/Aliases.md) for daily commands.
+See [Workstation modules and dependency order](docs/workstation-modules.md) for focused execution. See [Suspicious-file analysis](docs/malware-analysis.md) for isolation, telemetry limits, and residual attack surface. See [Analysis and differencing cases](docs/analysis-differencing.md) for general Sandbox behavior and graph-first binary comparison. See [Contour Terminal and BlueTerm](docs/contour-terminal.md) for the official MSI, Scoop migration, and theme translation. See [Windows hardening profile and attack surface](docs/hardening.md) for the legacy-script review, compatibility costs, and residual exposure. See [Opt-in Windows debloat profile](docs/debloat.md) for the exact removal allowlist and rollback limits. See [docs/Aliases.md](docs/Aliases.md) for daily commands.

@@ -23,7 +23,7 @@ debugger, changes policy, or repairs desired state.
 | `dotnet-performance` | A .NET process needs EventPipe evidence | `profile-dotnet-ps`, existing Speedscope output | `profile-dotnet -ProcessId PID -Seconds 30 -OutputBase CASE` |
 | `event-history` | Service, login, audit, or general Windows history may explain a failure | `problems`, `service-errors`, `loginfail` | `eventlog-start CASE -Executable PATH` |
 | `security-state` | Defender, firewall, SmartScreen, or SaveZone may be involved | `firewall-status`, `defender-status`, `smartscreen-status`, `savezone-status` | Export and add the state to a Tricky case |
-| `malware-triage` | A file, script, document, or PDF is suspicious | `is-this-malware PATH` | Use the approved Sandbox detonation command only after static triage |
+| `malware-triage` | A file is suspicious, general Sandbox behavior must be compared, or two binaries need structural comparison | `is-this-malware PATH`, `sandbox-behavior-control PATH`, or `binary-diff OLD NEW` | Use a separately confirmed Sandbox launch or rootless graph-parser run only after reviewing its plan |
 
 The next-action column crosses an evidence or execution boundary. Review the target and scope before
 running it. The focused workflow pages under **Diagnose** and **Secure** explain those boundaries.
@@ -31,7 +31,8 @@ running it. The focused workflow pages under **Diagnose** and **Secure** explain
 Follow the concrete operator evidence and safety boundaries in [sample outputs](../sample-outputs.md),
 [hardening residual attack surface](../hardening.md#residual-attack-surface),
 [debloat rollback limits](../debloat.md#rollback-limits), and
-[malware-analysis isolation](../malware-analysis.md#isolation-and-residual-attack-surface).
+[malware-analysis isolation](../malware-analysis.md#isolation-and-residual-attack-surface), and
+[graph-first analysis differencing](../analysis-differencing.md#graph-first-binary-comparison).
 
 ## Inspect or configure the workstation
 
@@ -41,7 +42,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `powershell-testing` | Discover Pester tests, parallel execution, or 5.1 compatibility | `test-powershell` |
 | `workstation-help` | Find managed commands, aliases, and skills | `workstation-help` |
 | `idle-sleep-inhibition` | Inspect Caffeine and its startup state | `pwsh -NoProfile -File .\scripts\Set-CaffeineState.ps1 -Mode Test` |
-| `workstation-modules` | Select one desired-state resource and its dependencies | `.\Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` |
+| `workstation-modules` | Select desired state or review the complete update workflow | `.\Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` or `update` |
 | `linux-developer-packages` | Inspect Homebrew, pyinfra, Dagger, or container engines in WSL | `pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test` |
 | `go-development` | Inspect Go, its workspace, and toolchain selection | `go version` |
 | `native-development` | Inspect MSVC, CMake, Rust, Java, and their environment | `.\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan` |

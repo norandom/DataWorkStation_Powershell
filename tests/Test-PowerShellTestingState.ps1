@@ -84,6 +84,8 @@ function Test-Adapters {
         @{ Path = 'tests/pester/MalwareAnalysis.Tests.ps1'; Script = 'Test-MalwareAnalysis.ps1'; Section = 'RootlessContainer' },
         @{ Path = 'tests/pester/MalwareContainerAnalysis.Tests.ps1'; Script = 'Test-MalwareContainerAnalysis.ps1'; Section = 'Planning' }
         @{ Path = 'tests/pester/NativeDevelopment.Tests.ps1'; Script = 'Test-NativeDevelopmentState.ps1'; Section = 'JavaContract' }
+        @{ Path = 'tests/pester/WorkstationUpdate.Tests.ps1'; Script = 'Test-WorkstationUpdate.ps1'; Section = 'PlanContract' }
+        @{ Path = 'tests/pester/AnalysisDifferencing.Tests.ps1'; Script = 'Test-AnalysisDifferencing.ps1'; Section = 'GraphArtifacts' }
     )
     foreach ($adapter in $adapters) {
         $source = Get-Source $adapter.Path

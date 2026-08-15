@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$targets = @(if ($Path.Count -gt 0) { $Path } else { 'linux' })
+$targets = @(if ($Path.Count -gt 0) { $Path } else { 'linux', 'tests/test_binary_diff_runner.py' })
 $uv = Get-Command uv.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1
 if (-not $uv) { $uv = Get-Command uv -CommandType Application -ErrorAction Stop | Select-Object -First 1 }
 

@@ -34,6 +34,8 @@ function Assert-SafeConfig {
     if ($state.evolve_memory -ne $false) { $violations += 'evolve_memory must be false' }
     if ($state.auto_adopt -ne $false) { $violations += 'auto_adopt must be false' }
     if ($state.gate_mode -ne 'on') { $violations += 'gate_mode must be on' }
+    if ($state.gate_no_regression -ne $true) { $violations += 'gate_no_regression must be true' }
+    if ($state.target_task_filter -ne $true) { $violations += 'target_task_filter must be true' }
     if ($state.redact_secrets -ne $true) { $violations += 'redact_secrets must be true' }
     if ($violations.Count -gt 0) { throw "Unsafe SkillOpt configuration: $($violations -join '; '). Run Set-SkillOptState.ps1 -Mode Ensure." }
 }

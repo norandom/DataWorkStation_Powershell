@@ -28,6 +28,11 @@ debugger, changes policy, or repairs desired state.
 The next-action column crosses an evidence or execution boundary. Review the target and scope before
 running it. The focused workflow pages under **Diagnose** and **Secure** explain those boundaries.
 
+Follow the concrete operator evidence and safety boundaries in [sample outputs](../sample-outputs.md),
+[hardening residual attack surface](../hardening.md#residual-attack-surface),
+[debloat rollback limits](../debloat.md#rollback-limits), and
+[malware-analysis isolation](../malware-analysis.md#isolation-and-residual-attack-surface).
+
 ## Inspect or configure the workstation
 
 | Route | Use when | Safe first command |

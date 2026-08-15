@@ -155,15 +155,15 @@ and the publication commands.
 
 ### Failing tests
 
-- [ ] T028 [US5] Add failing Windows 11 Pro, local-sample/ignore, operator-content, and command-to-capability coupling assertions for REQ-013, REQ-034, REQ-035, and REQ-036 in `tests/Test-WorkstationBaseline.ps1#Documentation`
-- [ ] T029 [US5] Add failing publication-command declarations and executable smoke assertions for REQ-037 in `tests/Test-WorkstationBaseline.ps1#PublicationGates`
-- [ ] T030 [US5] Add failing traceability completeness and test-before-implementation task-order assertions for REQ-039 and REQ-040 in `tests/Test-WorkstationBaseline.ps1#SpecificationWorkflow`
-- [ ] T031 [US5] Add failing explicit-target, gating, staging, no-schedule, and explicit-adoption assertions for REQ-041 in `tests/Test-WorkstationBaseline.ps1#SkillOptSafety`
+- [x] T028 [US5] Add failing Windows 11 Pro, local-sample/ignore, operator-content, and command-to-capability coupling assertions for REQ-013, REQ-034, REQ-035, and REQ-036 in `tests/Test-WorkstationBaseline.ps1#Documentation`
+- [x] T029 [US5] Add failing publication-command declarations and executable smoke assertions for REQ-037 in `tests/Test-WorkstationBaseline.ps1#PublicationGates`
+- [x] T030 [US5] Add failing traceability completeness and test-before-implementation task-order assertions for REQ-039 and REQ-040 in `tests/Test-WorkstationBaseline.ps1#SpecificationWorkflow`
+- [x] T031 [US5] Add failing explicit-target, gating, staging, no-schedule, and explicit-adoption assertions for REQ-041 in `tests/Test-WorkstationBaseline.ps1#SkillOptSafety`
 
 ### Conditional remediation and green pass
 
-- [ ] T032 [US5] Remediate only failing governance contracts in `README.md`, `docs/`, `.gitignore`, `config/capabilities.psd1`, `.specify/ears-sdd.toml`, `specs/001-workstation-baseline/traceability.toml`, `specs/001-workstation-baseline/tasks.md`, `config/skillopt.psd1`, or `scripts/Invoke-SkillOpt.ps1` for REQ-013 and REQ-034 through REQ-041 using the corresponding US5 selectors
-- [ ] T033 [US5] Run all US5 selectors, all deterministic EARS phases, PowerShell lint, repository-skill validation, Tricky human/JSON smoke, and strict MkDocs; record passing evidence in `specs/001-workstation-baseline/verification-log.md`
+- [x] T032 [US5] Remediate only failing governance contracts in `README.md`, `docs/`, `.gitignore`, `config/capabilities.psd1`, `.specify/ears-sdd.toml`, `specs/001-workstation-baseline/traceability.toml`, `specs/001-workstation-baseline/tasks.md`, `config/skillopt.psd1`, or `scripts/Invoke-SkillOpt.ps1` for REQ-013 and REQ-034 through REQ-041 using the corresponding US5 selectors
+- [x] T033 [US5] Run all US5 selectors, all deterministic EARS phases, PowerShell lint, repository-skill validation, Tricky human/JSON smoke, and strict MkDocs; record passing evidence in `specs/001-workstation-baseline/verification-log.md`
 
 **Checkpoint**: Contributors can discover, specify, test, review, and publish through one governed
 human-readable workflow.
@@ -175,9 +175,9 @@ human-readable workflow.
 **Purpose**: Replace brownfield manual entries with automated selectors only where execution
 evidence now exists, without fabricating automation for unsafe host operations.
 
-- [ ] T034 Update each safely automated requirement from manual rationale to its passing selector in `specs/001-workstation-baseline/traceability.toml`
-- [ ] T035 [P] Retain and review concrete manual rationales for privileged, destructive, graphics, reboot, capture, attach, package-repair, and WSL-host requirements in `specs/001-workstation-baseline/traceability.toml`
-- [ ] T036 Run `ears-sdd validate --phase final`, the full `tests/Test-WorkstationBaseline.ps1`, and the quickstart sequence; record the final zero-finding result in `specs/001-workstation-baseline/verification-log.md`
+- [x] T034 Update each safely automated requirement from manual rationale to its passing selector in `specs/001-workstation-baseline/traceability.toml`
+- [x] T035 [P] Retain and review concrete manual rationales for privileged, destructive, graphics, reboot, capture, attach, package-repair, and WSL-host requirements in `specs/001-workstation-baseline/traceability.toml`
+- [x] T036 Run `ears-sdd validate --phase final`, the full `tests/Test-WorkstationBaseline.ps1`, and the quickstart sequence; record the final zero-finding result in `specs/001-workstation-baseline/verification-log.md`
 - [x] T037 Review the frozen module and capability tables against their live catalogs, confirm drift, and update `specs/001-workstation-baseline/spec.md` only through the approved requirement change
 
 ## Phase 9: Go and released hash-tool adoption
@@ -185,8 +185,8 @@ evidence now exists, without fabricating automation for unsafe host operations.
 - [x] T038 [US4] Add failing dual-shell official-package, environment, built-in toolchain, narrow-release, SHA-256, embedded-version, module, and capability assertions for REQ-042 and REQ-043 in `tests/Test-GoState.ps1` and `tests/Test-MalwareHashesState.ps1`
 - [x] T039 [US4] Implement focused Go and MalwareHashes state resources, package declarations, module dependency order, and capability routes for REQ-042 and REQ-043
 - [x] T040 [US4] Document Go's built-in compatible toolchain selection, MSI-owned GOROOT, the released hash command, focused plans, and representative state output for REQ-042 and REQ-043
-- [ ] T041 [US4] Run both resources under PowerShell 7 and Windows PowerShell 5.1, full workstation baseline tests, publication gates, and the final EARS validator
-- [ ] T042 Review the updated 40-module and 25-capability inventories against their live catalogs and record the migration result in `specs/001-workstation-baseline/verification-log.md`
+- [x] T041 [US4] Run both resources under PowerShell 7 and Windows PowerShell 5.1, full workstation baseline tests, publication gates, and the final EARS validator
+- [x] T042 Review the updated 40-module and 25-capability inventories against their live catalogs and record the migration result in `specs/001-workstation-baseline/verification-log.md`
 
 ## Phase 10: Staged PowerShell bootstrap and Windows Terminal default
 
@@ -205,7 +205,7 @@ profile selector through Windows PowerShell 5.1.
 - [x] T048 [US4] Implement the focused Windows Terminal package/settings module and merge-preserving human/JSON resource for REQ-049 through REQ-051 in `.config/windows-terminal.winget`, `config/windows-terminal.psd1`, `scripts/Set-WindowsTerminalState.ps1`, `config/workstation-modules.psd1`, and `Apply-Workstation.ps1` using `tests/Test-WorkstationBaseline.ps1#WindowsTerminal`
 - [x] T049 [US4] Update the PowerShell environment capability route and operator documentation for REQ-025, REQ-035, REQ-036, and REQ-048 through REQ-051 in `config/capabilities.psd1`, `README.md`, `docs/desired-state.md`, `docs/workstation-modules.md`, `docs/Aliases.md`, and `docs/sample-outputs.md`
 - [x] T050 Promote REQ-012, REQ-025, and REQ-044 through REQ-051 to their passing automated selectors and add the baseline command to `.specify/ears-sdd.toml` and `specs/001-workstation-baseline/traceability.toml`
-- [ ] T051 [US4] Run Test then Ensure for the focused `PowerShellProfile` and `WindowsTerminal` modules, verify both runtime profile smokes and the Terminal default locally, and record the non-privileged state result in `specs/001-workstation-baseline/verification-log.md`
+- [x] T051 [US4] Run Test then Ensure for the focused `PowerShellProfile` and `WindowsTerminal` modules, verify both runtime profile smokes and the Terminal default locally, and record the non-privileged state result in `specs/001-workstation-baseline/verification-log.md`
 - [x] T052 Run modern parallel Pester, the Windows PowerShell compatibility lane, PowerShell lint, Tricky human/JSON smoke, strict MkDocs, and the final EARS gate for REQ-037 and SC-006 through SC-009
 
 **Checkpoint**: A fresh host can reach Core using only inbox tooling; both supported shells load the

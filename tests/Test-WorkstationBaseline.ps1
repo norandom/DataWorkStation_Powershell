@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All', 'HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'DeveloperEnvironment', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal')]
+    [ValidateSet('All', 'HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'DeveloperEnvironment', 'Documentation', 'PublicationGates', 'SpecificationWorkflow', 'SkillOptSafety', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal')]
     [string] $Section = 'All'
 )
 
@@ -639,6 +639,141 @@ function Test-DeveloperEnvironment {
     Test-SpecDrivenDevelopment
 }
 
+function Test-Documentation {
+    $readme = Get-Content -LiteralPath (Join-Path $repositoryRoot 'README.md') -Raw
+    $gettingStarted = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\getting-started.md') -Raw
+    Assert-True ($readme -match 'Windows 11 Pro is required') 'the developer README names Windows 11 Pro as required'
+    Assert-True ($gettingStarted -match 'Windows 11 Pro is required') 'getting started names Windows 11 Pro as required'
+
+    $gitignore = @(Get-Content -LiteralPath (Join-Path $repositoryRoot '.gitignore'))
+    $localSelections = @(
+        [pscustomobject]@{ Sample = '.excluded.sample'; Local = '.excluded' }
+        [pscustomobject]@{ Sample = '.wsl-env.sample'; Local = '.wsl-env' }
+        [pscustomobject]@{ Sample = '.terminal-fonts-sample'; Local = '.terminal-fonts' }
+    )
+    foreach ($selection in $localSelections) {
+        Assert-True (Test-Path -LiteralPath (Join-Path $repositoryRoot $selection.Sample) -PathType Leaf) "public sample '$($selection.Sample)' exists"
+        Assert-True (@($gitignore | Where-Object { $_.Trim() -eq $selection.Local }).Count -eq 1) "local selection '$($selection.Local)' is ignored exactly once"
+        $copyPattern = 'Copy-Item\s+' + [regex]::Escape($selection.Sample) + '\s+' + [regex]::Escape($selection.Local)
+        Assert-True ($gettingStarted -match $copyPattern) "getting started shows how to create '$($selection.Local)' from its sample"
+    }
+
+    $sampleOutputs = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\sample-outputs.md') -Raw
+    $hardening = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\hardening.md') -Raw
+    $debloat = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\debloat.md') -Raw
+    $malware = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\malware-analysis.md') -Raw
+    Assert-True ($sampleOutputs -match '(?m)^PS> ' -and $sampleOutputs -match '(?i)json') 'operator documentation contains representative human and structured output'
+    Assert-True ($hardening -match '(?i)sudo|elevat|privileg') 'hardening documentation states its privilege boundary'
+    Assert-True ($debloat -match '(?i)ConfirmRemoval' -and $debloat -match '(?im)^## Rollback limits') 'debloat documentation states confirmation and recovery limits'
+    Assert-True ($hardening -match '(?im)^## Residual attack surface' -and $malware -match '(?im)^## Isolation and residual attack surface') 'security workflows document residual attack surface'
+
+    $capabilityDocument = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\capabilities\index.md') -Raw
+    $catalog = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\capabilities.psd1')
+    foreach ($capability in @($catalog.Capabilities)) {
+        Assert-True ($capabilityDocument -match ('`' + [regex]::Escape($capability.Id) + '`')) "capability documentation includes route '$($capability.Id)'"
+    }
+    Assert-True ($capabilityDocument -match [regex]::Escape('config/capabilities.psd1')) 'operator documentation identifies the routing catalog as authoritative'
+    foreach ($target in @('../sample-outputs.md', '../hardening.md#residual-attack-surface', '../debloat.md#rollback-limits', '../malware-analysis.md#isolation-and-residual-attack-surface')) {
+        Assert-True ($capabilityDocument -match [regex]::Escape("($target)")) "capability decision page links directly to '$target'"
+    }
+}
+
+function Test-PublicationGates {
+    $powerShell = (Get-Command pwsh.exe -ErrorAction Stop).Source
+    $lint = Invoke-External -FilePath $powerShell -ArgumentList @('-NoLogo', '-NoProfile', '-File', (Join-Path $repositoryRoot 'scripts\Invoke-PowerShellLint.ps1'))
+    Assert-True ($lint.ExitCode -eq 0) "publication PowerShell lint succeeds: $($lint.Output -join ' ')"
+
+    $trickyScript = Join-Path $repositoryRoot 'scripts\Invoke-Tricky.ps1'
+    $human = Invoke-External -FilePath $powerShell -ArgumentList @('-NoLogo', '-NoProfile', '-File', $trickyScript, 'capabilities')
+    Assert-True ($human.ExitCode -eq 0 -and ($human.Output -join [Environment]::NewLine) -match 'memory-pressure') 'publication Tricky human smoke succeeds'
+    $structured = Invoke-External -FilePath $powerShell -ArgumentList @('-NoLogo', '-NoProfile', '-File', $trickyScript, 'capabilities', '-Json')
+    $parsed = $null
+    try { $parsed = ($structured.Output -join [Environment]::NewLine) | ConvertFrom-Json } catch { $parsed = $null }
+    Assert-True ($structured.ExitCode -eq 0 -and $null -ne $parsed -and @($parsed.Capabilities).Count -eq @(Get-BaselineCapabilityNames).Count) 'publication Tricky JSON smoke succeeds'
+
+    $uv = (Get-Command uv.exe -ErrorAction Stop).Source
+    $docs = Invoke-External -FilePath $uv -ArgumentList @('run', '--group', 'docs', 'mkdocs', 'build', '--strict')
+    Assert-True ($docs.ExitCode -eq 0) "publication strict documentation build succeeds: $($docs.Output -join ' ')"
+
+    $releaseWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github\workflows\release.yml') -Raw
+    Assert-True ($releaseWorkflow -match 'Invoke-PowerShellLint\.ps1') 'release workflow declares the PowerShell lint gate'
+    Assert-True ($releaseWorkflow -match 'Invoke-Tricky\.ps1\s+capabilities(?:\s|$)') 'release workflow declares the Tricky human smoke gate'
+    Assert-True ($releaseWorkflow -match 'Invoke-Tricky\.ps1\s+capabilities\s+-Json') 'release workflow declares the Tricky JSON smoke gate'
+    Assert-True ($releaseWorkflow -match 'mkdocs\s+build\s+--strict') 'release workflow declares the strict documentation gate'
+}
+
+function Test-SpecificationWorkflow {
+    $featureRoot = Join-Path $repositoryRoot 'specs\001-workstation-baseline'
+    $specification = Get-Content -LiteralPath (Join-Path $featureRoot 'spec.md') -Raw
+    $traceability = Get-Content -LiteralPath (Join-Path $featureRoot 'traceability.toml') -Raw
+    $tasks = Get-Content -LiteralPath (Join-Path $featureRoot 'tasks.md') -Raw
+
+    $requirements = @([regex]::Matches($specification, '(?m)^- (REQ-\d{3}): .*\bshall\b') | ForEach-Object { $_.Groups[1].Value })
+    $traceIds = @([regex]::Matches($traceability, '(?m)^\[requirements\.(REQ-\d{3})\]\s*$') | ForEach-Object { $_.Groups[1].Value })
+    Assert-True ($requirements.Count -gt 0) 'the specification exposes EARS requirements'
+    Assert-True (@($requirements | Sort-Object -Unique).Count -eq $requirements.Count) 'EARS requirement IDs are unique'
+    Assert-True (@($traceIds | Sort-Object -Unique).Count -eq $traceIds.Count) 'traceability requirement entries are unique'
+    Assert-True (@(Compare-Object -ReferenceObject ($requirements | Sort-Object) -DifferenceObject ($traceIds | Sort-Object)).Count -eq 0) 'every EARS requirement has exactly one traceability entry'
+
+    foreach ($requirement in $requirements) {
+        $blockPattern = '(?ms)^\[requirements\.' + [regex]::Escape($requirement) + '\]\s*(.*?)(?=^\[requirements\.|\z)'
+        $block = [regex]::Match($traceability, $blockPattern).Groups[1].Value
+        $verification = [regex]::Match($block, '(?m)^verification\s*=\s*"(automated|manual)"\s*$').Groups[1].Value
+        Assert-True ($verification -in @('automated', 'manual')) "traceability for '$requirement' declares an accepted verification mode"
+        if ($verification -eq 'automated') {
+            Assert-True ($block -match '(?m)^tests\s*=\s*\[\s*"[^"]+"') "automated traceability for '$requirement' names a selector"
+        } else {
+            Assert-True ($block -match '(?m)^rationale\s*=\s*"[^\"]{20,}"') "manual traceability for '$requirement' gives a concrete rationale"
+        }
+    }
+
+    $taskIds = @([regex]::Matches($tasks, '(?m)^- \[(?: |x|X)\] T(\d{3})\b') | ForEach-Object { [int] $_.Groups[1].Value })
+    Assert-True (@($taskIds | Sort-Object -Unique).Count -eq $taskIds.Count) 'task IDs are unique'
+    Assert-True (@(Compare-Object -ReferenceObject @(1..52) -DifferenceObject ($taskIds | Sort-Object)).Count -eq 0) 'the declared T001 through T052 task sequence has no omissions'
+
+    $coverageRows = @([regex]::Matches($tasks, '(?m)^\| (REQ-[^|]+) \| (T[^|]+) \| (T[^|]+) \|$'))
+    $coveredRequirements = [Collections.Generic.List[string]]::new()
+    foreach ($row in $coverageRows) {
+        $rowRequirements = @([regex]::Matches($row.Groups[1].Value, 'REQ-\d{3}') | ForEach-Object { $_.Value })
+        foreach ($requirement in $rowRequirements) { $coveredRequirements.Add($requirement) }
+        $testTasks = @([regex]::Matches($row.Groups[2].Value, 'T(\d{3})') | ForEach-Object { [int] $_.Groups[1].Value })
+        $implementationTasks = @([regex]::Matches($row.Groups[3].Value, 'T(\d{3})') | ForEach-Object { [int] $_.Groups[1].Value })
+        Assert-True ($testTasks.Count -gt 0 -and $implementationTasks.Count -gt 0) "coverage row '$($row.Groups[1].Value.Trim())' names test and remediation tasks"
+        Assert-True (($testTasks | Measure-Object -Maximum).Maximum -lt ($implementationTasks | Measure-Object -Minimum).Minimum) "coverage row '$($row.Groups[1].Value.Trim())' places failing tests before remediation"
+    }
+    Assert-True (@(Compare-Object -ReferenceObject ($requirements | Sort-Object) -DifferenceObject (@($coveredRequirements) | Sort-Object)).Count -eq 0) 'the task coverage matrix includes every EARS requirement exactly once'
+}
+
+function Test-SkillOptSafety {
+    $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\skillopt.psd1')
+    $source = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Invoke-SkillOpt.ps1') -Raw
+    Assert-True ($configuration.UserConfig.backend -eq 'mock') 'SkillOpt defaults to the non-provider mock backend'
+    Assert-True ($configuration.UserConfig.gate_mode -eq 'on') 'SkillOpt gating is enabled'
+    Assert-True ($configuration.UserConfig.gate_no_regression -eq $true) 'SkillOpt rejects regression at the gate'
+    Assert-True ($configuration.UserConfig.target_task_filter -eq $true) 'SkillOpt gates against target-task evidence'
+    Assert-True ($configuration.UserConfig.auto_adopt -eq $false) 'SkillOpt cannot auto-adopt a proposal'
+    Assert-True ($configuration.UserConfig.evolve_memory -eq $false) 'SkillOpt cannot rewrite project memory'
+
+    Assert-True ($source -match '\[Parameter\(Mandatory = \$true, Position = 0\)\]') 'SkillOpt requires one explicit action'
+    Assert-True ($source -match 'function Resolve-TargetSkill' -and $source -match "requires a skill name from \.agents/skills") 'optimization actions require one explicit repository skill'
+    Assert-True ($source -match 'if \(\$state\.gate_mode -ne ''on''\)') 'the runtime guard rejects disabled gating'
+    Assert-True ($source -match 'if \(\$state\.gate_no_regression -ne \$true\)') 'the runtime guard rejects regression-tolerant gating'
+    Assert-True ($source -match 'if \(\$state\.target_task_filter -ne \$true\)') 'the runtime guard requires target-task filtering'
+    Assert-True ($source -match 'if \(\$state\.auto_adopt -ne \$false\)') 'the runtime guard rejects automatic adoption'
+    Assert-True ($source -match "Backend = 'Mock'" -and $source -match 'AllowProviderCalls') 'provider use requires an explicit backend and acknowledgement'
+    Assert-True ($source -match '\.skillopt-sleep\\staging' -and $source -match 'Staging path is outside this repository SkillOpt staging tree') 'proposals remain inside the ignored repository staging tree'
+    Assert-True ($source -match 'ConfirmAdoption' -and $source -match 'Adoption requires -ConfirmAdoption') 'adoption requires explicit confirmation'
+    Assert-True ($source -match 'Adoption requires an explicit -Staging path') 'adoption requires one reviewed staging path'
+    Assert-True ($source -notmatch '(?i)Register-ScheduledTask|New-ScheduledTask|schtasks(?:\.exe)?|Start-Job|Register-ObjectEvent') 'the SkillOpt wrapper contains no scheduling path'
+}
+
+function Test-Governance {
+    Test-Documentation
+    Test-PublicationGates
+    Test-SpecificationWorkflow
+    Test-SkillOptSafety
+}
+
 function Test-BootstrapStages {
     $catalogPath = Join-Path $repositoryRoot 'config\workstation-modules.psd1'
     $catalog = Import-PowerShellDataFile -LiteralPath $catalogPath
@@ -785,7 +920,7 @@ function Test-WindowsTerminal {
     }
 }
 
-$sections = if ($Section -eq 'All') { @('HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal') } else { @($Section) }
+$sections = if ($Section -eq 'All') { @('HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal') } else { @($Section) }
 foreach ($name in $sections) {
     & (Get-Command "Test-$name" -CommandType Function)
     Write-Host "PASS $name"

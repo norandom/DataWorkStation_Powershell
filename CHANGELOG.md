@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 2.0.0 - 2026-08-15
+
+- Expand the staged workstation DSL with PowerShell 7 bootstrap gates, native development toolchains, Java, Go, Rust, CMake, MSBuild, Pester, and compatible shared profiles for Windows PowerShell 5.1 and PowerShell Core.
+- Add rootless Podman and pyinfra-managed Debian WSL automation, keeping Dagger isolated to its Docker-first Linux environment.
+- Add evidence-first suspicious-file analysis for binaries, Office documents, and PDFs with static tooling, Windows Sandbox detonation plans, clean-control diffs, host/guest hash comparison, and explicit execution and networking confirmations.
+- Add the release-pinned `malware_hashes` command, Ghidra and related analysis tools, retained ETW/file/handle evidence, and human-readable aliases before AI routing.
+- Migrate the repository to release-pinned Spec Kit with reusable EARS/TDD validation, complete requirement traceability, dependency-ordered tasks, and governance tests that prevent requirements from silently falling out of the implementation flow.
+- Add strict publication gates for PowerShell lint, human and JSON Tricky routes, capability documentation, specification integrity, and reproducible MkDocs builds.
+
 ## 1.0.0 - 2026-08-14
 
 - Add managed focus-follows-mouse behavior that explicitly preserves window Z-order.

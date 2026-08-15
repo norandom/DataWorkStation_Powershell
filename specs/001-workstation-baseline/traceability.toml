@@ -1,168 +1,168 @@
 schema_version = "1.0"
 
 [requirements.REQ-001]
-verification = "manual"
-rationale = "Compare the rendered module baseline against the human-readable module plan and declared catalog."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Modules"]
 
 [requirements.REQ-002]
-verification = "manual"
-rationale = "Review every module row in the catalog for all required metadata fields during baseline migration."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Modules"]
 
 [requirements.REQ-003]
-verification = "manual"
-rationale = "Run full and focused plan commands and inspect ordering without applying workstation state."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#ModulePlanning"]
 
 [requirements.REQ-004]
-verification = "manual"
-rationale = "Run representative focused plans and compare their rows with the expected transitive dependency closure."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#ModulePlanning"]
 
 [requirements.REQ-005]
-verification = "manual"
-rationale = "Run plan mode while monitoring that no desired-state resource or package operation is invoked."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#PlanSafety"]
 
 [requirements.REQ-006]
 verification = "manual"
-rationale = "Run representative resource Test modes and review their state reports without authorizing repair."
+rationale = "Run focused Test commands for package, privileged Windows, WSL, and user resources; compare relevant state before and after, and do not authorize Ensure or repair."
 
 [requirements.REQ-007]
 verification = "manual"
-rationale = "Run Ensure twice on a disposable or already compliant host and compare the second compliance report."
+rationale = "On a disposable or approved already-compliant host, run the same focused Ensure command twice and retain the second report showing no replacement or additional change."
 
 [requirements.REQ-008]
 verification = "manual"
-rationale = "Inspect documented backup artifacts before explicitly exercising supported Reinitialize modes."
+rationale = "After explicitly approving one supported Reinitialize on a disposable host, verify its dated backup or snapshot exists and is readable before the first replacement operation."
 
 [requirements.REQ-009]
-verification = "manual"
-rationale = "Inspect focused privileged-module plans and verify that Sudo precedes every elevated dependant."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#ModulePlanning", "tests/Test-WorkstationBaseline.ps1#StateSafety"]
 
 [requirements.REQ-010]
 verification = "manual"
-rationale = "Invoke the destructive profile without confirmation and verify that it refuses to remove state."
+rationale = "Invoke each destructive module with Ensure but without its confirmation switch, verify a nonzero refusal, and confirm its documented inventory or retained-data target is unchanged."
 
 [requirements.REQ-011]
-verification = "manual"
-rationale = "Inspect the default module plan and verify that the opt-in Debloat module is absent."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#PlanSafety"]
 
 [requirements.REQ-012]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#PowerShellRuntimes"]
 
 [requirements.REQ-013]
-verification = "manual"
-rationale = "Review the developer README and getting-started documentation for an explicit Windows 11 Pro prerequisite."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Documentation"]
 
 [requirements.REQ-014]
-verification = "manual"
-rationale = "Inspect the Windows feature plan and confirm all Hyper-V parent dependencies precede Sandbox."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#WindowsSafety"]
 
 [requirements.REQ-015]
 verification = "manual"
-rationale = "Exercise the feature resource on a disposable host and verify that it reports restart state without rebooting."
+rationale = "On a disposable Windows host, run the approved Windows-feature Ensure, retain its RestartRequired report, and verify the process neither invokes a restart command nor reboots the host."
 
 [requirements.REQ-016]
-verification = "manual"
-rationale = "Inspect module selection and direct commands for independent security and removal state boundaries."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#WindowsSafety"]
 
 [requirements.REQ-017]
-verification = "manual"
-rationale = "Inspect the declared hardening controls and test report to confirm no User Account Control setting is managed."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#WindowsSafety"]
 
 [requirements.REQ-018]
 verification = "manual"
-rationale = "Compare debloat inventory results with the protected-package rules before authorizing any removal."
+rationale = "Run Set-DebloatState.ps1 -Mode Test through the documented elevated boundary, compare every proposed AppX target with ProtectedAppxPatterns and NonRemovable state, and do not authorize removal."
 
 [requirements.REQ-019]
 verification = "manual"
-rationale = "On a disposable host, confirm that the documented inventory snapshot exists before removal begins."
+rationale = "On a disposable host only, explicitly approve Debloat Ensure with ConfirmRemoval and retain timestamps proving the JSON pre-removal snapshot was readable before the first package or feature removal."
 
 [requirements.REQ-020]
 verification = "manual"
-rationale = "Inspect the Contour transition report and installed package sources during an explicitly authorized Ensure run."
+rationale = "During an explicitly approved Contour Ensure, retain evidence that the Scoop package was removed before the hash-verified official MSI was installed and that no restart occurred."
 
 [requirements.REQ-021]
 verification = "manual"
-rationale = "Run the bounded Contour graphics test with compatible and intentionally invalid driver conditions."
+rationale = "Run Set-ContourTerminalState.ps1 -Mode Test on separately approved hosts that already exhibit working and failing graphics stacks; retain bounded gate and driver/INF output without changing a driver for the test."
 
 [requirements.REQ-022]
 verification = "manual"
-rationale = "Resolve the awk and sed commands and inventory installed packages for excluded shell environments."
+rationale = "After an approved NativeTextTools Test or Ensure, resolve awk.exe and sed.exe, run their functional pipelines, and inventory packages and PATH to confirm Git Bash, MinGit, MSYS, MSYS2, and Cygwin were not introduced."
 
 [requirements.REQ-023]
 verification = "manual"
-rationale = "Test the selected Debian resources and inspect package locations from inside the distribution."
+rationale = "Run the focused LinuxHomebrew, LinuxAutomation, and DeveloperTools Test commands, then inspect brew, uv, pyinfra, and Dagger paths from inside the selected Debian WSL distribution."
 
 [requirements.REQ-024]
 verification = "manual"
-rationale = "Inspect isolated tool environments and verify unrelated Python environments are not modified."
+rationale = "Before and after an approved tool Ensure, inventory the host and Debian uv tool directories plus the unrelated AMD/PyTorch environment and verify only the declared isolated environment changed."
 
 [requirements.REQ-025]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#PowerShellRuntimes"]
 
 [requirements.REQ-026]
-verification = "manual"
-rationale = "Compare capability discovery output with all nineteen entries in the migration baseline table."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Capabilities"]
 
 [requirements.REQ-027]
-verification = "manual"
-rationale = "Review every capability route for nonempty triggers, evidence kinds, inspection commands, and capture command."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Capabilities"]
 
 [requirements.REQ-028]
 verification = "manual"
-rationale = "Walk each diagnostic skill against a case with existing evidence and verify inspection occurs first."
+rationale = "Provide each focused diagnostic workflow an existing EVTX, ETL, PCAPNG, dump, profile, or snapshot case and verify it inspects that artifact before proposing any new capture."
 
 [requirements.REQ-029]
 verification = "manual"
-rationale = "Review diagnostic workflows for explicit operator commands before every capture or state-changing action."
+rationale = "Walk each capture, debugger, termination, protection, and Reinitialize path up to its human command boundary; decline authorization and verify no state-changing command starts."
 
 [requirements.REQ-030]
-verification = "manual"
-rationale = "Run representative Tricky discovery and case commands without JSON and inspect readable terminal output."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#TrickyOutput"]
 
 [requirements.REQ-031]
-verification = "manual"
-rationale = "Run representative Tricky commands with JSON and parse their complete output with a JSON parser."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#TrickyOutput"]
 
 [requirements.REQ-032]
-verification = "manual"
-rationale = "Validate repository skill packages and review that each directory retains one focused purpose."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#DiagnosticSkills"]
 
 [requirements.REQ-033]
 verification = "manual"
-rationale = "Exercise profiler status and representative format generation for Python, .NET, and native workflows."
+rationale = "Run profile-status first, then separately approve bounded native, Python, and .NET captures on disposable workloads and verify ETL, SVG, nettrace, and Speedscope outputs open with their documented viewers."
 
 [requirements.REQ-034]
-verification = "manual"
-rationale = "Compare every documented local selector with its safe sample and version-control exclusion."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Documentation"]
 
 [requirements.REQ-035]
-verification = "manual"
-rationale = "Build and review the operator documentation for commands, outputs, privileges, rollback, and attack surface."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#Documentation", "tests/Test-WorkstationBaseline.ps1#PublicationGates"]
 
 [requirements.REQ-036]
 verification = "manual"
-rationale = "Review command-changing commits for matching capability catalog and operator documentation updates."
+rationale = "For each public-command or routing change, review git diff --name-only and the patch to confirm config/capabilities.psd1 and the corresponding operator page changed in the same commit."
 
 [requirements.REQ-037]
-verification = "manual"
-rationale = "Run the declared publication commands and retain their zero-error output before a release is published."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#PublicationGates"]
 
 [requirements.REQ-038]
-verification = "manual"
-rationale = "Test the released bundle state in both PowerShell runtimes and inspect its version and hash declarations."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#SpecDrivenDevelopment"]
 
 [requirements.REQ-039]
-verification = "manual"
-rationale = "Run deterministic plan validation and inspect that every requirement has one accepted verification entry."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#SpecificationWorkflow"]
 
 [requirements.REQ-040]
-verification = "manual"
-rationale = "Review generated behavior tasks for a requirement identifier, selector, and preceding failing-test task."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#SpecificationWorkflow"]
 
 [requirements.REQ-041]
-verification = "manual"
-rationale = "Review and mock the SkillOpt workflow to verify explicit targeting, gating, staging, and adoption."
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#SkillOptSafety"]
 
 [requirements.REQ-042]
 verification = "automated"
@@ -174,32 +174,32 @@ tests = ["tests/Test-MalwareHashesState.ps1"]
 
 [requirements.REQ-044]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#BootstrapStages"]
 
 [requirements.REQ-045]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#BootstrapStages"]
 
 [requirements.REQ-046]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#BootstrapStages"]
 
 [requirements.REQ-047]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#BootstrapStages"]
 
 [requirements.REQ-048]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#PowerShellRuntimes"]
 
 [requirements.REQ-049]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#WindowsTerminal"]
 
 [requirements.REQ-050]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#WindowsTerminal"]
 
 [requirements.REQ-051]
 verification = "automated"
-tests = ["tests/Test-WorkstationBaseline.ps1"]
+tests = ["tests/Test-WorkstationBaseline.ps1#WindowsTerminal"]

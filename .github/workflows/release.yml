@@ -29,6 +29,16 @@ jobs:
         run: |
           set -euo pipefail
           test "$RELEASE_TAG" = "v$(tr -d '\r\n' < VERSION)"
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: Install-PSResource -Name PSScriptAnalyzer -Version 1.25.0 -Scope CurrentUser -Repository PSGallery -TrustRepository -Quiet
+      - name: Run PowerShell and Tricky publication gates
+        shell: pwsh
+        run: |
+          ./scripts/Invoke-PowerShellLint.ps1
+          ./scripts/Invoke-Tricky.ps1 capabilities | Out-Null
+          $capabilities = ./scripts/Invoke-Tricky.ps1 capabilities -Json | ConvertFrom-Json
+          if (@($capabilities.Capabilities).Count -eq 0) { throw 'Tricky JSON capability smoke returned no routes.' }
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:

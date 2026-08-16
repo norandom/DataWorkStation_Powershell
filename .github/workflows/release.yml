@@ -21,7 +21,7 @@ jobs:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ env.RELEASE_TAG }}
       - name: Validate version
@@ -55,14 +55,26 @@ jobs:
           tar -C site -czf "dist/DataWorkStation-PowerShell-${version}-site.tar.gz" .
           tar -czf "dist/DataWorkStation-PowerShell-${version}-docs-source.tar.gz" \
             docs mkdocs.yml pyproject.toml uv.lock README.md CHANGELOG.md VERSION
-      - name: Create or update GitHub Release
+      - name: Create or verify the draft release, upload once, and publish
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" dist/* --clobber
+            release_json="$(gh release view "$RELEASE_TAG" --json isDraft,assets)"
+            test "$(jq -r '.isDraft' <<<"$release_json")" = "true"
+            while IFS= read -r asset; do
+              test "$(jq --arg name "$asset" '[.assets[] | select(.name == $name)] | length' <<<"$release_json")" = "0"
+            done < <(find dist -maxdepth 1 -type f -printf '%f\n' | sort)
           else
-            gh release create "$RELEASE_TAG" dist/* --verify-tag --generate-notes --title "$RELEASE_TAG"
+            gh release create "$RELEASE_TAG" --draft --verify-tag --generate-notes --title "$RELEASE_TAG"
           fi
+          gh release upload "$RELEASE_TAG" dist/*
+          release_json="$(gh release view "$RELEASE_TAG" --json isDraft,assets)"
+          test "$(jq -r '.isDraft' <<<"$release_json")" = "true"
+          while IFS= read -r asset; do
+            test "$(jq --arg name "$asset" '[.assets[] | select(.name == $name)] | length' <<<"$release_json")" = "1"
+          done < <(find dist -maxdepth 1 -type f -printf '%f\n' | sort)
+          gh release edit "$RELEASE_TAG" --draft=false
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"

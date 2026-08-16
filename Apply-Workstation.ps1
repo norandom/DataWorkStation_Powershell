@@ -4,7 +4,7 @@ param(
     [string] $Mode = 'Ensure',
     [ValidateSet(
         'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
-        'MalwareHashes', 'MalwareAnalysisTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
+        'MalwareHashes', 'MalwareAnalysisTools', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -57,6 +57,7 @@ $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
 $specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
 $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalysisToolsState.ps1'
+$nativeForensicToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeForensicToolsState.ps1'
 $malwareContainerImageScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareContainerImageState.ps1'
 $linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
 $linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
@@ -388,6 +389,11 @@ function Invoke-WorkstationModule {
         'MalwareAnalysisTools' {
             Invoke-CheckedProcess 'Optional malware analysis tool state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $malwareAnalysisToolsScript -Mode $Mode
+            }
+        }
+        'NativeForensicTools' {
+            Invoke-CheckedProcess 'Native forensic tool state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nativeForensicToolsScript -Mode $Mode
             }
         }
         'MalwareContainerImage' {

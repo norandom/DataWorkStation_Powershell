@@ -1,0 +1,96 @@
+name: Build native forensic tool candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_record:
+        description: Reviewed build record to execute
+        required: true
+        default: config/forensic-builds/ewfverify-20231119-b1.psd1
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      BUILD_RECORD: ${{ inputs.build_record }}
+      OUTPUT_DIRECTORY: ${{ github.workspace }}\artifacts\forensic-tools
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the reviewed commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Select the pinned converter Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: 3.12.10
+
+      - name: Build and validate the native package
+        shell: pwsh
+        run: |
+          ./scripts/Build-NativeForensicTool.ps1 `
+            -BuildRecord $env:BUILD_RECORD `
+            -OutputDirectory $env:OUTPUT_DIRECTORY
+
+      - name: Recheck the package offline
+        shell: pwsh
+        run: |
+          $record = Import-PowerShellDataFile $env:BUILD_RECORD
+          $asset = Join-Path $env:OUTPUT_DIRECTORY $record.Package.AssetName
+          ./scripts/Test-ForensicReleaseCandidate.ps1 -PackagePath $asset -BuildRecord $env:BUILD_RECORD
+
+      - name: Run benign corpus contract in PowerShell 7
+        shell: pwsh
+        run: ./tests/Test-NativeForensicVerification.ps1 -Section CertificationCorpus
+
+      - name: Run benign corpus contract in Windows PowerShell 5.1
+        shell: powershell
+        run: ./tests/Test-NativeForensicVerification.ps1 -Section CertificationCorpus
+
+      - name: Resolve immutable candidate identity
+        id: candidate
+        shell: pwsh
+        run: |
+          $record = Import-PowerShellDataFile $env:BUILD_RECORD
+          $asset = Join-Path $env:OUTPUT_DIRECTORY $record.Package.AssetName
+          "asset=$asset" >> $env:GITHUB_OUTPUT
+          "tag=$($record.Package.ReleaseTag)" >> $env:GITHUB_OUTPUT
+
+      - name: Attest candidate package provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: ${{ steps.candidate.outputs.asset }}
+
+      - name: Retain candidate and evidence as workflow artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-forensic-candidate
+          path: artifacts/forensic-tools/*
+          if-no-files-found: error
+
+      - name: Create or verify the draft release, then upload once
+        shell: pwsh
+        run: |
+          $record = Import-PowerShellDataFile $env:BUILD_RECORD
+          $tag = $record.Package.ReleaseTag
+          $asset = Join-Path $env:OUTPUT_DIRECTORY $record.Package.AssetName
+          $release = gh release view $tag --json isDraft,assets 2>$null | ConvertFrom-Json
+          if ($LASTEXITCODE -eq 0) {
+            if (-not $release.isDraft) { throw "Release $tag already exists and is not a draft." }
+            $existing = @($release.assets | Where-Object name -eq $record.Package.AssetName)
+            if ($existing.Count -gt 0) { throw "Draft asset already exists; refusing to replace $($record.Package.AssetName)." }
+          }
+          else {
+            gh release create $tag --draft --title $tag --notes "Native forensic candidate; approval and publication are separate reviewed operations."
+            if ($LASTEXITCODE -ne 0) { throw "Unable to create draft release $tag." }
+          }
+          gh release upload $tag $asset
+          if ($LASTEXITCODE -ne 0) { throw "Unable to upload candidate asset without replacement." }

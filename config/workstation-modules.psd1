@@ -310,6 +310,18 @@
             Description = 'Opt-in, hash-pinned static-analysis and Sandbox telemetry tools.'
         }
         @{
+            Name = 'NativeForensicTools'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 64
+            Default = $false
+            DependsOn = @('PowerShell7', 'PowerShellProfile')
+            SupportedModes = @('Test', 'Ensure')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Opt-in, version-pinned native Windows forensic verifier package installed without a local build.'
+        }
+        @{
             Name = 'MalwareContainerImage'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

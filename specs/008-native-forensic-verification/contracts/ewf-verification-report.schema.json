@@ -1,0 +1,224 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dataworkstation.local/schemas/ewf-verification-report-1.0.json",
+  "title": "EWF verification report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "reportDirectory",
+    "status",
+    "verified",
+    "startedAtUtc",
+    "endedAtUtc",
+    "host",
+    "tool",
+    "evidence",
+    "invocation",
+    "mediaDigests",
+    "artifacts",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "runId": { "type": "string", "pattern": "^[0-9a-fA-F-]{36}$" },
+    "reportDirectory": { "type": "string" },
+    "status": {
+      "enum": [
+        "verified",
+        "readable-no-stored-hash",
+        "integrity-failed",
+        "evidence-changed",
+        "unsupported",
+        "tool-integrity-failed",
+        "parser-output-unrecognized",
+        "report-failed"
+      ]
+    },
+    "verified": { "type": "boolean" },
+    "startedAtUtc": { "type": "string", "format": "date-time" },
+    "endedAtUtc": { "type": "string", "format": "date-time" },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["computerName", "windowsVersion", "architecture", "powerShellVersion"],
+      "properties": {
+        "computerName": { "type": "string" },
+        "windowsVersion": { "type": "string" },
+        "architecture": { "const": "x64" },
+        "powerShellVersion": { "type": "string" }
+      }
+    },
+    "tool": { "$ref": "#/$defs/tool" },
+    "evidence": { "$ref": "#/$defs/evidence" },
+    "invocation": { "$ref": "#/$defs/invocation" },
+    "mediaDigests": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/digestResult" }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reportArtifact" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "failure": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9A-F]{64}$"
+    },
+    "toolFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relativePath", "size", "sha256"],
+      "properties": {
+        "relativePath": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "toolId",
+        "upstreamVersion",
+        "buildRevision",
+        "catalogFileSha256",
+        "catalogCommit",
+        "packageSha256",
+        "executablePath",
+        "files",
+        "sourceArtifacts"
+      ],
+      "properties": {
+        "toolId": { "const": "ewfverify" },
+        "upstreamVersion": { "type": "string" },
+        "buildRevision": { "type": "string", "pattern": "^b[1-9][0-9]*$" },
+        "catalogFileSha256": { "$ref": "#/$defs/sha256" },
+        "catalogCommit": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "releaseTag": { "type": "string" },
+        "packageSha256": { "$ref": "#/$defs/sha256" },
+        "executablePath": { "type": "string" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/toolFile" }
+        },
+        "sourceArtifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/sourceArtifact" }
+        }
+      }
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "size", "sha256", "origin"],
+      "properties": {
+        "name": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "origin": { "type": "string" }
+      }
+    },
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinal",
+        "name",
+        "path",
+        "extension",
+        "preLength",
+        "preSha256",
+        "postLength",
+        "postSha256",
+        "unchanged"
+      ],
+      "properties": {
+        "ordinal": { "type": "integer", "minimum": 1 },
+        "name": { "type": "string" },
+        "path": { "type": "string" },
+        "extension": { "type": "string" },
+        "preLength": { "type": "integer", "minimum": 0 },
+        "preSha256": { "$ref": "#/$defs/sha256" },
+        "postLength": { "type": "integer", "minimum": 0 },
+        "postSha256": { "$ref": "#/$defs/sha256" },
+        "unchanged": { "type": "boolean" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selectedPath", "formatProfile", "totalBytes", "segments"],
+      "properties": {
+        "selectedPath": { "type": "string" },
+        "formatProfile": { "type": "string" },
+        "totalBytes": { "type": "integer", "minimum": 0 },
+        "segments": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/segment" }
+        }
+      }
+    },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "arguments", "exitCode", "parserProfile"],
+      "properties": {
+        "executable": { "type": "string" },
+        "arguments": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "exitCode": { "type": "integer" },
+        "parserProfile": { "type": "string" }
+      }
+    },
+    "digestResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "stored", "calculated", "matches"],
+      "properties": {
+        "algorithm": { "enum": ["MD5", "SHA1", "SHA256"] },
+        "stored": { "type": ["string", "null"] },
+        "calculated": { "type": ["string", "null"] },
+        "matches": { "type": ["boolean", "null"] }
+      }
+    },
+    "reportArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "size", "sha256", "sourceSize", "sourceSha256", "truncated"],
+      "properties": {
+        "name": {
+          "enum": ["report.txt", "stdout.bin", "stderr.bin", "ewfverify.log"]
+        },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "sourceSize": { "type": "integer", "minimum": 0 },
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
+        "truncated": { "type": "boolean" }
+      }
+    }
+  }
+}

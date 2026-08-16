@@ -196,8 +196,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 42 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 26 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 43 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 27 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -242,6 +242,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | SpecDrivenDevelopment | REQ-038, REQ-039, REQ-040 |
 | MalwareHashes | REQ-002, REQ-007, REQ-043 |
 | MalwareAnalysisTools | REQ-026, REQ-029 |
+| NativeForensicTools | REQ-002, REQ-007 |
 | MalwareContainerImage | REQ-023, REQ-026, REQ-029 |
 | LegacyDockerCleanup | REQ-010, REQ-023 |
 | ProfilingTools | REQ-033 |
@@ -274,6 +275,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | event-history | REQ-026, REQ-028 |
 | security-state | REQ-026, REQ-029 |
 | malware-triage | REQ-026, REQ-028, REQ-029, REQ-043 |
+| forensic-evidence-verification | REQ-026, REQ-028, REQ-029 |
 | workstation-help | REQ-025, REQ-026 |
 | repository-quality | REQ-026 |
 | powershell-testing | REQ-012, REQ-026 |

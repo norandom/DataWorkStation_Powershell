@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Forensic Evidence"
+  short_description: "Verify EWF images without changing evidence"
+  default_prompt: "Use $verify-forensic-evidence to verify an existing EWF image and interpret its retained report."

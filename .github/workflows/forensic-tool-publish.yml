@@ -1,0 +1,61 @@
+name: Publish approved native forensic tool
+
+on:
+  workflow_dispatch:
+    inputs:
+      record_id:
+        description: Approved forensic catalog record
+        required: true
+        type: string
+      build_record:
+        description: Reviewed build record
+        required: true
+        type: string
+      asset_name:
+        description: Exact approved draft asset name
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  attestations: read
+
+jobs:
+  publish-approved-candidate:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Check out the clean reviewed commit
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Download the existing draft asset without replacement
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $record = (Import-PowerShellDataFile ./config/forensic-tools.psd1).Records |
+            Where-Object RecordId -eq '${{ inputs.record_id }}'
+          if (@($record).Count -ne 1 -or $record.ReviewState -ne 'Approved') { throw 'The requested record is not uniquely Approved.' }
+          $candidateDirectory = Join-Path $env:RUNNER_TEMP 'forensic-candidate'
+          New-Item -ItemType Directory -Path $candidateDirectory | Out-Null
+          gh release download $record.ReleaseIdentity.Tag `
+            --repo $record.ReleaseIdentity.Repository `
+            --pattern '${{ inputs.asset_name }}' `
+            --dir $candidateDirectory
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to download the exact draft asset.' }
+
+      - name: Validate and explicitly publish the approved draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $candidateDirectory = Join-Path $env:RUNNER_TEMP 'forensic-candidate'
+          ./scripts/Publish-NativeForensicTool.ps1 `
+            -RecordId '${{ inputs.record_id }}' `
+            -BuildRecord '${{ inputs.build_record }}' `
+            -PackagePath (Join-Path $candidateDirectory '${{ inputs.asset_name }}') `
+            -Publish `
+            -ConfirmPublication `
+            -Confirm:$false

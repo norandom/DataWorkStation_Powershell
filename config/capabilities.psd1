@@ -166,6 +166,27 @@
             CaptureCommand = 'malware-sandbox <path> -Mode Detonate -Run -ConfirmSandbox -ConfirmExecution'
         }
         @{
+            Id = 'forensic-evidence-verification'
+            Title = 'Read-only native Windows EWF verification'
+            Triggers = @('ewf', 'e01', 'forensic image', 'evidence verification', 'ewfverify', 'segment integrity', 'forensic package')
+            EvidenceKinds = @('EWF image', 'Verification report', 'Raw native output', 'Provenance snapshot')
+            InspectCommands = @(
+                'ewf-verify <path.E01> -ReportDirectory <separate-report-root> -Plan'
+                'ewf-verify <path.E01> -ReportDirectory <separate-report-root>'
+                'ewf-verify <path.E01> -ReportDirectory <separate-report-root> -Json'
+                'pwsh -NoProfile -File .\scripts\Set-NativeForensicToolsState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module NativeForensicTools -Plan'
+            )
+            ValidationCommands = @(
+                'pwsh -NoProfile -File .\tests\Test-NativeForensicVerification.ps1 -Section All'
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-NativeForensicVerification.ps1 -Section All'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module NativeForensicTools'
+            )
+            CaptureCommand = 'tricky add {case} <ewf-report-directory>'
+        }
+        @{
             Id = 'workstation-help'
             Title = 'Managed command, alias, and skill discovery'
             Triggers = @('list aliases', 'list skills', 'commands', 'workstation help', 'wshelp', 'wget', 'aria2c', 'download alias')

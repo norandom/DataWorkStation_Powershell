@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 2.2.0 - 2026-08-16
+
+- Add native-Windows, read-only segmented EWF verification with pre/post evidence identities, pinned tool provenance, bounded raw artifacts, and durable human/JSON reports in both supported PowerShell runtimes.
+- Add an opt-in forensic package lifecycle with verified source signatures, AMD64/import policy, two-lane benign compatibility certification, candidate-only ordinary update reporting, atomic rollback, draft/no-clobber release workflows, and explicit approval/publication boundaries.
+
 ## 2.1.0 - 2026-08-16
 
 - Add a release-pinned NixOS-WSL environment for Helm, kubectl, a separately locked current Pulumi CLI, and native OpenSSH, with locked-flake drift checks, complete Nix-store content verification, and one permission-safe SSH client configuration shared by Windows, trusted Debian, and NixOS while excluding Debian-MW.

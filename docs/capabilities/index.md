@@ -24,6 +24,7 @@ debugger, changes policy, or repairs desired state.
 | `event-history` | Service, login, audit, or general Windows history may explain a failure | `problems`, `service-errors`, `loginfail` | `eventlog-start CASE -Executable PATH` |
 | `security-state` | Defender, firewall, SmartScreen, or SaveZone may be involved | `firewall-status`, `defender-status`, `smartscreen-status`, `savezone-status` | Export and add the state to a Tricky case |
 | `malware-triage` | A file is suspicious, general Sandbox behavior must be compared, or two binaries need structural comparison | `is-this-malware PATH`, `sandbox-behavior-control PATH`, or `binary-diff OLD NEW` | Use a separately confirmed Sandbox launch or rootless graph-parser run only after reviewing its plan |
+| `forensic-evidence-verification` | An existing segmented EWF image needs an attributable stored-digest and segment-integrity check | `ewf-verify PATH.E01 -ReportDirectory REPORTS -Plan` | Run `ewf-verify` without `-Plan` only after reviewing the native tool state and separate report destination |
 
 Commands in the next-action column start a capture or cross an execution boundary. Review the target
 and scope before running one. The focused workflow pages under **Diagnose** and **Secure** explain
@@ -33,7 +34,8 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 [hardening residual attack surface](../hardening.md#residual-attack-surface),
 [debloat rollback limits](../debloat.md#rollback-limits), and
 [malware-analysis isolation](../malware-analysis.md#isolation-and-residual-attack-surface), and
-[graph-first analysis differencing](../analysis-differencing.md#graph-first-binary-comparison).
+[graph-first analysis differencing](../analysis-differencing.md#graph-first-binary-comparison), and
+[read-only EWF verification](../ewf-verification.md).
 
 ## Inspect or configure the workstation
 

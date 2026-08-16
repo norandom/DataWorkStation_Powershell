@@ -4,7 +4,9 @@ param(
     [string[]] $Target = @('All'),
     [switch] $Run,
     [switch] $Json,
-    [scriptblock] $CommandRunner
+    [scriptblock] $CommandRunner,
+    [Parameter(DontShow = $true)][string] $ForensicCatalogPath,
+    [Parameter(DontShow = $true)][switch] $PassThru
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,6 +14,21 @@ $null = $CommandRunner # consumed by the nested command executor
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\workstation-update.psd1')
 $releaseVersion = (Get-Content -LiteralPath (Join-Path $repositoryRoot 'VERSION') -Raw).Trim()
+if ([string]::IsNullOrWhiteSpace($ForensicCatalogPath)) { $ForensicCatalogPath = Join-Path $repositoryRoot 'config\forensic-tools.psd1' }
+
+function Get-ForensicToolUpdateStatus {
+    param([Parameter(Mandatory = $true)][string] $LiteralPath)
+
+    if (-not (Test-Path -LiteralPath $LiteralPath -PathType Leaf)) { throw "Forensic tool catalog not found: $LiteralPath" }
+    $catalog = Import-PowerShellDataFile -LiteralPath ([IO.Path]::GetFullPath($LiteralPath))
+    $approved = @($catalog.Records | Where-Object { $_.ReviewState -eq 'Approved' } | ForEach-Object {
+        [pscustomobject]@{ RecordId = $_.RecordId; ToolId = $_.ToolId; UpstreamVersion = $_.UpstreamVersion; BuildRevision = $_.BuildRevision; ReleaseTag = $_.ReleaseIdentity.Tag }
+    })
+    $candidates = @($catalog.Records | Where-Object { $_.ReviewState -eq 'Candidate' } | ForEach-Object {
+        [pscustomobject]@{ RecordId = $_.RecordId; ToolId = $_.ToolId; UpstreamVersion = $_.UpstreamVersion; BuildRevision = $_.BuildRevision; ReleaseTag = $_.ReleaseIdentity.Tag; Action = 'review-required' }
+    })
+    [pscustomobject]@{ Approved = $approved; Candidates = $candidates }
+}
 
 function Assert-UpdateCatalog {
     $targets = @($configuration.Targets)
@@ -75,6 +92,9 @@ function Write-HumanResult {
     $Result.Stages | Select-Object Order, Name, Privilege, Status, @{ Name = 'DependsOn'; Expression = { @($_.DependsOn) -join ',' } }, Detail |
         Format-Table -AutoSize -Wrap
     if ($Result.Action -eq 'Plan') { Write-Host 'No updates were installed. Run update -Run to execute this plan.' }
+    foreach ($candidate in @($Result.ForensicToolCandidates)) {
+        Write-Host "Forensic candidate (not installed): $($candidate.ToolId) $($candidate.UpstreamVersion)-$($candidate.BuildRevision); explicit review is required."
+    }
 }
 
 function ConvertTo-BoundedDetail {
@@ -230,19 +250,24 @@ function Invoke-UpdateStage {
 
 Assert-UpdateCatalog
 $resolved = @(Resolve-UpdateTargets -Requested $Target)
+$forensicStatus = Get-ForensicToolUpdateStatus -LiteralPath $ForensicCatalogPath
 $result = [pscustomobject][ordered]@{
     SchemaVersion = 1
     Action = if ($Run) { 'Run' } else { 'Plan' }
     ReleaseVersion = $releaseVersion
     SelectedTargets = @($Target)
     Stages = @($resolved | ForEach-Object { New-PlannedStage -Definition $_ })
+    ForensicToolApproved = @($forensicStatus.Approved)
+    ForensicToolCandidates = @($forensicStatus.Candidates)
     RestartRequired = $false
     Succeeded = $true
     NewShellRecommended = $false
 }
 
 if (-not $Run) {
-    if ($Json) { $result | ConvertTo-Json -Depth 8 } else { Write-HumanResult $result }
+    if ($PassThru) { $result }
+    elseif ($Json) { $result | ConvertTo-Json -Depth 8 }
+    else { Write-HumanResult $result }
     return
 }
 
@@ -283,5 +308,7 @@ foreach ($stage in @($result.Stages)) {
     if ($stage.Status -notin $terminalStates) { throw "Update stage '$($stage.Name)' has invalid terminal status '$($stage.Status)'." }
 }
 
-if ($Json) { $result | ConvertTo-Json -Depth 8 } else { Write-HumanResult $result }
-if (-not $result.Succeeded) { exit 1 }
+if ($PassThru) { $result }
+elseif ($Json) { $result | ConvertTo-Json -Depth 8 }
+else { Write-HumanResult $result }
+if (-not $PassThru -and -not $result.Succeeded) { exit 1 }

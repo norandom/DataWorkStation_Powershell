@@ -24,3 +24,21 @@ pyinfra-debug.log
 *.tmp
 *.bak
 *~
+
+# Native build and fixture-generator outputs
+build/
+bin/
+obj/
+out/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.exe
+*.dll
+*.pdb
+*.ilk
+.env*
+.idea/
+.vscode/

@@ -1,0 +1,89 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#HumanInterface"]
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#NativeWindowsBoundary"]
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#Planning"]
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#EvidenceReadOnly"]
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#SegmentInventory"]
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#SegmentIntegrity"]
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#SegmentIntegrity"]
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#MediaDigests"]
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#HashlessEvidence"]
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#FormatCertification"]
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#InvocationEvidence"]
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#ReportContract"]
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#JsonParity"]
+[requirements.REQ-014]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#HostileOutput"]
+[requirements.REQ-015]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#CatalogSchema"]
+[requirements.REQ-016]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#InstallIntegrity"]
+[requirements.REQ-017]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#ToolDrift"]
+[requirements.REQ-018]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#UpdatePolicy"]
+[requirements.REQ-019]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#UpgradeCertification"]
+[requirements.REQ-020]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#CertificationCorpus"]
+[requirements.REQ-021]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#HistoricalAttribution"]
+[requirements.REQ-022]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#OfflineExecution"]
+[requirements.REQ-023]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#ReportPersistence"]
+[requirements.REQ-024]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#DocumentationRouting"]
+[requirements.REQ-025]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#RuntimeCompatibility"]
+[requirements.REQ-026]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#ReleasePackageContract"]
+[requirements.REQ-027]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#InstallWithoutBuild"]
+[requirements.REQ-028]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#BuildRevisionPolicy"]
+[requirements.REQ-029]
+verification = "automated"
+tests = ["tests/Test-NativeForensicVerification.ps1#ReleaseTrustAnchor"]

@@ -65,7 +65,7 @@ The short command is observational until `-Run` is explicit:
 
 ```text
 PS> update
-Workstation update plan (release 2.1.0)
+Workstation update plan (release 2.2.0)
 
 Order Name                  Privilege            Status  DependsOn
 ----- ----                  ---------            ------  ---------
@@ -576,3 +576,50 @@ Malware analysis tool state: drift detected.
 ```
 
 `-Mode Ensure -Tool Handle` is the corresponding explicit, focused state change.
+
+## EWF verification
+
+Start with the non-mutating plan:
+
+```text
+PS> ewf-verify C:\Evidence\disk.E01 -ReportDirectory C:\EvidenceReports -Plan
+Plan: 3 EWF segment(s), tool ewfverify 20231119-b1.
+Report destination: C:\EvidenceReports
+```
+
+After review, a successful run returns a short operator result and retains the
+details in a new report directory:
+
+```text
+PS> ewf-verify C:\Evidence\disk.E01 -ReportDirectory C:\EvidenceReports
+EWF verification: verified
+Evidence: C:\Evidence\disk.E01
+Tool: ewfverify 20231119-b1
+Report: C:\EvidenceReports\ewf-20260816T184200Z-7ad9...
+```
+
+The JSON form exposes the same stable facts without printing raw native output:
+
+```text
+PS> ewf-verify C:\Evidence\disk.E01 -ReportDirectory C:\EvidenceReports -Json | ConvertFrom-Json | Select-Object status,verified,reportDirectory
+
+status   verified reportDirectory
+------   -------- ---------------
+verified     True C:\EvidenceReports\ewf-20260816T184200Z-7ad9...
+```
+
+Images without a stored digest are not reported as verified:
+
+```text
+PS> ewf-verify C:\Evidence\hashless.E01 -ReportDirectory C:\EvidenceReports
+EWF verification: readable-no-stored-hash
+Evidence: C:\Evidence\hashless.E01
+Tool: ewfverify 20231119-b1
+Report: C:\EvidenceReports\ewf-20260816T184500Z-1f82...
+Detail: Verification completed with status: readable-no-stored-hash
+```
+
+Paths and run IDs are illustrative. Inspect `report.txt` first, then
+`report.json` and `artifacts.json`. Treat `stdout.bin`, `stderr.bin`, and the
+upstream log as hostile bytes; the human report contains bounded sanitized
+previews.

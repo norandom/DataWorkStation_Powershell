@@ -77,6 +77,7 @@ Read [Reproducible NixOS WSL tools](docs/nixos-wsl.md) for operation and [NixOS 
 | Drive requirements into tests | release-pinned Spec Kit plus reusable EARS/TDD validation and traceability |
 | Run reproducible Kubernetes tools | locked NixOS WSL generation with Helm, kubectl, Pulumi, native OpenSSH, and full-store verification |
 | Triage a suspicious file | bounded host inspection, isolated document/reverse-engineering jobs, and explicitly confirmed Windows Sandbox detonation |
+| Verify an EWF image | `ewf-verify` with held read-only segment handles, pre/post hashes, pinned native tooling, and durable human/JSON reports |
 
 Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
@@ -114,6 +115,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
 | `config/go.psd1` | Go minimum version, workspace, command path, and built-in toolchain-selection policy. |
 | `config/malware-hashes.psd1` | Pinned `malware_hashes` GitHub release asset, SHA-256, and narrow install paths. |
+| `config/forensic-tools.psd1` | Reviewed native forensic release catalog, package/file hashes, certification state, and immutable provenance. |
+| `config/forensic-builds/` | Pinned native forensic source, signature, key, compiler, and build-recipe identities. |
 | `config/spec-driven-development.psd1` | Pinned Spec Kit EARS/TDD release wheel, hash, and upstream CLI version. |
 | `config/pester.psd1` | Pinned Pester release, shared module path, test discovery, output bounds, and parallel throttle. |
 | `config/native-text-tools.psd1` | Declares the native BusyBox applet host and the two exposed PowerShell commands. |
@@ -143,6 +146,9 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Set-DeveloperToolsState.ps1` | Maintains CodeQL, Trail of Bits packs, Semgrep CE, pyinfra-managed Dagger through Homebrew, TTD, Debian rsync, and PoolMon tags. |
 | `scripts/Set-GoState.ps1` | Maintains the official Go package, `GOPATH`, command path, and `GOTOOLCHAIN=auto` behavior without overriding MSI-owned `GOROOT`. |
 | `scripts/Set-MalwareHashesState.ps1` | Installs and verifies the pinned `malware_hashes` Windows release for host and Sandbox use. |
+| `scripts/Invoke-EwfVerification.ps1` | Verifies segmented EWF evidence read-only and writes attributable human/JSON/raw reports. |
+| `scripts/Set-NativeForensicToolsState.ps1` | Plans, tests, or explicitly installs an approved immutable native forensic package. |
+| `scripts/Test-ForensicReleaseCandidate.ps1` | Validates package structure, native imports, provenance, and the two-lane benign certification corpus. |
 | `scripts/Set-SpecDrivenDevelopmentState.ps1` | Maintains the release-pinned EARS/TDD Spec Kit tool in an isolated `uv tool` environment. |
 | `scripts/Set-PesterState.ps1` | Observes or explicitly installs the exact per-user Pester release for both PowerShell runtimes. |
 | `scripts/Invoke-PowerShellTests.ps1` | Runs standard test files through one human/JSON Pester command with bounded parallel and compatibility lanes. |
@@ -428,6 +434,8 @@ Local pyinfra applies the state inside each distribution. `Debian` keeps a rootf
 
 - [Workstation modules and dependency order](docs/workstation-modules.md) explains focused execution.
 - [Suspicious-file analysis](docs/malware-analysis.md) documents isolation, telemetry limits, and residual risk.
+- [EWF verification](docs/ewf-verification.md) documents the read-only evidence transaction, result meanings, retained reports, and parser attack surface.
+- [Native forensic tool lifecycle](docs/forensic-tools.md) documents pinned builds, candidate review, explicit installation, and immutable publication.
 - [Analysis and differencing cases](docs/analysis-differencing.md) covers Sandbox behavior and graph-based binary comparison.
 - [Contour Terminal and BlueTerm](docs/contour-terminal.md) covers the MSI, Scoop migration, and theme translation.
 - [Windows hardening profile and attack surface](docs/hardening.md) records the legacy-script review and compatibility costs.

@@ -405,5 +405,25 @@
             )
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
+        @{
+            Id = 'quant-research-environment'
+            Title = 'Independent uv/OpenBB quantitative research overlays'
+            Triggers = @('quant research', 'openbb', 'jupyter', 'notebook', 'uv overlay', 'thesis environment', 'source relocation plan')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'quant-status'
+                'quant-status -Json'
+                'pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Test -Project All'
+                'source-relocation-plan -Target D:\Source'
+                'source-relocation-plan -Target D:\Source -Json'
+            )
+            StateCommands = @(
+                'quant-sync -Project thesis'
+                'quant-rebuild -Project thesis'
+                'quant-overlay -Name <name> -Dependency <package> -Run'
+                'quant-notebook -Project thesis'
+            )
+            CaptureCommand = 'tricky add {case} <quant-research-status.json>'
+        }
     )
 }

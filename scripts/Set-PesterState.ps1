@@ -11,6 +11,8 @@ $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\pe
 $moduleBase = [Environment]::ExpandEnvironmentVariables([string] $configuration.ModuleBase)
 $declaredVersion = [string] $configuration.Version
 $manifestPath = Join-Path $moduleBase "Pester\$declaredVersion\Pester.psd1"
+$modulePathEntries = @($env:PSModulePath -split ';' | Where-Object { $_ })
+if ($moduleBase -notin $modulePathEntries) { $env:PSModulePath = "$moduleBase;$env:PSModulePath" }
 
 function Get-RuntimePesterVersion {
     param([Parameter(Mandatory = $true)][string] $Executable)

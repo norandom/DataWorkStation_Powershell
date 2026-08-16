@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dataworkstation.local/schemas/source-relocation-plan.schema.json",
+  "title": "Deferred Source relocation plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "planOnly",
+    "executionAvailable",
+    "authorized",
+    "mutationPerformed",
+    "sourcePath",
+    "targetPath",
+    "backupPath",
+    "sourceVolume",
+    "targetVolume",
+    "sourceLogicalBytes",
+    "targetFreeBytes",
+    "requiredReserveBytes",
+    "capacitySuitable",
+    "reparsePoints",
+    "encryptedFiles",
+    "generatedEnvironments",
+    "repositories",
+    "activeUseRisks",
+    "copyCommandPreview",
+    "verificationSteps",
+    "rollbackSteps",
+    "rebuildSteps",
+    "blockers",
+    "warnings",
+    "planFingerprint"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "planOnly": { "const": true },
+    "executionAvailable": { "const": false },
+    "authorized": { "const": false },
+    "mutationPerformed": { "const": false },
+    "sourcePath": { "type": "string", "minLength": 3 },
+    "targetPath": { "type": "string", "minLength": 3 },
+    "backupPath": { "type": "string", "minLength": 3 },
+    "sourceExists": { "type": "boolean" },
+    "sourceIsReparsePoint": { "type": "boolean" },
+    "targetExists": { "type": "boolean" },
+    "backupConflict": { "type": "boolean" },
+    "sourceVolume": { "$ref": "#/$defs/volume" },
+    "targetVolume": { "$ref": "#/$defs/volume" },
+    "sourceLogicalBytes": { "type": "integer", "minimum": 0 },
+    "targetFreeBytes": { "type": "integer", "minimum": 0 },
+    "requiredReserveBytes": { "type": "integer", "minimum": 0 },
+    "capacitySuitable": { "type": "boolean" },
+    "reparsePoints": { "type": "array", "items": { "$ref": "#/$defs/reparsePoint" } },
+    "encryptedFiles": { "type": "array", "items": { "type": "string" } },
+    "generatedEnvironments": { "type": "array", "items": { "$ref": "#/$defs/generatedEnvironment" } },
+    "repositories": { "type": "array", "items": { "$ref": "#/$defs/repository" } },
+    "activeUseRisks": { "type": "array", "items": { "type": "string" } },
+    "copyCommandPreview": { "type": "string" },
+    "verificationSteps": { "type": "array", "items": { "type": "string" } },
+    "rollbackSteps": { "type": "array", "items": { "type": "string" } },
+    "rebuildSteps": { "type": "array", "items": { "type": "string" } },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "planFingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "commitRequiresFreshVerification": { "const": true }
+  },
+  "$defs": {
+    "volume": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["drive", "driveType", "local", "fileSystem", "health", "sizeBytes", "freeBytes"],
+      "properties": {
+        "drive": { "type": "string" },
+        "driveType": { "type": ["integer", "null"] },
+        "local": { "type": "boolean" },
+        "fileSystem": { "type": ["string", "null"] },
+        "health": { "type": ["string", "null"] },
+        "sizeBytes": { "type": ["integer", "null"], "minimum": 0 },
+        "freeBytes": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "reparsePoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "type", "target", "disposition", "blocker"],
+      "properties": {
+        "path": { "type": "string" },
+        "type": { "type": ["string", "null"] },
+        "target": { "type": ["string", "null"] },
+        "disposition": { "enum": ["exclude", "preserve-link", "review", "block"] },
+        "blocker": { "type": "boolean" }
+      }
+    },
+    "generatedEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "environmentPath", "lockPath", "excludeFromCopy"],
+      "properties": {
+        "projectPath": { "type": "string" },
+        "environmentPath": { "type": "string" },
+        "lockPath": { "type": "string" },
+        "excludeFromCopy": { "type": "boolean" }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relativePath", "head", "statusDigest", "fsckPlanned"],
+      "properties": {
+        "relativePath": { "type": "string" },
+        "head": { "type": ["string", "null"] },
+        "statusDigest": { "type": ["string", "null"] },
+        "fsckPlanned": { "type": "boolean" }
+      }
+    }
+  }
+}

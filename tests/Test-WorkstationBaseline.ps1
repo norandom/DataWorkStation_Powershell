@@ -846,7 +846,7 @@ function Get-ProfileSurface {
     param([string] $Runtime)
     $loader = Join-Path $repositoryRoot 'profile\Shell.ps1'
     $escapedLoader = $loader.Replace("'", "''")
-    $command = ". '$escapedLoader'; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore) } | ConvertTo-Json -Compress"
+    $command = ". '$escapedLoader'; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore); QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore) } | ConvertTo-Json -Compress"
     $result = Invoke-External -FilePath $Runtime -ArgumentList @('-NoLogo', '-NoProfile', '-Command', $command)
     Assert-True ($result.ExitCode -eq 0) "profile loads in '$Runtime': $($result.Output -join ' ')"
     $jsonLine = @($result.Output | Where-Object { [string] $_ -match '^\s*\{' } | Select-Object -Last 1)
@@ -855,6 +855,17 @@ function Get-ProfileSurface {
 }
 
 function Test-PowerShellRuntimes {
+    $profileConfig = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Config.ps1') -Raw
+    $profileLoader = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Shell.ps1') -Raw
+    $profileDeployer = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-PowerShellProfile.ps1') -Raw
+    $nativeCatalog = Import-PowerShellDataFile (Join-Path $repositoryRoot 'profile\NativeCommands.psd1')
+    Assert-True (@($nativeCatalog.Commands).Count -gt 40) 'native command preference has one declarative catalog'
+    Assert-True ($profileConfig -match 'NativeCommands\.cache\.psd1' -and $profileConfig -match 'Test-NativeApplicationAvailable') 'profile consumes the generated native-command cache'
+    Assert-True ($profileConfig -match 'Get-Command\s+"\$Name\.exe"') 'a missing or stale cache entry retains live command-discovery fallback'
+    Assert-True ($profileDeployer -match 'Get-NativeCommandCacheContent' -and $profileDeployer -match 'Test-NativeCommandCacheDrift') 'profile desired state generates and validates the native-command cache'
+    Assert-True ($profileDeployer -match 'Get-Command\s+"\$commandName\.exe"[\s\S]+?Select-Object\s+-First\s+1') 'cache records the first executable PowerShell would invoke when PATH contains duplicates'
+    Assert-True ($profileLoader -match 'QuantResearch\.ps1' -and $profileDeployer -match 'QuantResearch\.ps1') 'profile loader and deployer agree on the quantitative research component'
+
     $windowsPowerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
     $powerShell7 = (Get-Command pwsh.exe -ErrorAction Stop).Source
     $desktop = Get-ProfileSurface -Runtime $windowsPowerShell
@@ -866,6 +877,7 @@ function Test-PowerShellRuntimes {
         Assert-True ($surface.Wget -eq 'aria2c') 'wget maps to the managed aria2c command'
         Assert-True $surface.Help 'workstation-help is available'
         Assert-True $surface.TestCommand 'test-powershell is available'
+        Assert-True $surface.QuantStatus 'quant-status is available'
     }
 }
 

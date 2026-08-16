@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dataworkstation.local/schemas/quant-research-status.schema.json",
+  "title": "Quantitative research environment status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "mode",
+    "checkedAtUtc",
+    "researchRoot",
+    "state",
+    "mutationPerformed",
+    "base",
+    "overlays",
+    "globalKernels",
+    "blockers",
+    "warnings"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "mode": { "enum": ["Test", "Ensure", "Reinitialize"] },
+    "checkedAtUtc": { "type": "string", "format": "date-time" },
+    "researchRoot": { "type": "string", "minLength": 3 },
+    "state": { "enum": ["compliant", "drift detected", "blocked"] },
+    "mutationPerformed": { "type": "boolean" },
+    "base": { "$ref": "#/$defs/projectState" },
+    "overlays": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/projectState" }
+    },
+    "globalKernels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scope", "path", "identities"],
+        "properties": {
+          "scope": { "enum": ["user", "system"] },
+          "path": { "type": "string" },
+          "identities": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "state", "detail"],
+      "properties": {
+        "name": { "type": "string" },
+        "state": { "enum": ["compliant", "drift detected", "blocked", "not applicable"] },
+        "detail": { "type": "string" }
+      }
+    },
+    "projectState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "path", "state", "lockDigest", "checks"],
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "enum": ["base", "overlay"] },
+        "path": { "type": "string" },
+        "state": { "enum": ["compliant", "drift detected", "blocked"] },
+        "lockDigest": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } }
+      }
+    }
+  }
+}

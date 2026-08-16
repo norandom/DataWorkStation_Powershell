@@ -196,8 +196,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 45 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 28 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 46 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 29 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -241,6 +241,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | DeveloperTools | REQ-023, REQ-024 |
 | SpecDrivenDevelopment | REQ-038, REQ-039, REQ-040 |
 | MalwareHashes | REQ-002, REQ-007, REQ-043 |
+| QuantResearchEnvironment | REQ-002, REQ-007, REQ-012 |
 | MalwareAnalysisTools | REQ-026, REQ-029 |
 | SleuthKitCli | REQ-002, REQ-007, REQ-026 |
 | Autopsy | REQ-002, REQ-007, REQ-016, REQ-026, REQ-029 |
@@ -296,6 +297,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | windows-debloat | REQ-010, REQ-018, REQ-019, REQ-026 |
 | windows-virtualization | REQ-014, REQ-015, REQ-026 |
 | desktop-focus | REQ-026 |
+| quant-research-environment | REQ-012, REQ-025, REQ-026 |
 
 ## EARS requirements
 

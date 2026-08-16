@@ -298,6 +298,18 @@
             Description = 'Hash-pinned malware_hashes Windows executable from its GitHub release.'
         }
         @{
+            Name = 'QuantResearchEnvironment'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 58
+            Default = $false
+            DependsOn = @('Packages', 'PowerShellProfile')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Opt-in uv/OpenBB base and independently locked quantitative research overlays.'
+        }
+        @{
             Name = 'MalwareAnalysisTools'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

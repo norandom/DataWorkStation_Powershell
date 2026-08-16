@@ -4,7 +4,7 @@ param(
     [string] $Mode = 'Ensure',
     [ValidateSet(
         'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
-        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
+        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -56,6 +56,7 @@ $focusFollowsMouseScript = Join-Path $PSScriptRoot 'scripts\Set-FocusFollowsMous
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
 $specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
+$quantResearchEnvironmentScript = Join-Path $PSScriptRoot 'scripts\Set-QuantResearchEnvironmentState.ps1'
 $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalysisToolsState.ps1'
 $nativeForensicToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeForensicToolsState.ps1'
 $sleuthKitScript = Join-Path $PSScriptRoot 'scripts\Set-SleuthKitState.ps1'
@@ -386,6 +387,11 @@ function Invoke-WorkstationModule {
         'SpecDrivenDevelopment' {
             Invoke-CheckedProcess 'Spec-driven development state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $specDrivenDevelopmentScript -Mode $Mode
+            }
+        }
+        'QuantResearchEnvironment' {
+            Invoke-CheckedProcess 'Quantitative research environment state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $quantResearchEnvironmentScript -Mode $Mode
             }
         }
         'MalwareAnalysisTools' {

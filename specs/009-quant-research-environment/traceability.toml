@@ -1,0 +1,89 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#CommandContract"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#OutputParity"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#BaseDeclaration"]
+
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#LockReproducibility"]
+
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#RelativeBaseRelationship"]
+
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#OverlayIsolation"]
+
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#OverlayMutationIsolation"]
+
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#NotebookEntryPoint"]
+
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#KernelRegistryIsolation"]
+
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#OpenBbExtensions"]
+
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#ObservationalStatus"]
+
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#FailureAtomicity"]
+
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#ReconciliationScope"]
+
+[requirements.REQ-014]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#UserContentPreservation"]
+
+[requirements.REQ-015]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#CredentialBoundary"]
+
+[requirements.REQ-016]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#CapabilityRouting"]
+
+[requirements.REQ-017]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#RelocationNonMutation"]
+
+[requirements.REQ-018]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#RelocationPlanContract"]
+
+[requirements.REQ-019]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#RelocationGuard"]
+
+[requirements.REQ-020]
+verification = "manual"
+rationale = "The user explicitly deferred relocation execution, so this feature contains no Prepare or Commit surface. RelocationGuard automatically proves the executor is absent; a future separately approved feature must test on a disposable tree that a readable backup exists before junction creation."
+
+[requirements.REQ-021]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#MovedRootRebuild"]
+
+[requirements.REQ-022]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#FocusedBoundary"]

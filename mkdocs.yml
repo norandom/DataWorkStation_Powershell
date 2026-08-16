@@ -55,6 +55,7 @@ nav:
       - Terminal keys and scrolling: terminal-keybindings.md
       - Native awk and sed: native-text-tools.md
       - Reproducible NixOS WSL tools: nixos-wsl.md
+      - Quantitative research environment: quant-research-environment.md
   - Diagnose:
       - Choose a capability: capabilities/index.md
       - Something is not working: workflows/problem-not-working.md

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add an opt-in uv/OpenBB quantitative research environment with an installable shared base, independently locked project overlays, project-local JupyterLab, observational drift reporting, bounded generated-environment recovery, and a strictly non-mutating future Source-relocation plan.
+- Cache managed native-command availability during explicit profile reconciliation, while retaining path validation and live fallback for missing or stale entries at shell startup.
+
 ## 2.3.0 - 2026-08-16
 
 - Add the optional, hash-pinned Autopsy 4.23.1 Windows forensic GUI with complete private dependencies, namespaced helper commands, matching native Sleuth Kit 4.15.0 CLI tools, deterministic installed-file verification, and MSI repair for binary drift.

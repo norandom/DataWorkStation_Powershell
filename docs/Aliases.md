@@ -47,6 +47,8 @@ Microsoft Coreutils executables take precedence over same-named PowerShell alias
 
 `cat`, `cp`, `cut`, `date`, `dir`, `echo`, `env`, `expand`, `factor`, `false`, `head`, `hostname`, `join`, `link`, `ln`, `ls`, `md5sum`, `mkdir`, `mktemp`, `mv`, `nl`, `nproc`, `od`, `paste`, `pathchk`, `printenv`, `printf`, `pwd`, `readlink`, `realpath`, `rm`, `rmdir`, `sha1sum`, `sha256sum`, `sha512sum`, `sleep`, `sort`, `split`, `stat`, `sum`, `tac`, `tail`, `tee`, `test`, `touch`, `tr`, `true`, `truncate`, `uname`, `uniq`, `wc`, `whoami`.
 
+`Set-PowerShellProfile.ps1 -Mode Ensure` resolves this catalog once into the generated profile cache. Shell startup validates cached executable paths and falls back to live discovery only for missing or stale entries.
+
 | Command | Purpose |
 |---|---|
 | `grep` | Microsoft Coreutils grep. |
@@ -572,3 +574,17 @@ arguments they open the selected distribution; with arguments they execute that 
 
 `docker`, `docker-compose`, `rsync`, and `wslpath` use `wsl-dev`. Direct Podman diagnosis uses
 `wsl-mw podman ...`; malware analysis itself uses the policy-gated `malware-container` commands.
+
+## Quantitative research commands
+
+| Command | Behavior |
+|---|---|
+| `quant-status [-Project name] [-Json]` | observational uv/OpenBB/base/overlay status; returns nonzero on drift |
+| `quant-sync [-Project name] [-Json]` | explicit exact synchronization from the existing lock |
+| `quant-rebuild [-Project name] [-Json]` | explicit generated `.venv` replacement with rollback |
+| `quant-overlay -Name name [-Dependency package] [-Run] [-Json]` | plan by default; explicitly stage and create an independently locked overlay with `-Run` |
+| `quant-notebook [-Project name] [-JupyterArguments args]` | run locked project-local JupyterLab without global kernel registration |
+| `source-relocation-plan [-Source path] [-Target D:\Source] [-Json]` | inspect future relocation readiness without copying, renaming, deleting, or linking anything |
+
+See [Quantitative research environment](quant-research-environment.md) for ownership, credentials,
+OpenBB extension refresh, and the deferred junction boundary.

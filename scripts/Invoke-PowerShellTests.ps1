@@ -14,6 +14,9 @@ param(
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\pester.psd1')
+$managedModuleBase = [Environment]::ExpandEnvironmentVariables([string] $configuration.ModuleBase)
+$modulePathEntries = @($env:PSModulePath -split ';' | Where-Object { $_ })
+if ($managedModuleBase -notin $modulePathEntries) { $env:PSModulePath = "$managedModuleBase;$env:PSModulePath" }
 $failureMessageLimit = [int] $configuration.FailureMessageLimit
 $failureRecordLimit = [int] $configuration.FailureRecordLimit
 if ($PathListJson) { $Path = @($PathListJson | ConvertFrom-Json -ErrorAction Stop) }

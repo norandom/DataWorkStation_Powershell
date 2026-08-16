@@ -7,7 +7,16 @@ param(
 $ErrorActionPreference = 'Stop'
 $profileSourceDirectory = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\profile'))
 $templatePath = Join-Path $profileSourceDirectory 'Shell.ps1'
-$componentNames = @('Config.ps1', 'Tools.ps1', 'Aliases.ps1', 'NativeDevelopment.ps1', 'ForensicTools.ps1')
+$scriptComponentNames = @('Config.ps1', 'Tools.ps1', 'Aliases.ps1', 'NativeDevelopment.ps1', 'ForensicTools.ps1', 'QuantResearch.ps1')
+$dataComponentNames = @('NativeCommands.psd1')
+$componentNames = @($scriptComponentNames) + @($dataComponentNames)
+$nativeCommandCatalog = Import-PowerShellDataFile (Join-Path $profileSourceDirectory 'NativeCommands.psd1')
+$nativeCommandCacheName = 'NativeCommands.cache.psd1'
+$nativeCommandCatalogKey = @(
+    [string] $nativeCommandCatalog.SchemaVersion
+    @($nativeCommandCatalog.Commands)
+    [string] $nativeCommandCatalog.CurlCommand
+) -join '|'
 $beginMarker = '# BEGIN CODEX LINUX SHELL'
 $endMarker = '# END CODEX LINUX SHELL'
 $blockPattern = '(?s)' + [regex]::Escape($beginMarker) + '.*?' + [regex]::Escape($endMarker)
@@ -44,11 +53,62 @@ function Test-ComponentDrift {
     return $false
 }
 
+function ConvertTo-Psd1StringLiteral {
+    param([Parameter(Mandatory = $true)][string] $Value)
+
+    "'" + $Value.Replace("'", "''") + "'"
+}
+
+function Get-NativeCommandCacheContent {
+    $commandNames = @($nativeCommandCatalog.Commands) + @([string] $nativeCommandCatalog.CurlCommand)
+    $commands = foreach ($commandName in $commandNames) {
+        $command = Get-Command "$commandName.exe" -CommandType Application -ErrorAction Ignore |
+            Select-Object -First 1
+        if ($command) {
+            [pscustomobject]@{ Name = $commandName; Path = $command.Source }
+        }
+    }
+    $lines = @(
+        '@{'
+        '    SchemaVersion = 1'
+        "    CatalogKey = $(ConvertTo-Psd1StringLiteral $nativeCommandCatalogKey)"
+        '    Commands = @('
+    )
+    foreach ($command in $commands) {
+        $name = ConvertTo-Psd1StringLiteral ([string] $command.Name)
+        $path = ConvertTo-Psd1StringLiteral ([string] $command.Path)
+        $lines += "        @{ Name = $name; Path = $path }"
+    }
+    $lines += @('    )', '}', '')
+    $lines -join [Environment]::NewLine
+}
+
+function Test-NativeCommandCacheDrift {
+    param([string] $ProfilePath)
+
+    $cachePath = Join-Path (Join-Path (Split-Path -Parent $ProfilePath) 'LinuxShell') $nativeCommandCacheName
+    if (-not (Test-Path -LiteralPath $cachePath -PathType Leaf)) { return $true }
+    try { $cache = Import-PowerShellDataFile -LiteralPath $cachePath } catch { return $true }
+    if ($cache.SchemaVersion -ne 1 -or $cache.CatalogKey -ne $nativeCommandCatalogKey) { return $true }
+    foreach ($entry in @($cache.Commands)) {
+        if ([string]::IsNullOrWhiteSpace([string] $entry.Name) -or
+            [string]::IsNullOrWhiteSpace([string] $entry.Path) -or
+            -not (Test-Path -LiteralPath ([string] $entry.Path) -PathType Leaf)) {
+            return $true
+        }
+    }
+    return $false
+}
+
 $driftedTargets = @()
 foreach ($target in $targets) {
     $existing = if (Test-Path -LiteralPath $target) { (Get-Content -LiteralPath $target -Raw).TrimEnd() } else { '' }
     $desired = (Get-DesiredProfileContent -Path $target).TrimEnd()
-    if ($existing -cne $desired -or (Test-ComponentDrift -ProfilePath $target)) { $driftedTargets += $target }
+    if ($existing -cne $desired -or
+        (Test-ComponentDrift -ProfilePath $target) -or
+        (Test-NativeCommandCacheDrift -ProfilePath $target)) {
+        $driftedTargets += $target
+    }
 }
 
 if ($Mode -eq 'Test') {
@@ -62,11 +122,16 @@ if ($Mode -eq 'Test') {
 }
 
 $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$nativeCommandCacheContent = Get-NativeCommandCacheContent
 foreach ($target in $targets) {
     $desired = Get-DesiredProfileContent -Path $target
     $existing = if (Test-Path -LiteralPath $target) { (Get-Content -LiteralPath $target -Raw).TrimEnd() } else { '' }
     $profileChanged = $Mode -eq 'Reinitialize' -or $existing -cne $desired.TrimEnd()
     $componentDirectory = Join-Path (Split-Path -Parent $target) 'LinuxShell'
+    $nativeCommandCachePath = Join-Path $componentDirectory $nativeCommandCacheName
+    $nativeCommandCacheChanged = $Mode -eq 'Reinitialize' -or
+        -not (Test-Path -LiteralPath $nativeCommandCachePath -PathType Leaf) -or
+        (Get-Content -LiteralPath $nativeCommandCachePath -Raw) -cne $nativeCommandCacheContent
     $changedComponents = @($componentNames | Where-Object {
         $source = Join-Path $profileSourceDirectory $_
         $destination = Join-Path $componentDirectory $_
@@ -75,7 +140,7 @@ foreach ($target in $targets) {
             (Get-Content -LiteralPath $source -Raw).TrimEnd() -cne (Get-Content -LiteralPath $destination -Raw).TrimEnd()
     })
 
-    if (-not $profileChanged -and $changedComponents.Count -eq 0) {
+    if (-not $profileChanged -and $changedComponents.Count -eq 0 -and -not $nativeCommandCacheChanged) {
         Write-Host "Unchanged profile: $target"
         continue
     }
@@ -94,6 +159,10 @@ foreach ($target in $targets) {
     foreach ($componentName in $changedComponents) {
         Copy-Item -LiteralPath (Join-Path $profileSourceDirectory $componentName) -Destination (Join-Path $componentDirectory $componentName) -Force
         Write-Host "Updated profile component: $(Join-Path $componentDirectory $componentName)"
+    }
+    if ($nativeCommandCacheChanged) {
+        [IO.File]::WriteAllText($nativeCommandCachePath, $nativeCommandCacheContent, [Text.UTF8Encoding]::new($false))
+        Write-Host "Updated native-command cache: $nativeCommandCachePath"
     }
 }
 

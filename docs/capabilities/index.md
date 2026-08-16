@@ -24,6 +24,7 @@ debugger, changes policy, or repairs desired state.
 | `event-history` | Service, login, audit, or general Windows history may explain a failure | `problems`, `service-errors`, `loginfail` | `eventlog-start CASE -Executable PATH` |
 | `security-state` | Defender, firewall, SmartScreen, or SaveZone may be involved | `firewall-status`, `defender-status`, `smartscreen-status`, `savezone-status` | Export and add the state to a Tricky case |
 | `malware-triage` | A file is suspicious, general Sandbox behavior must be compared, or two binaries need structural comparison | `is-this-malware PATH`, `sandbox-behavior-control PATH`, or `binary-diff OLD NEW` | Use a separately confirmed Sandbox launch or rootless graph-parser run only after reviewing its plan |
+| `autopsy-forensic-analysis` | Existing evidence needs interactive Autopsy or matching native Sleuth Kit inspection | `.\Apply-Workstation.ps1 -Mode Test -Module Autopsy -Plan` | Explicitly apply the opt-in Autopsy module only after reviewing its Defender and tool-write boundaries |
 | `forensic-evidence-verification` | An existing segmented EWF image needs an attributable stored-digest and segment-integrity check | `ewf-verify PATH.E01 -ReportDirectory REPORTS -Plan` | Run `ewf-verify` without `-Plan` only after reviewing the native tool state and separate report destination |
 
 Commands in the next-action column start a capture or cross an execution boundary. Review the target
@@ -58,6 +59,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `windows-debloat` | Review opt-in application and legacy-component removal | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Plan` |
 | `windows-virtualization` | Inspect Hyper-V and Windows Sandbox dependency order | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` |
 | `desktop-focus` | Inspect focus-follows-mouse without raising windows | `pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test` |
+| `quant-research-environment` | Inspect the OpenBB base, independently locked uv overlays, notebook entry point, or deferred Source relocation plan | `quant-status` or `source-relocation-plan -Target D:\Source` |
 
 ## Routing contract
 

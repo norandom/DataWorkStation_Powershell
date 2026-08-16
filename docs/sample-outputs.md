@@ -672,3 +672,36 @@ Paths and run IDs are illustrative. Inspect `report.txt` first, then
 `report.json` and `artifacts.json`. Treat `stdout.bin`, `stderr.bin`, and the
 upstream log as hostile bytes; the human report contains bounded sanitized
 previews.
+
+## Quantitative research environment
+
+```text
+PS> quant-status -Project thesis
+Quantitative research environment: compliant
+Root: C:\Users\mariu\Source\quant-research
+- base quant-base: compliant
+- overlay thesis: compliant
+```
+
+Drift remains observational:
+
+```text
+PS> quant-status -Project Base
+Quantitative research environment: drift detected
+- base quant-base: drift detected
+  openbb-extensions: Generated OpenBB reference omits installed extensions.
+```
+
+The relocation report never executes its preview:
+
+```text
+PS> source-relocation-plan -Target D:\Source
+Source relocation plan (observational only)
+Source: C:\Users\mariu\Source
+Target: D:\Source
+Execution available: False
+Future dry-run copy preview: robocopy "C:\Users\mariu\Source" "D:\Source" ... /L
+```
+
+Paths, capacity, warnings, and fingerprints are workstation-specific. Use `-Json` for the same
+checks as one structured object; a blocker returns nonzero.

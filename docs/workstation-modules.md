@@ -105,6 +105,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
+| `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | independently locked uv/OpenBB research projects and project-local notebooks |
 | `SleuthKitCli` | **no** | `PowerShell7` | matching official native Windows TSK command suite on the user PATH |
 | `Autopsy` | **no** | `Sudo`, `PowerShell7`, `PowerShellProfile`, `SleuthKitCli` | signed Windows GUI MSI, private CLI bindings, case root, and Defender exclusions |
 | `MalwareAnalysisTools` | **no** | `Packages`, `WindowsFeatures`, `ProfilingTools`, `MalwareHashes` | opt-in isolated parsers and telemetry tools |
@@ -123,7 +124,12 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `Debloat` | **no** | `Sudo` | opt-in software removal profile |
 
 `-Module All` selects only modules marked default. It never includes `Autopsy`, `SleuthKitCli`,
-`NativeForensicTools`, or `Debloat`.
+`NativeForensicTools`, `QuantResearchEnvironment`, or `Debloat`.
+
+`QuantResearchEnvironment` is opt-in because dependency synchronization can be large and doctoral
+research state is user-owned. `Test` is observational. `Ensure` exact-syncs generated environments
+from existing locks, and `Reinitialize` replaces only `.venv` with rollback. The module never owns
+notebooks, research source, datasets, exports, credentials, or the deferred Source junction.
 
 ## Explicit debloat module
 

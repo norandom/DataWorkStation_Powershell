@@ -40,33 +40,62 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
 }
 
 # Prefer managed native commands over same-named Windows PowerShell aliases.
-# Remove an alias only when the replacement executable exists.
-$nativeCommands = @(
-    'cat', 'cp', 'cut', 'date', 'dir', 'echo', 'env', 'expand', 'factor',
-    'false', 'head', 'hostname', 'join', 'link', 'ln', 'ls', 'md5sum',
-    'mkdir', 'mktemp', 'mv', 'nl', 'nproc', 'od', 'paste', 'pathchk',
-    'printenv', 'printf', 'pwd', 'readlink', 'realpath', 'rm', 'rmdir',
-    'sha1sum', 'sha256sum', 'sha512sum', 'sleep', 'sort', 'split', 'stat',
-    'sum', 'tac', 'tail', 'tee', 'test', 'touch', 'tr', 'true', 'truncate',
-    'uname', 'uniq', 'wc', 'whoami'
-)
+# Ensure generates the availability cache once. Startup validates cached paths and
+# resolves only missing or stale entries, preserving the safe fallback behavior.
+$nativeCommandCatalogPath = Join-Path $PSScriptRoot 'NativeCommands.psd1'
+$nativeCommandCachePath = Join-Path $PSScriptRoot 'NativeCommands.cache.psd1'
+$nativeCommandCatalog = Import-PowerShellDataFile -LiteralPath $nativeCommandCatalogPath
+$nativeCommandNames = @($nativeCommandCatalog.Commands)
+$nativeCommandCatalogKey = @(
+    [string] $nativeCommandCatalog.SchemaVersion
+    @($nativeCommandNames)
+    [string] $nativeCommandCatalog.CurlCommand
+) -join '|'
+$nativeCommandCache = if (Test-Path -LiteralPath $nativeCommandCachePath -PathType Leaf) {
+    Import-PowerShellDataFile -LiteralPath $nativeCommandCachePath
+} else { $null }
+$cachedNativeCommands = @{}
+if ($nativeCommandCache -and
+    $nativeCommandCache.SchemaVersion -eq 1 -and
+    $nativeCommandCache.CatalogKey -eq $nativeCommandCatalogKey) {
+    foreach ($entry in @($nativeCommandCache.Commands)) {
+        $cachedNativeCommands[[string] $entry.Name] = [string] $entry.Path
+    }
+}
+$pathDirectories = @($env:PATH -split ';' | ForEach-Object { $_.Trim().TrimEnd('\') } |
+    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
 
-foreach ($commandName in $nativeCommands) {
-    if ((Get-Command "$commandName.exe" -CommandType Application -ErrorAction Ignore) -and
-        (Test-Path "Alias:$commandName")) {
+function Test-NativeApplicationAvailable {
+    param([Parameter(Mandatory = $true)][string] $Name)
+
+    $cachedPath = [string] $cachedNativeCommands[$Name]
+    if (-not [string]::IsNullOrWhiteSpace($cachedPath) -and
+        (Test-Path -LiteralPath $cachedPath -PathType Leaf) -and
+        $pathDirectories -icontains (Split-Path -Parent $cachedPath).TrimEnd('\')) {
+        return $true
+    }
+    [bool] (Get-Command "$Name.exe" -CommandType Application -ErrorAction Ignore)
+}
+
+foreach ($commandName in $nativeCommandNames) {
+    if ((Test-NativeApplicationAvailable -Name $commandName) -and (Test-Path "Alias:$commandName")) {
         Remove-Item "Alias:$commandName" -Force
     }
 }
 
 # Windows supplies curl.exe, but Windows PowerShell 5.1 masks curl and wget with aliases.
 # Aliases.ps1 assigns wget to the managed aria2c wrapper after removing those aliases.
-if (Get-Command curl.exe -CommandType Application -ErrorAction Ignore) {
+if (Test-NativeApplicationAvailable -Name $nativeCommandCatalog.CurlCommand) {
     foreach ($commandName in 'curl', 'wget') {
         if (Test-Path "Alias:$commandName") {
             Remove-Item "Alias:$commandName" -Force
         }
     }
 }
+Remove-Item Function:Test-NativeApplicationAvailable -ErrorAction Ignore
+Remove-Variable nativeCommandCatalogPath, nativeCommandCachePath, nativeCommandCatalog,
+    nativeCommandNames, nativeCommandCatalogKey, nativeCommandCache, cachedNativeCommands,
+    pathDirectories -ErrorAction Ignore
 
 function Test-ContourTerminalSession {
     -not [Console]::IsOutputRedirected -and (

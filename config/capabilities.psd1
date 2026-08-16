@@ -166,6 +166,29 @@
             CaptureCommand = 'malware-sandbox <path> -Mode Detonate -Run -ConfirmSandbox -ConfirmExecution'
         }
         @{
+            Id = 'autopsy-forensic-analysis'
+            Title = 'Autopsy Windows GUI and native Sleuth Kit analysis'
+            Triggers = @('autopsy', 'sleuth kit', 'mmls', 'fls', 'icat', 'fsstat', 'recent activity', 'regripper', 'forensic gui')
+            EvidenceKinds = @('Disk image', 'Autopsy case', 'Registry hive', 'TSK command output')
+            InspectCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Test -Module Autopsy -Plan'
+                '.\Apply-Workstation.ps1 -Mode Test -Module Autopsy'
+                'autopsy-defender-status'
+                'mmls -V'
+                'autopsy-regripper -h'
+            )
+            ValidationCommands = @(
+                'pwsh -NoProfile -File .\tests\Test-AutopsyState.ps1 -Section All'
+                'pwsh -NoProfile -File .\scripts\Set-SleuthKitState.ps1 -Mode Test'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module Autopsy'
+                'autopsy-defender-off'
+                'autopsy-defender-on'
+            )
+            CaptureCommand = 'tricky add {case} <exported-autopsy-or-tsk-report>'
+        }
+        @{
             Id = 'forensic-evidence-verification'
             Title = 'Read-only native Windows EWF verification'
             Triggers = @('ewf', 'e01', 'forensic image', 'evidence verification', 'ewfverify', 'segment integrity', 'forensic package')

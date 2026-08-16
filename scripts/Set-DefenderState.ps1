@@ -6,16 +6,18 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$principal = [Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
-if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw 'Administrator rights are required. Run this script through sudo.'
-}
 
 function Get-DefenderState {
     $status = Get-MpComputerStatus
     $preference = Get-MpPreference
+    $service = Get-Service WinDefend -ErrorAction SilentlyContinue
+    $process = Get-Process MsMpEng -ErrorAction SilentlyContinue | Select-Object -First 1
     [pscustomobject]@{
-        DefenderEngineAvailable  = $status.AntivirusEnabled
+        DefenderEngineAvailable   = $status.AntivirusEnabled
+        DefenderServiceInstalled  = [bool] $service
+        DefenderServiceStatus     = if ($service) { [string] $service.Status } else { 'Absent' }
+        DefenderServiceStartType  = if ($service) { [string] $service.StartType } else { 'Absent' }
+        DefenderProcessRunning    = [bool] $process
         RealTimeProtectionEnabled = $status.RealTimeProtectionEnabled
         BehaviorMonitorEnabled    = $status.BehaviorMonitorEnabled
         IoavProtectionEnabled     = $status.IoavProtectionEnabled
@@ -29,6 +31,11 @@ function Get-DefenderState {
 if ($Mode -eq 'Status') {
     Get-DefenderState
     exit 0
+}
+
+$principal = [Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw 'Administrator rights are required. Run this script through sudo.'
 }
 
 $initial = Get-DefenderState

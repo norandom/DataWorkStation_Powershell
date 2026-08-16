@@ -289,7 +289,11 @@ function global:Invoke-ManagedDefenderState {
         Write-Warning "Defender script not found: $defenderScript"
         return
     }
-    & sudo.exe powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $defenderScript -Mode $Mode
+    if ($Mode -eq 'Status') {
+        & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $defenderScript -Mode $Mode
+    } else {
+        & sudo.exe --inline powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $defenderScript -Mode $Mode
+    }
 }
 
 function global:Invoke-EventTriage {

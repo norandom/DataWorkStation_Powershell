@@ -40,6 +40,7 @@ report no data when no supported provider is running.
 | Diagnose a failure | [Choose a capability](capabilities/index.md) | Inspect current state and existing evidence |
 | Keep investigation evidence together | [Keep evidence in Tricky cases](tricky.md) | `tricky new NAME -Problem '...'` |
 | Assess a suspicious file | [Analyze a suspicious file](malware-analysis.md) | `is-this-malware PATH` |
+| Examine media with Autopsy | [Autopsy Windows forensic workstation](autopsy.md) | `./Apply-Workstation.ps1 -Mode Test -Module Autopsy -Plan` |
 | Compare a clean run or two binary graphs | [Analysis and differencing cases](analysis-differencing.md) | `sandbox-behavior-control PATH` or `binary-diff OLD NEW` |
 | Extend the project test-first | [Specification-driven development](spec-driven-development.md) | Validate the current specification state |
 | Look up a command | [Commands and aliases](Aliases.md) | Search by task or command name |

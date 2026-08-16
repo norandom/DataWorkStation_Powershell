@@ -68,6 +68,7 @@ nav:
       - Compare behavior and binary graphs: analysis-differencing.md
       - Verify an EWF image: ewf-verification.md
       - Manage native forensic tools: forensic-tools.md
+      - Autopsy Windows forensic workstation: autopsy.md
       - Verify NixOS integrity: nixos-integrity.md
       - Apply the hardening profile: hardening.md
       - Run opt-in debloat: debloat.md

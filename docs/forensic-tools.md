@@ -4,6 +4,11 @@ The runtime and build paths are deliberately separate. Operators install a
 reviewed release package; they do not compile forensic software during setup or
 ordinary update.
 
+This page covers the lightweight, attributable `ewf-verify` package. The optional
+[Autopsy Windows forensic workstation](autopsy.md) is a separate GUI module with its own official
+MSI, matched Sleuth Kit command suite, embedded patched libewf runtime, and Defender boundary. It
+does not replace this verifier or its read-only report contract.
+
 ## Observe or install the approved package
 
 ```powershell

@@ -8,15 +8,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $ruleGroup = 'Linux Shell - Inbound Allowlist'
-$allowedTcpPorts = @(22, 3389, 8080, 8081)
-$allowedUdpPorts = @(41641)
 $tailscaleProgram = Join-Path $env:ProgramFiles 'Tailscale\tailscaled.exe'
 $expectedRuleNames = @(
     'LinuxShell-Allow-External-TCP-22-3389-8080-8081'
     'LinuxShell-Allow-Tailscale-Interface'
     'LinuxShell-Allow-Tailscale-UDP-41641'
-    'LinuxShell-Block-Other-TCP'
-    'LinuxShell-Block-Other-UDP'
 )
 
 function Assert-Administrator {
@@ -24,25 +20,6 @@ function Assert-Administrator {
     if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         throw 'Administrator rights are required. Run this script through sudo.'
     }
-}
-
-function Get-BlockedPortRanges {
-    param([int[]] $AllowedPorts)
-
-    $allowed = @($AllowedPorts | Where-Object { $_ -ge 1 -and $_ -le 65535 } | Sort-Object -Unique)
-    $ranges = @()
-    $start = 1
-    foreach ($allowedPort in $allowed) {
-        if ($start -le ($allowedPort - 1)) {
-            $end = $allowedPort - 1
-            $ranges += if ($start -eq $end) { "$start" } else { "$start-$end" }
-        }
-        $start = $allowedPort + 1
-    }
-    if ($start -le 65535) {
-        $ranges += if ($start -eq 65535) { '65535' } else { "$start-65535" }
-    }
-    return $ranges
 }
 
 function ConvertTo-NormalizedSet {
@@ -97,6 +74,9 @@ function Get-FirewallDrift {
         if ("$($firewallProfile.Enabled)" -ne 'True') { $issues.Add("$($firewallProfile.Name) firewall is disabled.") }
         if ("$($firewallProfile.DefaultInboundAction)" -ne 'Block') { $issues.Add("$($firewallProfile.Name) default inbound action is not Block.") }
         if ("$($firewallProfile.DefaultOutboundAction)" -ne 'Allow') { $issues.Add("$($firewallProfile.Name) default outbound action is not Allow.") }
+        if ("$($firewallProfile.AllowInboundRules)" -ne 'True') { $issues.Add("$($firewallProfile.Name) does not honor inbound allow rules.") }
+        if ("$($firewallProfile.AllowLocalFirewallRules)" -ne 'True') { $issues.Add("$($firewallProfile.Name) does not honor expert-created local rules.") }
+        if ("$($firewallProfile.NotifyOnListen)" -ne 'True') { $issues.Add("$($firewallProfile.Name) application-listener notifications are disabled.") }
     }
 
     $managedNames = @(Get-NetFirewallRule -Group $ruleGroup -ErrorAction Ignore | Select-Object -ExpandProperty Name | Sort-Object)
@@ -113,13 +93,6 @@ function Get-FirewallDrift {
     if (-not (Test-Rule -Name 'LinuxShell-Allow-Tailscale-Interface' -Action Allow -Protocol Any -LocalPort Any -InterfaceAlias Tailscale)) {
         $issues.Add('The internal Tailscale interface rule has drifted.')
     }
-    if (-not (Test-Rule -Name 'LinuxShell-Block-Other-TCP' -Action Block -Protocol TCP -LocalPort (Get-BlockedPortRanges $allowedTcpPorts) -InterfaceType Wired,Wireless)) {
-        $issues.Add('The physical-network TCP block rule has drifted.')
-    }
-    if (-not (Test-Rule -Name 'LinuxShell-Block-Other-UDP' -Action Block -Protocol UDP -LocalPort (Get-BlockedPortRanges $allowedUdpPorts) -InterfaceType Wired,Wireless)) {
-        $issues.Add('The physical-network UDP block rule has drifted.')
-    }
-
     return $issues
 }
 
@@ -138,20 +111,18 @@ function Initialize-FirewallState {
     $backupFile = Export-FirewallBackup
 
     Get-NetFirewallRule -Group $ruleGroup -ErrorAction Ignore | Remove-NetFirewallRule
-    Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True -DefaultInboundAction Block -DefaultOutboundAction Allow -LogBlocked True
+    Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled True -DefaultInboundAction Block -DefaultOutboundAction Allow `
+        -AllowInboundRules True -AllowLocalFirewallRules True -NotifyOnListen True -LogBlocked True
 
     New-NetFirewallRule -Name 'LinuxShell-Allow-Tailscale-UDP-41641' -DisplayName 'Allow Tailscale WireGuard UDP 41641' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol UDP -LocalPort 41641 -Program $tailscaleProgram | Out-Null
     New-NetFirewallRule -Name 'LinuxShell-Allow-Tailscale-Interface' -DisplayName 'Allow all traffic from Tailscale interface' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol Any -InterfaceAlias 'Tailscale' | Out-Null
     New-NetFirewallRule -Name 'LinuxShell-Allow-External-TCP-22-3389-8080-8081' -DisplayName 'Allow SSH, RDP, and HTTP application ports' -Group $ruleGroup -Direction Inbound -Action Allow -Profile Any -Protocol TCP -LocalPort 22,3389,8080,8081 -InterfaceType Wired,Wireless | Out-Null
-    New-NetFirewallRule -Name 'LinuxShell-Block-Other-TCP' -DisplayName 'Block all other inbound TCP ports on physical networks' -Group $ruleGroup -Direction Inbound -Action Block -Profile Any -Protocol TCP -LocalPort (Get-BlockedPortRanges $allowedTcpPorts) -InterfaceType Wired,Wireless | Out-Null
-    New-NetFirewallRule -Name 'LinuxShell-Block-Other-UDP' -DisplayName 'Block all other inbound UDP ports on physical networks' -Group $ruleGroup -Direction Inbound -Action Block -Profile Any -Protocol UDP -LocalPort (Get-BlockedPortRanges $allowedUdpPorts) -InterfaceType Wired,Wireless | Out-Null
-
     $drift = @(Get-FirewallDrift)
     if ($drift.Count -gt 0) { throw "Firewall reinitialization did not converge: $($drift -join ' ')" }
 
     Write-Host 'Firewall desired state is active.'
-    Write-Host 'Physical networks: inbound TCP 22, 3389, 8080, 8081 and Tailscale UDP 41641 are allowed; all other TCP/UDP ports are blocked.'
-    Write-Host 'Internal access: loopback and the Tailscale interface remain unrestricted by the managed port block rules.'
+    Write-Host 'Inbound defaults to Block; declared service rules and expert-approved local application rules are honored on every profile.'
+    Write-Host 'Internal access: loopback and the Tailscale interface remain unrestricted by this managed rule set.'
     Write-Host "Backup: $backupFile"
 }
 
@@ -190,7 +161,7 @@ if ($Mode -in 'Status', 'Disable', 'Enable') {
         $expected = $true
     }
 
-    $profiles | Select-Object Name,Enabled,DefaultInboundAction,DefaultOutboundAction,AllowInboundRules
+    $profiles | Select-Object Name,Enabled,DefaultInboundAction,DefaultOutboundAction,AllowInboundRules,AllowLocalFirewallRules,NotifyOnListen
     if (-not $expected) {
         Write-Warning "Windows Firewall did not reach the requested '$Mode' state within 5 seconds."
         exit 1

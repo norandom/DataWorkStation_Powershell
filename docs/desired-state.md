@@ -84,6 +84,12 @@ Inspect with `pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test`.
 
 Defender exclusion paths are local state in ignored `.excluded`; `.excluded.sample` documents the portable format. Desired state refuses to guess paths when the local file is absent.
 
+The optional `Autopsy` forensic module is separate from the default workstation run. It depends on
+the matching `SleuthKitCli` module and keeps a dedicated case/output directory plus Autopsy process
+in Defender's exclusion catalog. It does not stop or remove Defender. Global protection changes use
+the explicit `autopsy-defender-off` and `autopsy-defender-on` commands. See [Autopsy Windows
+forensic workstation](autopsy.md).
+
 SkillOpt 0.2.0 is installed automatically through an isolated `uv tool` environment. Desired state also enforces validation gating, mock backend defaults, no auto-adoption, no `CLAUDE.md` evolution, and no evidence log. Use `-SkipSkillOpt` to omit this resource.
 
 The default `NixOsWsl` module installs the pinned NixOS-WSL image and activates the repository's locked system generation for Helm, kubectl, the Pulumi CLI, Git, jq, and native OpenSSH. Its read-only self-check compares the active system with the evaluated flake, verifies the deployed source manifest, checks command provenance, and content-verifies the complete local Nix store. `SharedSshConfig` then links the canonical Windows `%USERPROFILE%\.ssh\config` into ordinary Debian and NixOS while explicitly excluding Debian-MW. Windows, Debian, and NixOS keep their native SSH clients. See [Reproducible NixOS WSL tools](nixos-wsl.md) and [NixOS integrity and alteration detection](nixos-integrity.md).

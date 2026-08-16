@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 2.3.0 - 2026-08-16
+
+- Add the optional, hash-pinned Autopsy 4.23.1 Windows forensic GUI with complete private dependencies, namespaced helper commands, matching native Sleuth Kit 4.15.0 CLI tools, deterministic installed-file verification, and MSI repair for binary drift.
+- Keep Microsoft Defender installed while exposing explicit protection controls and durable, verified Autopsy process and case-output exclusions so forensic results are not silently quarantined.
+- Keep unmatched inbound traffic blocked while honoring an expert's application-listener approval on every firewall profile, with the resulting exposure and Autopsy Solr listener documented for review.
+
 ## 2.2.0 - 2026-08-16
 
 - Add native-Windows, read-only segmented EWF verification with pre/post evidence identities, pinned tool provenance, bounded raw artifacts, and durable human/JSON reports in both supported PowerShell runtimes.

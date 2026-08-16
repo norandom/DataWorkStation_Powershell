@@ -76,7 +76,7 @@ Hardening reduces attack paths; it does not make the host closed.
 
 | Surface | Current boundary |
 |---|---|
-| Physical Ethernet/Wi-Fi inbound | the managed firewall allows TCP 22, 3389, 8080, and 8081 plus the Tailscale UDP 41641 transport; all other managed physical TCP/UDP ports are blocked |
+| Physical Ethernet/Wi-Fi inbound | default inbound is Block; the managed firewall allows TCP 22, 3389, 8080, and 8081 plus Tailscale UDP 41641, and honors expert-approved local application rules on every profile |
 | Tailscale inbound | the Tailscale interface is unrestricted, so authenticated tailnet peers can reach any service bound to that interface unless the service has its own access control |
 | Listening Windows services | after convergence, RPC 135, SMB 445, and Hyper-V 2179 were bound on wildcard addresses; NetBIOS 139 remained on Hyper-V virtual-switch addresses, not the physical Wi-Fi address |
 | RDP and WinRM | both services were stopped and RDP connections were disabled at review time, but this hardening profile does not disable the services; if enabled later, the firewall already permits physical TCP 3389 |

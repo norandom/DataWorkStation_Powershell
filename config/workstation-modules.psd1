@@ -310,6 +310,30 @@
             Description = 'Opt-in, hash-pinned static-analysis and Sandbox telemetry tools.'
         }
         @{
+            Name = 'SleuthKitCli'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 62
+            Default = $false
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Official hash-pinned native Windows Sleuth Kit command suite on the user PATH.'
+        }
+        @{
+            Name = 'Autopsy'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 63
+            Default = $false
+            DependsOn = @('Sudo', 'PowerShell7', 'PowerShellProfile', 'SleuthKitCli')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Official Autopsy Windows GUI MSI, matched TSK CLI, private tool bindings, case root, and Defender exclusions.'
+        }
+        @{
             Name = 'NativeForensicTools'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

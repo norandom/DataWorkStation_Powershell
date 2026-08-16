@@ -213,12 +213,15 @@ Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicat
 | `fw-lockdown` | Compatibility name for `fw-ensure`. |
 | `fw-unlock` | Remove only this repository's managed rules; Windows rules remain. |
 
-The declared policy applies explicit block rules to physical wired and Wi-Fi interfaces. It allows inbound TCP 22 for SSH, 3389 for RDP, and 8080/8081 for HTTP/application services, plus UDP 41641 for direct Tailscale transport. All other inbound TCP/UDP ports on physical interfaces are blocked.
+The declared policy keeps the default inbound action at Block. It allows inbound TCP 22 for SSH,
+3389 for RDP, and 8080/8081 for HTTP/application services, plus UDP 41641 for direct Tailscale
+transport. Windows listener notifications remain enabled, and all profiles honor application rules
+an expert creates by clicking **Allow access**. Traffic with no matching allow rule stays blocked.
 
 The Tailscale interface is fully allowed, so SSH, RDP, and other services remain available inside the
 Tailnet subject to its access policy. Loopback is unaffected. WSL/Docker services published on
 loopback remain local. Outbound traffic is allowed. Router or NAT port forwarding determines whether
-the physically allowed ports 22, 3389, 8080, and 8081 are reachable from the public internet.
+the explicitly or interactively allowed application ports are reachable from the public internet.
 
 Use a loopback binding for Docker services that should not be externally exposed:
 
@@ -239,6 +242,26 @@ Containers on the same Docker network do not need published ports. To expose a l
 | `enable-defender` | Restore those Defender runtime protections through inline `sudo`. No scan is started. |
 
 Tamper Protection can reject these settings even for an administrator. `disable-defender` checks it before changing anything and directs you to `defender-settings` when necessary. Windows can also restore real-time protection later; `defender-status` reports the effective state.
+
+## Autopsy and Sleuth Kit
+
+| Command | Purpose |
+|---|---|
+| `autopsy` | Start the installed Autopsy Windows GUI. |
+| `mmls`, `fls`, `icat`, `fsstat`, `tsk_recover` | Use the matching standalone Sleuth Kit commands from `PATH`. |
+| `autopsy-regripper` | Run Autopsy's RegRipper build and custom Recent Activity plugins. |
+| `autopsy-ewfexport` | Run Autopsy's patched private libewf export tool explicitly. |
+| `autopsy-tesseract`, `autopsy-yara` | Use the OCR or YARA helper bundled with this Autopsy release. |
+| `autopsy-photorec`, `autopsy-testdisk` | Run the bundled recovery consoles. |
+| `autopsy-gst-inspect` | Inspect Autopsy's private GStreamer plugins. |
+| `autopsy-log2timeline` | Use the old Autopsy-compatible Plaso build, not a current general Plaso. |
+| `autopsy-tsk-logical-imager` | Run the bundled TSK logical imager explicitly. |
+| `autopsy-defender-status` | Report protection layers and the retained Defender service/process separately. |
+| `autopsy-defender-off`, `autopsy-defender-on` | Explicitly disable or restore runtime protection; neither command removes Defender. |
+
+The durable protection against quarantine is the managed Autopsy case/output folder exclusion.
+Read [Autopsy Windows forensic workstation](autopsy.md) before using the global protection toggle or
+private write-capable tools.
 
 ## SmartScreen and Mark-of-the-Web
 

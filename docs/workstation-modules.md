@@ -25,6 +25,7 @@ Show the dependencies pulled in for one module:
 .\Apply-Workstation.ps1 -Mode Test -Module MalwareAnalysisTools -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module RootlessPodman -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module NixOsWsl,SharedSshConfig -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module Autopsy -Plan
 ```
 
 Add `-Json` to `-Plan` for machine-readable output. Every row includes `Stage` and `Runtime`. Plan
@@ -104,6 +105,8 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
+| `SleuthKitCli` | **no** | `PowerShell7` | matching official native Windows TSK command suite on the user PATH |
+| `Autopsy` | **no** | `Sudo`, `PowerShell7`, `PowerShellProfile`, `SleuthKitCli` | signed Windows GUI MSI, private CLI bindings, case root, and Defender exclusions |
 | `MalwareAnalysisTools` | **no** | `Packages`, `WindowsFeatures`, `ProfilingTools`, `MalwareHashes` | opt-in isolated parsers and telemetry tools |
 | `MalwareContainerImage` | **no** | `RootlessPodman` | opt-in local build of the pinned rootless static-parser image |
 | `LegacyDockerCleanup` | **no** | `RootlessPodman` | destructive removal of retained Debian-MW Docker data after explicit confirmation |
@@ -116,10 +119,11 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `WslMemory` | yes | none | WSL memory and swap limits |
 | `Pagefile` | yes | `Sudo` | Windows pagefile policy |
 | `EventLogs` | yes | `Sudo` | audit channels and EVTX export |
-| `Firewall` | yes | `Sudo` | managed firewall profiles and allowlist |
+| `Firewall` | yes | `Sudo` | default-block profiles, named service rules, and expert-approved local application rules |
 | `Debloat` | **no** | `Sudo` | opt-in software removal profile |
 
-`-Module All` selects only modules marked default. It never includes `Debloat`.
+`-Module All` selects only modules marked default. It never includes `Autopsy`, `SleuthKitCli`,
+`NativeForensicTools`, or `Debloat`.
 
 ## Explicit debloat module
 

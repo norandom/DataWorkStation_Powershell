@@ -78,6 +78,7 @@ Read [Reproducible NixOS WSL tools](docs/nixos-wsl.md) for operation and [NixOS 
 | Run reproducible Kubernetes tools | locked NixOS WSL generation with Helm, kubectl, Pulumi, native OpenSSH, and full-store verification |
 | Triage a suspicious file | bounded host inspection, isolated document/reverse-engineering jobs, and explicitly confirmed Windows Sandbox detonation |
 | Verify an EWF image | `ewf-verify` with held read-only segment handles, pre/post hashes, pinned native tooling, and durable human/JSON reports |
+| Examine media in a forensic GUI | optional Autopsy Windows GUI, matching native Sleuth Kit CLI, Recent Activity helpers, and explicit Defender boundaries |
 
 Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
@@ -116,6 +117,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/go.psd1` | Go minimum version, workspace, command path, and built-in toolchain-selection policy. |
 | `config/malware-hashes.psd1` | Pinned `malware_hashes` GitHub release asset, SHA-256, and narrow install paths. |
 | `config/forensic-tools.psd1` | Reviewed native forensic release catalog, package/file hashes, certification state, and immutable provenance. |
+| `config/autopsy.psd1` | Official Autopsy GUI release, embedded-component inventory, private CLI bindings, case root, and Defender boundary. |
+| `config/sleuthkit.psd1` | Matching official native Windows Sleuth Kit CLI release and command inventory. |
 | `config/forensic-builds/` | Pinned native forensic source, signature, key, compiler, and build-recipe identities. |
 | `config/spec-driven-development.psd1` | Pinned Spec Kit EARS/TDD release wheel, hash, and upstream CLI version. |
 | `config/pester.psd1` | Pinned Pester release, shared module path, test discovery, output bounds, and parallel throttle. |
@@ -148,6 +151,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Set-MalwareHashesState.ps1` | Installs and verifies the pinned `malware_hashes` Windows release for host and Sandbox use. |
 | `scripts/Invoke-EwfVerification.ps1` | Verifies segmented EWF evidence read-only and writes attributable human/JSON/raw reports. |
 | `scripts/Set-NativeForensicToolsState.ps1` | Plans, tests, or explicitly installs an approved immutable native forensic package. |
+| `scripts/Set-AutopsyState.ps1` | Maintains the signed Autopsy Windows MSI, case root, private tools, and Defender exclusions. |
+| `scripts/Set-SleuthKitState.ps1` | Maintains the matching hash-pinned native Sleuth Kit command suite on the user PATH. |
 | `scripts/Test-ForensicReleaseCandidate.ps1` | Validates package structure, native imports, provenance, and the two-lane benign certification corpus. |
 | `scripts/Set-SpecDrivenDevelopmentState.ps1` | Maintains the release-pinned EARS/TDD Spec Kit tool in an isolated `uv tool` environment. |
 | `scripts/Set-PesterState.ps1` | Observes or explicitly installs the exact per-user Pester release for both PowerShell runtimes. |
@@ -195,7 +200,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Invoke-PacketCapture.ps1` | Captures NIC traffic with in-box PktMon and converts ETL to PCAPNG. |
 | `scripts/Get-PcapTriage.ps1` | Provides compact packet, failure, protocol, port, and endpoint views from PktMon ETL. |
 | `scripts/ssh-copy-id.ps1` | Installs an OpenSSH public key on a POSIX SSH target. |
-| `scripts/Set-FirewallState.ps1` | Tests, ensures, reinitializes, removes, or restores the firewall state. |
+| `scripts/Set-FirewallState.ps1` | Maintains default-block profiles, named service rules, and expert-approved local application rules. |
 | `.excluded.sample` | Public, machine-agnostic template for the ignored local Defender exclusion list. |
 | `config/defender-exclusions.psd1` | Declares Defender performance policy and the local exclusion-list filename. |
 | `config/wslconfig.ini` | Declares the global WSL 2 memory policy. |
@@ -272,7 +277,7 @@ requires the verified `malware_hashes` release, Windows Sandbox, WPT, and its pa
 MalwareContainerImage requires RootlessPodman.
 
 `-Module All` means the default full run. It excludes Debloat, MalwareAnalysisTools,
-MalwareContainerImage, and the destructive LegacyDockerCleanup module. See
+MalwareContainerImage, Autopsy, SleuthKitCli, NativeForensicTools, and the destructive LegacyDockerCleanup module. See
 [Sample outputs](docs/sample-outputs.md) for human and JSON output.
 
 Defender reads managed exclusion paths from the ignored local `.excluded` file. Copy
@@ -436,6 +441,7 @@ Local pyinfra applies the state inside each distribution. `Debian` keeps a rootf
 - [Suspicious-file analysis](docs/malware-analysis.md) documents isolation, telemetry limits, and residual risk.
 - [EWF verification](docs/ewf-verification.md) documents the read-only evidence transaction, result meanings, retained reports, and parser attack surface.
 - [Native forensic tool lifecycle](docs/forensic-tools.md) documents pinned builds, candidate review, explicit installation, and immutable publication.
+- [Autopsy Windows forensic workstation](docs/autopsy.md) documents the optional GUI, matching TSK commands, private dependencies, and Defender boundary.
 - [Analysis and differencing cases](docs/analysis-differencing.md) covers Sandbox behavior and graph-based binary comparison.
 - [Contour Terminal and BlueTerm](docs/contour-terminal.md) covers the MSI, Scoop migration, and theme translation.
 - [Windows hardening profile and attack surface](docs/hardening.md) records the legacy-script review and compatibility costs.

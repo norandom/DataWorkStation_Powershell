@@ -26,4 +26,8 @@ The capture produces ETL and PCAPNG without installing Wireshark. The query comm
 endpoints, protocols, ports, and failures in the PktMon ETL. PCAPNG is the portable interchange
 artifact.
 
-The managed firewall allows inbound TCP 22 for SSH, 3389 for RDP, and 8080/8081 for HTTP/application services on physical networks. The Tailscale interface is unrestricted, direct Tailscale transport uses UDP 41641, and other inbound TCP/UDP ports on physical interfaces are blocked. Verify the exact current rules with `firewall-status`.
+The managed firewall defaults inbound traffic to Block and allows TCP 22 for SSH, 3389 for RDP,
+8080/8081 for HTTP/application services, and UDP 41641 for direct Tailscale transport. The Tailscale
+interface is unrestricted. Listener notifications and expert-created local application rules are
+honored on Domain, Private, and Public profiles; traffic with no matching rule remains blocked.
+Verify the exact current profile and rule state with `firewall-status`.

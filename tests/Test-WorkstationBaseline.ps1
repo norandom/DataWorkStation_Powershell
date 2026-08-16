@@ -309,7 +309,7 @@ function Test-StateSafety {
         Assert-True (@(Compare-Object $expectedCatalogModes (@($catalogModule.SupportedModes) | Sort-Object)).Count -eq 0) "'$name' catalog modes match its resource"
     }
 
-    $windowsSudoModules = @('ContourTerminal', 'WindowsFeatures', 'Hardening', 'MsvcBuildTools', 'DefenderExclusions', 'SmartScreen', 'Pagefile', 'EventLogs', 'Firewall', 'Debloat')
+    $windowsSudoModules = @('ContourTerminal', 'Autopsy', 'WindowsFeatures', 'Hardening', 'MsvcBuildTools', 'DefenderExclusions', 'SmartScreen', 'Pagefile', 'EventLogs', 'Firewall', 'Debloat')
     foreach ($name in $windowsSudoModules) {
         $module = @($catalog.Modules | Where-Object Name -eq $name)[0]
         Assert-True ($module.DependsOn -contains 'Sudo') "Windows-elevated module '$name' has an explicit Sudo edge"
@@ -388,6 +388,11 @@ function Test-WindowsSafety {
     Assert-True (@($hardeningControls | Where-Object { $_.Category -eq 'UAC' -or $_.Name -in $uacNames }).Count -eq 0) 'DeveloperBaseline leaves UAC outside managed scope'
     $hardeningSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-HardeningState.ps1') -Raw
     Assert-True ($hardeningSource -notmatch 'Set-MpPreference|Set-NetFirewallProfile|Remove-AppxPackage') 'hardening does not absorb Defender, Firewall, or Debloat mutation'
+    $firewallSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-FirewallState.ps1') -Raw
+    Assert-True ($firewallSource -match '-DefaultInboundAction Block') 'firewall keeps the unmatched inbound default at Block'
+    Assert-True ($firewallSource -match '-AllowInboundRules True' -and $firewallSource -match '-AllowLocalFirewallRules True') 'all profiles honor expert-approved local application rules'
+    Assert-True ($firewallSource -match '-NotifyOnListen True') 'application listener prompts remain enabled'
+    Assert-True ($firewallSource -notmatch 'LinuxShell-Block-Other|Get-BlockedPortRanges') 'blanket explicit block rules cannot override expert-created allow rules'
     $windowsPowerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
     $hardeningPlan = Invoke-External -FilePath $windowsPowerShell -ArgumentList @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $repositoryRoot 'scripts\Set-HardeningState.ps1'), '-Mode', 'Plan')
     Assert-True ($hardeningPlan.ExitCode -eq 0) "the human hardening plan succeeds: $($hardeningPlan.Output -join ' ')"

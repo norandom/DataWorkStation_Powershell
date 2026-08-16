@@ -577,6 +577,55 @@ Malware analysis tool state: drift detected.
 
 `-Mode Ensure -Tool Handle` is the corresponding explicit, focused state change.
 
+## Autopsy and Sleuth Kit
+
+The complete optional setup reports the GUI, private helpers, case root, and Defender boundary
+separately:
+
+```text
+PS> .\Apply-Workstation.ps1 -Mode Test -Module Autopsy
+
+Resource                 State      Detail
+--------                 -----      ------
+AutopsyMsi               compliant  4.23.1 installed; 4.23.1 required
+AutopsyPrivateTools      complete   9 reviewed bindings
+AutopsyManagedFiles      verified   11 exact size/SHA-256 records
+AutopsyCaseRoot          present    C:\Users\operator\Documents\Autopsy Cases
+DefenderCaseExclusion    active     C:\Users\operator\Documents\Autopsy Cases
+DefenderProcessExclusion active     C:\Program Files\Autopsy-4.23.1\bin\autopsy64.exe
+DefenderService          retained   Running
+```
+
+The matching native TSK tools resolve directly from `PATH`:
+
+```text
+PS> mmls -V
+The Sleuth Kit ver 4.15.0
+
+PS> ./scripts/Set-SleuthKitState.ps1 -Mode Test
+SleuthKitTree verified 92 files; SHA-256 C8E39797BAC346638A6DBE78D21BAB6F9AD9A23A2DE06B334A4C9DD772B6B878
+
+PS> autopsy-regripper -h
+Rip v.4.0 - CLI RegRipper tool
+Rip [-r Reg hive file] [-f profile] [-p plugin] [options]
+```
+
+Protection status distinguishes disabled scanning from the retained engine process:
+
+```text
+PS> autopsy-defender-status
+
+DefenderServiceInstalled  : True
+DefenderServiceStatus     : Running
+DefenderProcessRunning    : True
+RealTimeProtectionEnabled : False
+BehaviorMonitorEnabled    : False
+IoavProtectionEnabled     : False
+```
+
+See [Autopsy Windows forensic workstation](autopsy.md) before changing protection or using private
+write-capable tools.
+
 ## EWF verification
 
 Start with the non-mutating plan:

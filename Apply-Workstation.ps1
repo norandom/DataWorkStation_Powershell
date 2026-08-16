@@ -4,7 +4,7 @@ param(
     [string] $Mode = 'Ensure',
     [ValidateSet(
         'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
-        'MalwareHashes', 'MalwareAnalysisTools', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
+        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -58,6 +58,8 @@ $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState
 $specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
 $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalysisToolsState.ps1'
 $nativeForensicToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeForensicToolsState.ps1'
+$sleuthKitScript = Join-Path $PSScriptRoot 'scripts\Set-SleuthKitState.ps1'
+$autopsyScript = Join-Path $PSScriptRoot 'scripts\Set-AutopsyState.ps1'
 $malwareContainerImageScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareContainerImageState.ps1'
 $linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
 $linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
@@ -394,6 +396,16 @@ function Invoke-WorkstationModule {
         'NativeForensicTools' {
             Invoke-CheckedProcess 'Native forensic tool state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nativeForensicToolsScript -Mode $Mode
+            }
+        }
+        'SleuthKitCli' {
+            Invoke-CheckedProcess 'Sleuth Kit command-line state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $sleuthKitScript -Mode $Mode
+            }
+        }
+        'Autopsy' {
+            Invoke-CheckedProcess 'Autopsy forensic workstation state' {
+                & sudo.exe --inline pwsh.exe -NoLogo -NoProfile -File $autopsyScript -Mode $Mode
             }
         }
         'MalwareContainerImage' {

@@ -1,7 +1,7 @@
 # Choose a capability
 
-Start with the failing behavior and inspect evidence that already exists. The routing catalog exposes
-the same choices to a person and to automation:
+Start with the failing behavior and inspect evidence that already exists. People and automation use
+the same routing catalog:
 
 ```powershell
 tricky capabilities
@@ -25,8 +25,9 @@ debugger, changes policy, or repairs desired state.
 | `security-state` | Defender, firewall, SmartScreen, or SaveZone may be involved | `firewall-status`, `defender-status`, `smartscreen-status`, `savezone-status` | Export and add the state to a Tricky case |
 | `malware-triage` | A file is suspicious, general Sandbox behavior must be compared, or two binaries need structural comparison | `is-this-malware PATH`, `sandbox-behavior-control PATH`, or `binary-diff OLD NEW` | Use a separately confirmed Sandbox launch or rootless graph-parser run only after reviewing its plan |
 
-The next-action column crosses an evidence or execution boundary. Review the target and scope before
-running it. The focused workflow pages under **Diagnose** and **Secure** explain those boundaries.
+Commands in the next-action column start a capture or cross an execution boundary. Review the target
+and scope before running one. The focused workflow pages under **Diagnose** and **Secure** explain
+each boundary.
 
 Follow the concrete operator evidence and safety boundaries in [sample outputs](../sample-outputs.md),
 [hardening residual attack surface](../hardening.md#residual-attack-surface),
@@ -40,6 +41,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 |---|---|---|
 | `powershell-environment` | Bootstrap PowerShell 7, profiles, or Windows Terminal | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan` |
 | `powershell-testing` | Discover Pester tests, parallel execution, or 5.1 compatibility | `test-powershell` |
+| `repository-quality` | Check PowerShell, Python, Dockerfiles, Actions, YAML, JSON, TOML, and staged-file safety | `lint-repository` or `precommit-run` |
 | `workstation-help` | Find managed commands, aliases, and skills | `workstation-help` |
 | `idle-sleep-inhibition` | Inspect Caffeine and its startup state | `pwsh -NoProfile -File .\scripts\Set-CaffeineState.ps1 -Mode Test` |
 | `workstation-modules` | Select desired state or review the complete update workflow | `.\Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` or `update` |

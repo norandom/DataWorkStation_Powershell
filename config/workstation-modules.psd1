@@ -214,6 +214,30 @@
             Description = 'Pinned pyinfra executor inside Debian WSL for local Linux deploy files.'
         }
         @{
+            Name = 'NixOsWsl'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 48
+            Default = $true
+            DependsOn = @('Packages')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Pinned NixOS-WSL distribution with a locked Helm, kubectl, Pulumi, OpenSSH, and integrity-checking system generation.'
+        }
+        @{
+            Name = 'SharedSshConfig'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 48
+            Default = $true
+            DependsOn = @('NixOsWsl')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'One Windows OpenSSH client configuration linked into trusted Debian and NixOS WSL users while excluding Debian-MW.'
+        }
+        @{
             Name = 'RootlessPodman'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

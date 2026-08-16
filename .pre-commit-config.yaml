@@ -1,6 +1,22 @@
 minimum_pre_commit_version: "4.6.2"
 
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+        files: '\.(?:yml|yaml|winget)$'
+      - id: check-json
+        files: '(?:\.json|/\.registry)$'
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=no]
+        exclude: '^(?:\.agents/|\.specify/)'
   - repo: local
     hooks:
       - id: powershell-lint
@@ -25,3 +41,45 @@ repos:
         language: system
         files: '\.py$'
         pass_filenames: true
+      - id: dockerfile-lint
+        name: Dockerfile lint (Hadolint)
+        entry: pwsh
+        args:
+          - -NoLogo
+          - -NoProfile
+          - -File
+          - scripts/Invoke-RepositoryLint.ps1
+          - -Category
+          - Docker
+        language: system
+        files: '(^|/)(Dockerfile(?:\.[^/]+)?|[^/]+\.Dockerfile)$'
+        pass_filenames: true
+      - id: github-actions-lint
+        name: GitHub Actions lint (actionlint)
+        entry: pwsh
+        args:
+          - -NoLogo
+          - -NoProfile
+          - -File
+          - scripts/Invoke-RepositoryLint.ps1
+          - -Category
+          - Actions
+        language: system
+        files: '^\.github/workflows/[^/]+\.(?:yml|yaml)$'
+        pass_filenames: true
+      - id: docs-strict
+        name: Documentation build (MkDocs strict)
+        entry: uv
+        args:
+          - run
+          - --locked
+          - --group
+          - docs
+          - mkdocs
+          - build
+          - --strict
+          - --site-dir
+          - site
+        language: system
+        files: '^(?:docs/|README\.md$|mkdocs\.yml$|pyproject\.toml$|uv\.lock$)'
+        pass_filenames: false

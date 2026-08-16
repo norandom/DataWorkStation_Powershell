@@ -1,6 +1,6 @@
 # Something is not working
 
-Create a case when the symptom crosses tool boundaries or may need to be handed to an AI:
+Create a case when the symptom crosses tool boundaries or needs review by another operator or an AI:
 
 ```powershell
 tricky new import-failure -Problem 'The import worker exits without output' -Target 'worker.exe'

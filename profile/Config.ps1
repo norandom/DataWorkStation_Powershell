@@ -1,7 +1,7 @@
 # Shell behavior: readline editing, completion, prompt, and native command precedence.
 
-# Tool-specific user and WPT directories are deterministic profile dependencies.
-# Add only directories that exist and avoid duplicating an existing PATH entry.
+# These user-tool and WPT directories are managed profile dependencies.
+# Add an entry only when the directory exists and PATH does not already contain it.
 $managedToolPaths = @(
     (Join-Path $env:USERPROFILE '.local\bin'),
     (Join-Path $env:USERPROFILE '.dotnet\tools'),
@@ -17,7 +17,7 @@ foreach ($managedToolPath in $managedToolPaths) {
 }
 Remove-Variable managedToolPaths, managedToolPath -ErrorAction Ignore
 
-# PSReadLine: Emacs/readline editing, searchable history and menu completion.
+# Configure Emacs-style editing, searchable history, and menu completion.
 if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
     Set-PSReadLineOption -EditMode Emacs -BellStyle None -HistorySearchCursorMovesToEnd
@@ -28,8 +28,8 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
     Set-PSReadLineKeyHandler -Chord Ctrl+r -Function ReverseSearchHistory
 
-    # PSReadLine 2.1+ can show fish/Kali-like history suggestions. Windows
-    # PowerShell 5.1 ships an older version, so enable this only when supported.
+    # PSReadLine 2.1 and later can show history suggestions. Windows PowerShell
+    # 5.1 may load an older version, so check support before enabling them.
     $psReadLineOptions = (Get-Command Set-PSReadLineOption).Parameters
     if ($psReadLineOptions.ContainsKey('PredictionSource') -and -not [Console]::IsOutputRedirected) {
         Set-PSReadLineOption -PredictionSource History
@@ -39,8 +39,8 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     }
 }
 
-# Prefer native Unix-style commands over Windows PowerShell's built-in aliases.
-# An alias is removed only when the corresponding executable actually exists.
+# Prefer managed native commands over same-named Windows PowerShell aliases.
+# Remove an alias only when the replacement executable exists.
 $nativeCommands = @(
     'cat', 'cp', 'cut', 'date', 'dir', 'echo', 'env', 'expand', 'factor',
     'false', 'head', 'hostname', 'join', 'link', 'ln', 'ls', 'md5sum',
@@ -58,8 +58,8 @@ foreach ($commandName in $nativeCommands) {
     }
 }
 
-# Windows includes curl.exe, while Windows PowerShell 5.1 masks it with curl/wget aliases.
-# Aliases.ps1 assigns wget to the managed aria2c wrapper after this cleanup.
+# Windows supplies curl.exe, but Windows PowerShell 5.1 masks curl and wget with aliases.
+# Aliases.ps1 assigns wget to the managed aria2c wrapper after removing those aliases.
 if (Get-Command curl.exe -CommandType Application -ErrorAction Ignore) {
     foreach ($commandName in 'curl', 'wget') {
         if (Test-Path "Alias:$commandName") {

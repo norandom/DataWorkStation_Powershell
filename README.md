@@ -3,14 +3,30 @@
 [![Documentation Pages](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/docs-pages.yml/badge.svg)](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/docs-pages.yml)
 [![Release](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/release.yml/badge.svg)](https://github.com/norandom/DataWorkStation_Powershell/actions/workflows/release.yml)
 
-A human- and AI-operable Windows engineering workstation for quant finance, data science, development, administration, and occasional forensics.
+A managed Windows workstation for quantitative finance, data science, software development,
+administration, and occasional forensic work. People and automation use the same PowerShell
+commands.
+
+Linux administrators can usually reach for a familiar utility when a system misbehaves. Windows has
+equally powerful tools, but many are harder to discover and produce evidence in Windows-specific
+formats. This repository gives those tools a documented PowerShell interface. A sysadmin can use it
+directly or ask an AI to handle repetitive, frustrating, and time-consuming troubleshooting while
+keeping every privileged action, capture, and state change visible.
 
 ## Developer documentation
 
 **[Open the published MkDocs developer documentation →](https://norandom.github.io/DataWorkStation_Powershell/)**
 
-Windows 11 Pro is required. The managed state uses Client Hyper-V, Windows Sandbox, native Windows sudo, and other Windows 11 workstation capabilities.
-Managed developer commands remain callable from both PowerShell 7 and inbox Windows PowerShell where documented; the Spec Kit EARS/TDD state resource is explicitly tested in both.
+Windows 11 Pro is required. This configuration uses Client Hyper-V, Windows Sandbox, native Windows
+sudo, and other workstation features that are not available on every Windows edition.
+
+The documented developer commands work in PowerShell 7 and, where noted, inbox Windows PowerShell
+5.1. The test suite checks the Spec Kit EARS/TDD resource in both runtimes.
+
+The screenshots use a GPD Pocket 4. GPD Pocket systems are popular portable machines for data-center
+administrators. The hardware is an example, not a requirement. The default desired state installs
+no GPD-only driver or fan controller. Generic sensor commands work when a supported provider is
+present and otherwise report that no data is available.
 
 <table>
   <tr>
@@ -25,15 +41,27 @@ Managed developer commands remain callable from both PowerShell 7 and inbox Wind
 
 ### Native development
 
-The `NativeDevelopment` module supplies standalone MSVC/MSBuild, CMake/Ninja, stable Rust MSVC,
-and Microsoft OpenJDK 21 without the Visual Studio IDE or a Unix-emulation shell. `JavaToolchain`
-is independently selectable and exposes `java` and `javac`; optional Ghidra tooling reuses the same
-JDK package.
+The `NativeDevelopment` module installs standalone MSVC/MSBuild, CMake/Ninja, stable Rust MSVC, and
+Microsoft OpenJDK 21. It does not install the Visual Studio IDE or a Unix emulation shell. You can
+select `JavaToolchain` on its own when you only need `java` and `javac`. The optional Ghidra tools use
+that same JDK.
 
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan
 .\Apply-Workstation.ps1 -Mode Ensure -Module NativeDevelopment
 ```
+
+### Reproducible Kubernetes and infrastructure tools
+
+The default `NixOsWsl` module provides a locked NixOS generation for Helm, kubectl, Pulumi, and native OpenSSH. It content-verifies the complete local Nix store, compares the active generation with the evaluated flake, and separately verifies the deployed `/etc/nixos` source manifest. Ordinary Debian remains the Homebrew/Docker/Dagger environment, and Debian-MW remains excluded from shared SSH state.
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Test -Module NixOsWsl,SharedSshConfig -Plan
+nixos-check
+wsl-nix kubectl version --client
+```
+
+Read [Reproducible NixOS WSL tools](docs/nixos-wsl.md) for operation and [NixOS integrity and alteration detection](docs/nixos-integrity.md) for the exact whole-distribution hashing boundary.
 
 ## Capabilities
 
@@ -47,11 +75,15 @@ JDK package.
 | Keep an investigation coherent | `tricky` cases with structured JSON and standalone HTML reports |
 | Improve AI workflows safely | SkillOpt reviewed tasks, held-out gates, staged proposals, explicit adoption |
 | Drive requirements into tests | release-pinned Spec Kit plus reusable EARS/TDD validation and traceability |
+| Run reproducible Kubernetes tools | locked NixOS WSL generation with Helm, kubectl, Pulumi, native OpenSSH, and full-store verification |
 | Triage a suspicious file | bounded host inspection, isolated document/reverse-engineering jobs, and explicitly confirmed Windows Sandbox detonation |
 
 Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
-This repository maintains a Linux-friendly PowerShell environment without using the legacy DSC MOF/LCM model. WinGet Configuration uses the current DSC v3 processor for packages; small idempotent PowerShell resources maintain Windows features, a reviewed developer hardening profile, user profiles, Windows sudo, btop preferences, and firewall policy.
+This repository gives PowerShell users familiar command names without installing Git Bash, MSYS, or
+Cygwin. WinGet Configuration uses the DSC v3 processor for packages. Small PowerShell resources
+manage Windows features, the reviewed developer hardening profile, shell profiles, Windows sudo,
+btop settings, and firewall policy. The repository does not use the old DSC MOF/LCM model.
 
 ## Layout
 
@@ -65,7 +97,10 @@ This repository maintains a Linux-friendly PowerShell environment without using 
 | `.config/caffeine.winget` | Focused Zhorn Software Caffeine package state. |
 | `.config/malware-analysis-tools.winget` | Opt-in isolated-analysis packages; excluded from the default workstation set. |
 | `.terminal-fonts-sample` | Portable one-line terminal font-family example; copy it to ignored `.terminal-fonts` for local use. |
-| `.wsl-env.sample` | Portable Debian WSL distribution/user selector; copy it to ignored `.wsl-env`. |
+| `.wsl-env.sample` | Portable Debian, Debian-MW, and NixOS WSL distribution/user selectors; copy it to ignored `.wsl-env`. |
+| `nixos/` | Locked NixOS-WSL flake, CLI package set, and read-only integrity self-check. |
+| `config/nixos-wsl.psd1` | Pinned NixOS-WSL image identity, install boundary, and managed command inventory. |
+| `config/shared-ssh.psd1` | Canonical Windows SSH config and trusted WSL link boundaries; Debian-MW is excluded. |
 | `config/scoop.psd1` | Official per-user Scoop source and Main/Extras bucket state. |
 | `config/contour-terminal.psd1` | Contour package, config, Desktop shortcut, backup, and BlueTerm source paths. |
 | `config/terminal-fonts.psd1` | Pinned official Fira Code archive, per-font hashes, and per-user installation paths. |
@@ -180,7 +215,7 @@ Copy-Item .wsl-env.sample .wsl-env
 .\Apply-Workstation.ps1 -Mode Reinitialize
 ```
 
-Update every managed surface with the same plan-first boundary:
+Preview or run updates with one command:
 
 ```powershell
 update
@@ -188,16 +223,21 @@ update -Json
 update -Run
 ```
 
-The first two commands are read-only plans. `update -Run` explicitly services Windows software
-updates, ordinary WinGet and Scoop applications, WSL, both declared Debian distributions, the
-declared developer Homebrew instance, developer Docker, and Debian-MW rootless Podman. It then
-ensures and tests the current checkout's default non-destructive desired state. Drivers, automatic
-reboots, WSL shutdown, container pruning, Scoop cleanup, pinned/unknown package overrides, and
-undeclared distributions remain outside the command. See [Managed workstation update](docs/workstation-update.md).
+The first two commands only print a plan. `update -Run` installs accepted Windows software updates
+and updates ordinary WinGet and Scoop applications. It also updates WSL, both declared Debian
+distributions, the developer Homebrew installation, developer Docker, and Debian-MW rootless
+Podman. The command finishes by applying and testing the current checkout's default,
+non-destructive desired state.
 
-`Ensure` is the normal operation. It leaves compliant Windows features, hardening controls, hover-focus behavior, profile, sudo, Defender exclusions, and firewall state untouched. `Reinitialize` is useful after troubleshooting: it reapplies local state and always rebuilds the managed firewall group after exporting a full `.wfw` backup.
+The update command does not install drivers, restart Windows, shut down WSL, prune containers, clean
+Scoop, override pinned or unknown packages, or touch undeclared distributions. See
+[Managed workstation update](docs/workstation-update.md).
 
-Run one part at a time with inclusion-based module selection:
+Use `Ensure` for routine work. It changes only resources that have drifted. Use `Reinitialize` after
+troubleshooting when you need to reapply local state. That mode exports a full `.wfw` backup before
+it rebuilds the managed firewall group.
+
+Run one module and its dependencies with `-Module`:
 
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module Firewall
@@ -211,46 +251,185 @@ Run one part at a time with inclusion-based module selection:
 .\Apply-Workstation.ps1 -Mode Test -Module MalwareAnalysisTools -Plan
 ```
 
-The module DSL has three dependency stages. `Inbox` uses only Windows PowerShell 5.1 and native Windows commands already present on a fresh Windows 11 Pro host; it configures Sudo and installs/tests PowerShell 7 without resolving `pwsh.exe`. `Core` begins only after the PowerShell 7 gate succeeds and provides foundational packages, profiles, testing, fonts, and terminals. `Extended` contains the remaining workstation capabilities. A failure in an earlier selected stage blocks later stages, and a dependency from an earlier stage to a later one is rejected. Planning is available before PowerShell 7 is installed.
+The module DSL has three dependency stages. `Inbox` uses Windows PowerShell 5.1 and commands present
+on a fresh Windows 11 Pro host. It configures Sudo and installs or tests PowerShell 7 without first
+resolving `pwsh.exe`. `Core` starts after the PowerShell 7 gate passes and supplies the base packages,
+profiles, tests, fonts, and terminals. `Extended` contains the remaining workstation modules.
 
-Within those stages, Hardening pulls in Sudo; PowerShellTesting pulls in PowerShell 7; DeveloperTools pulls in Go, DeveloperDocker, LinuxAutomation, LinuxHomebrew, Packages, and PowerShell 7; Scoop pulls in Git; ContourTerminal pulls in Sudo, PowerShell 7, and TerminalFonts; WindowsTerminal pulls in PowerShell 7; MalwareAnalysisTools pulls in the verified `malware_hashes` release, Windows Sandbox, WPT, and package prerequisites; and MalwareContainerImage pulls in RootlessPodman. `-Module All` retains the default full run and includes neither Debloat, MalwareAnalysisTools, MalwareContainerImage, nor destructive LegacyDockerCleanup. [Sample outputs](docs/sample-outputs.md) show the human and JSON forms.
+A failed stage blocks every later selected stage. The planner also rejects a dependency that points
+from an earlier stage to a later one. You can inspect the plan before PowerShell 7 is installed.
 
-Defender exclusion paths are read from the ignored local `.excluded` file. Copy `.excluded.sample` after cloning and customize it; native Windows `%ENVIRONMENT_VARIABLE%` references are supported. The repository publishes no workstation-specific exclusion paths, and unrelated existing Defender exclusions are preserved.
+Dependencies are selected automatically. For example, Hardening requires Sudo, Scoop requires Git,
+and ContourTerminal requires Sudo, PowerShell 7, and TerminalFonts. DeveloperTools brings in Go,
+DeveloperDocker, LinuxAutomation, LinuxHomebrew, Packages, and PowerShell 7. MalwareAnalysisTools
+requires the verified `malware_hashes` release, Windows Sandbox, WPT, and its package prerequisites.
+MalwareContainerImage requires RootlessPodman.
 
-Defender remains active outside those paths by default, but scheduled activity is idle-only, low-priority, throttled toward 15% average CPU, and does not run missed-scan catch-up jobs. Use `disable-defender` and `enable-defender` for an explicit elevated runtime toggle; neither command starts a scan. SmartScreen supports `Off`, `Medium` (`Warn` with override), and `Full` (`Block` without bypass). SaveZone/Mark-of-the-Web is controlled independently. Smart App Control is deliberately not changed.
+`-Module All` means the default full run. It excludes Debloat, MalwareAnalysisTools,
+MalwareContainerImage, and the destructive LegacyDockerCleanup module. See
+[Sample outputs](docs/sample-outputs.md) for human and JSON output.
+
+Defender reads managed exclusion paths from the ignored local `.excluded` file. Copy
+`.excluded.sample` after cloning, then edit the copy for this workstation. You can use native Windows
+`%ENVIRONMENT_VARIABLE%` references. The repository contains no workstation-specific paths and does
+not remove unrelated Defender exclusions.
+
+Defender stays active outside the excluded paths. Scheduled work runs only while the machine is idle,
+uses low priority, targets 15% average CPU, and skips missed-scan catch-up jobs. The elevated
+`disable-defender` and `enable-defender` commands change runtime protection but do not start a scan.
+SmartScreen supports `Off`, `Medium` (`Warn` with override), and `Full` (`Block` without bypass).
+SaveZone controls Mark-of-the-Web separately. This project does not change Smart App Control.
 
 WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Windows uses a 16 GiB initial and 32 GiB maximum pagefile; changing that policy requires a Windows restart.
 
-The balanced event-log template keeps relevant live logs circular and generously sized, then exports a rolling 48-hour EVTX window every day. Generated ZIP archives are stored in `E:\Logs`, retained for at most 14 days, capped at 768 MiB total, and rotated early if E: has less than 128 MiB free. Staging occurs under ProgramData on C:. The scheduled exporter is copied into an administrator-controlled directory and runs as SYSTEM.
+The event-log template keeps the selected live logs circular and increases their size. A scheduled
+task exports the latest 48 hours to EVTX each day. It stores ZIP archives in `E:\Logs` for no more
+than 14 days and caps the directory at 768 MiB. Rotation starts early when E: has less than 128 MiB
+free. The task stages files under ProgramData on C:, runs from an administrator-controlled copy of
+the exporter, and uses the SYSTEM account.
 
-The package declarations include PowerShell 7, Windows Terminal, Go, Microsoft Coreutils, ripgrep, rclone, WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS with its bundled npm and npx commands, Git, GitHub CLI (`gh`), Tailscale, WSL, and Debian. Both Windows PowerShell 5.1 and the newest installed PowerShell Core load the same managed prompt, aliases, tools, and readline-compatible behavior. Windows Terminal starts PowerShell Core by default, keeps Windows PowerShell selectable, and applies the shared Blue appearance through `profiles.defaults` while preserving unrelated profiles, keybindings, themes, and settings. Go uses its official MSI-backed WinGet package; projects select compatible released toolchains through Go's built-in `go.mod`/`go.work` and `GOTOOLCHAIN=auto` behavior. `GOROOT` remains owned by the MSI. Git has a focused declaration so Scoop can depend on it without testing every unrelated package. Scoop is maintained per-user with official Main and Extras buckets. Contour Terminal is installed separately from the exact official release MSI after SHA-256 verification; any legacy Scoop Contour package is removed first. The translated BlueTerm default and `blue-dark` profiles remain managed, and a bounded minimized-window gate verifies that Contour can initialize its graphics stack before the module reports compliance. The Windows-feature declaration enables Hyper-V and Windows Sandbox, includes required parent features, declares Sandbox's dependency on Hyper-V, and never restarts Windows automatically. The feature resource validates its dependency graph and applies it in topological order. The developer-tool state installs CodeQL with pinned verification, public Trail of Bits query packs, Semgrep CE through an isolated uv environment, Dagger through Homebrew inside Debian WSL, standalone TTD, Debian rsync, and the official PoolMon tag database. The profiling state installs only the Windows Performance Toolkit feature from the ADK, py-spy through an isolated uv environment, dotnet-trace as a global .NET tool, and Speedscope as a local CLI/browser viewer. SkillOpt 0.2.0 is another isolated `uv tool`. None of these use or modify the AMD/PyTorch Python environment.
+The package set includes PowerShell 7, Windows Terminal, Go, Microsoft Coreutils, ripgrep, rclone,
+WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, Git, GitHub CLI
+(`gh`), Tailscale, WSL, and Debian. Node.js supplies npm and npx.
 
-Native `awk.exe` and `sed.exe` are maintained through the focused `NativeTextTools` WinGet module for PowerShell. This does not install or use Git Bash, MinGit, Cygwin, MSYS, or MSYS2. The native BusyBox host is not Bash; it contains an unused `ash`-style shell applet, while desired state exposes only `awk` and `sed`. See [Native awk and sed for PowerShell](docs/native-text-tools.md).
+Windows PowerShell 5.1 and the newest installed PowerShell Core load the same prompt, aliases, tools,
+and readline settings. Windows Terminal starts PowerShell Core by default and keeps Windows
+PowerShell available. Its shared Blue appearance is applied through `profiles.defaults`; unrelated
+profiles, keybindings, themes, and settings are preserved.
 
-Zhorn Software Caffeine is maintained as a focused WinGet module. Desired state installs the real portable utility and registers it to start active at sign-in, with no `-startoff` flag. The `caffeine` wrapper launches its verified 64-bit executable on demand, and the tray icon toggles inhibition.
+Go comes from the official MSI-backed WinGet package. Projects choose released toolchains through
+`go.mod`, `go.work`, and `GOTOOLCHAIN=auto`; the MSI continues to own `GOROOT`. Git has a separate
+package declaration because Scoop depends on it. Scoop runs per-user with the official Main and
+Extras buckets.
 
-Suspicious-file commands begin with bounded byte inspection: `is-this-malware <path>`. Target Sandbox plans also run the hash-pinned `malware_hashes` release against the bounded host source and arrange an independent run against the read-only guest copy; clean controls skip both. Raw host and guest reports remain segregated evidence, and only the bounded Python ingestor compares their deterministic hashes or exposes their source paths. `disass`, `decomp`, and `malware-sandbox` create reviewable Windows Sandbox plans by default; `-Run -ConfirmSandbox` is required to launch, detonation also requires `-ConfirmExecution`, and networking remains off unless separately enabled. `malware-container` similarly plans non-executing rootless Office/PDF/binary parsing and requires `-Run -ConfirmContainer`; its large local image is a separate opt-in module. `sandbox-behavior-control`, `sandbox-behavior-target`, and `sandbox-behavior-diff` expose the same differential engine for general programs. `binary-diff OLD NEW` uses Ghidra/BinExport call and control-flow graphs plus BinDiff as its canonical comparison; the separate SQLite code sidecar never replaces graph matching with raw bytes, versions, or decompiler text. `malware-control` and `malware-container-control` create matched clean controls. `malware-diff` retains canonical evidence trees and uses native Git's ordinary no-index unified diff without deserializing raw traces or parser output in PowerShell. Same-hash static and dynamic cases are cross-linked without treating static indicators as proof of execution. Documents are dissected as inert containers and never opened automatically in licensed Office. See [Suspicious-file analysis](docs/malware-analysis.md) and [Analysis and differencing cases](docs/analysis-differencing.md).
+Contour Terminal comes from the exact official MSI after SHA-256 verification. The installer first
+removes any legacy Scoop package. The module manages the translated BlueTerm `default` and
+`blue-dark` profiles, then starts a minimized smoke test to confirm that the graphics stack works.
+
+The Windows feature resource enables Hyper-V, Windows Sandbox, and their parent features in
+dependency order. It does not restart Windows. DeveloperTools installs the verified CodeQL CLI,
+public Trail of Bits query packs, Semgrep CE in an isolated uv environment, Dagger through Homebrew
+in Debian WSL, standalone TTD, Debian rsync, and the official PoolMon tag database.
+
+ProfilingTools installs only the Windows Performance Toolkit feature from the ADK. It also installs
+py-spy in an isolated environment, dotnet-trace as a global .NET tool, and the local Speedscope
+viewer. SkillOpt 0.2.0 uses another isolated `uv tool` environment. These tools do not use or modify
+the AMD/PyTorch Python environment.
+
+The `NativeTextTools` WinGet module supplies native `awk.exe` and `sed.exe` commands for PowerShell.
+It does not install or use Git Bash, MinGit, Cygwin, MSYS, or MSYS2. BusyBox is only the native
+applet host. Although its binary contains an `ash`-style shell applet, the module exposes only `awk`
+and `sed`. See [Native awk and sed for PowerShell](docs/native-text-tools.md).
+
+The Caffeine module installs Zhorn Software Caffeine through WinGet and starts it active at sign-in.
+It does not use the `-startoff` flag. Run `caffeine` to start the verified 64-bit executable on demand;
+use the tray icon to toggle sleep inhibition.
+
+Start suspicious-file work with bounded host inspection:
+
+```powershell
+is-this-malware <path>
+```
+
+A target Sandbox plan runs the hash-pinned `malware_hashes` release once against the bounded host
+source and once against the read-only guest copy. Clean controls skip those sample-specific runs.
+Host and guest reports stay separate; only the bounded Python ingestor compares their hashes and
+reports their source paths.
+
+`disass`, `decomp`, and `malware-sandbox` write reviewable Windows Sandbox plans. They do not launch
+the guest unless you add `-Run -ConfirmSandbox`. Detonation also requires `-ConfirmExecution`, and
+networking stays disabled unless you enable it separately. `malware-container` follows the same
+plan-first model for non-executing Office, PDF, and binary parsing in rootless Podman. Running it
+requires `-Run -ConfirmContainer`; its large local image is an opt-in module.
+
+Use `sandbox-behavior-control`, `sandbox-behavior-target`, and `sandbox-behavior-diff` for ordinary
+programs. `binary-diff OLD NEW` compares Ghidra/BinExport call and control-flow graphs with BinDiff.
+The SQLite sidecar supports bounded queries but does not replace graph matching with raw bytes,
+version strings, or decompiler text.
+
+`malware-control` and `malware-container-control` create matched clean controls. `malware-diff` keeps
+both evidence trees and calls native Git for an ordinary no-index unified diff. PowerShell does not
+deserialize raw traces or parser output. Static and dynamic cases with the same hash link to each
+other, but a static indicator is not treated as proof of execution. Document analysis treats files
+as inert containers and never opens them in licensed Office. See
+[Suspicious-file analysis](docs/malware-analysis.md) and
+[Analysis and differencing cases](docs/analysis-differencing.md).
 
 ## Automatic versus explicit actions
 
-`Apply-Workstation.ps1 -Mode Ensure` automatically installs or repairs the declared WinGet packages, Hyper-V and Windows Sandbox features, `DeveloperBaseline` hardening controls, current-user focus-follows-mouse behavior, developer CLIs, required profiling tools, SkillOpt, and its conservative local configuration. Hover focus does not raise or reorder windows. Windows features and hardening are applied through explicit elevated resources and never restart Windows; rebooting remains a user action. WPT uses a separate idempotent resource so only `OptionId.WindowsPerformanceToolkit` is installed rather than the complete ADK. AMD uProf remains explicit because AMD requires interactive EULA acceptance; `uprof-install` opens the official download page and desired state reports whether it was installed.
+`Apply-Workstation.ps1 -Mode Ensure` installs or repairs the declared WinGet packages, Hyper-V,
+Windows Sandbox, `DeveloperBaseline` hardening, hover focus, developer CLIs, profiling tools, and
+SkillOpt configuration. Hover focus does not raise or reorder windows. Windows features and
+hardening use elevated resources, but the command does not restart Windows.
 
-Desired state never configures rclone credentials, creates a persistent cloud mount, signs into Semgrep, starts a Semgrep/CodeQL scan, records a performance or TTD trace, attaches a debugger, captures a crash dump, or registers a machine-wide postmortem debugger. Those actions remain explicit shell commands.
+The WPT resource installs only `OptionId.WindowsPerformanceToolkit`, not the full ADK. AMD uProf is
+left to the operator because its installer requires interactive EULA acceptance. `uprof-install`
+opens the official download page; desired state only reports whether the tool is present.
 
-The optional malware-analysis toolset is also excluded from the default run. Analysis commands never silently install tools, launch Windows Sandbox, execute a sample, enable Sandbox networking, upload content, or transfer Microsoft 365 identity. Each boundary has an explicit human command and confirmation switch.
+Desired state does not configure rclone credentials or create a persistent cloud mount. It does not
+sign in to Semgrep, start a Semgrep or CodeQL scan, record a performance or TTD trace, attach a
+debugger, capture a dump, or register a machine-wide postmortem debugger. Run those operations with
+their separate shell commands.
 
-Debloating is never automatic. The separate `DeveloperMinimal` profile can inventory installed/provisioned apps and legacy components through its direct resource or `-Module Debloat`, but removal always requires `-ConfirmRemoval`. Package management, runtimes, codecs, OpenSSH, Windows Hello, WSL, Debian, and Codex are protected from that profile.
+The default run excludes the malware-analysis toolset. Analysis commands do not install missing
+tools, launch Windows Sandbox, execute a sample, enable guest networking, upload content, or copy a
+Microsoft 365 identity. Commands that cross those boundaries require a confirmation switch.
 
-It also never harvests Codex transcripts, contacts a model provider for SkillOpt, schedules optimization, or adopts generated skill edits. Those steps require reviewed task evidence and explicit commands.
+Debloat is opt-in. The `DeveloperMinimal` profile can inventory installed and provisioned apps plus
+legacy components through its direct resource or `-Module Debloat`. Removal requires
+`-ConfirmRemoval`. The profile protects package managers, runtimes, codecs, OpenSSH, Windows Hello,
+WSL, Debian, and Codex.
 
-The SkillOpt resource pins the stable PyPI package only. It does not install the mutable source tree, global SkillOpt plugin, WebUI, benchmark extras, or local-model stacks.
+SkillOpt does not collect Codex transcripts, contact a model provider, schedule optimization, or
+adopt generated edits by default. Each operation requires reviewed task evidence and a separate
+command.
 
-Repository hooks are explicit because `.git/hooks` is local state. Run `precommit-install` once per clone; it installs `pre-commit==4.6.2` as an isolated uv tool and PSScriptAnalyzer 1.25.0 for the current user. The hook lints staged PowerShell files, while `precommit-run` checks the complete tracked tree.
+The SkillOpt resource installs only the pinned stable PyPI package. It excludes the mutable source
+tree, global plugin, WebUI, benchmark extras, and local-model stacks.
 
-PowerShell tests use exact Pester 6.1.0 from the shared per-user WindowsPowerShell module tree so PowerShell 7 and inbox Windows PowerShell resolve the same framework. `test-powershell` discovers standard `*.Tests.ps1` files and uses bounded file-level parallel execution under PowerShell 7.4 or newer. `test-powershell -Compatibility` dispatches the compatible suite sequentially through Windows PowerShell 5.1. Files needing exclusive or live-state access use `#pester:no-parallel`. Test execution never installs Pester; inspect or repair it separately with the `PowerShellTesting` module.
+Git hooks live outside version control, so install them once in each clone:
+
+```powershell
+precommit-install
+```
+
+The installer adds `pre-commit==4.6.2` in an isolated uv tool environment, PSScriptAnalyzer 1.25.0,
+Hadolint 2.14.0 or newer, and actionlint 1.7.12 or newer. Hadolint and actionlint come from native
+WinGet packages.
+
+PSScriptAnalyzer is the main PowerShell quality and security checker. The policy enables its built-in
+Error and Warning rules except for documented conflicts with repository conventions. The remaining
+hooks check staged Python, Dockerfiles, GitHub Actions, YAML (including `.winget` files), JSON, and
+TOML. Documentation changes also run a strict MkDocs build. Stock pre-commit hooks reject merge
+markers, case conflicts, files over the configured size limit, private keys, and mixed line endings.
+They check files but do not rewrite them.
+
+The portable parser hook IDs are `check-yaml`, `check-json`, and `check-toml`. Run one directly with
+`pre-commit run check-yaml --all-files`.
+
+Run `lint-docker`, `lint-actions`, or `lint-repository` for focused checks. Run `precommit-run` to
+check the complete tracked tree.
+
+PowerShell 7 and Windows PowerShell 5.1 use the same Pester 6.1.0 installation from the shared
+per-user WindowsPowerShell module tree. `test-powershell` finds standard `*.Tests.ps1` files and runs
+them in bounded file-level parallel jobs on PowerShell 7.4 or newer. `test-powershell -Compatibility`
+runs the compatible suite sequentially in Windows PowerShell 5.1. Mark a test file
+`#pester:no-parallel` when it needs exclusive or live system state. Tests do not install Pester; use
+the `PowerShellTesting` module to inspect or repair it.
 
 The full WDK is not installed automatically because WinDbg supplies the required `pooltag.txt`. If that source disappears, `Set-PoolMonState.ps1` reports the explicit fallback command instead of silently installing the large WDK.
 
-Docker Engine and Compose remain Linux-native but are now reached through the PowerShell module DSL and applied by local pyinfra inside each distribution. `Debian` keeps a rootful daemon for Dagger; `Debian-MW` keeps a separate rootless daemon for the implemented inert static parser. Python deploy and container code is checked through the pinned `lint-python` Ruff command.
+Docker Engine and Compose run inside WSL, while the PowerShell module DSL manages them from Windows.
+Local pyinfra applies the state inside each distribution. `Debian` keeps a rootful daemon for Dagger.
+`Debian-MW` uses separate, daemonless rootless Podman for inert static parsers. The pinned
+`lint-python` Ruff command checks the deploy and container code.
 
-See [Workstation modules and dependency order](docs/workstation-modules.md) for focused execution. See [Suspicious-file analysis](docs/malware-analysis.md) for isolation, telemetry limits, and residual attack surface. See [Analysis and differencing cases](docs/analysis-differencing.md) for general Sandbox behavior and graph-first binary comparison. See [Contour Terminal and BlueTerm](docs/contour-terminal.md) for the official MSI, Scoop migration, and theme translation. See [Windows hardening profile and attack surface](docs/hardening.md) for the legacy-script review, compatibility costs, and residual exposure. See [Opt-in Windows debloat profile](docs/debloat.md) for the exact removal allowlist and rollback limits. See [docs/Aliases.md](docs/Aliases.md) for daily commands.
+## Detailed documentation
+
+- [Workstation modules and dependency order](docs/workstation-modules.md) explains focused execution.
+- [Suspicious-file analysis](docs/malware-analysis.md) documents isolation, telemetry limits, and residual risk.
+- [Analysis and differencing cases](docs/analysis-differencing.md) covers Sandbox behavior and graph-based binary comparison.
+- [Contour Terminal and BlueTerm](docs/contour-terminal.md) covers the MSI, Scoop migration, and theme translation.
+- [Windows hardening profile and attack surface](docs/hardening.md) records the legacy-script review and compatibility costs.
+- [Opt-in Windows debloat profile](docs/debloat.md) lists removals, protected software, and rollback limits.
+- [Commands and aliases](docs/Aliases.md) is the daily command reference.

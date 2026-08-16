@@ -5,8 +5,8 @@ sudo, and other Pro workstation features.
 
 ## Prepare the checkout
 
-Clone the repository and create the local selection files. Review each populated file before
-running desired state:
+Clone the repository and create the local configuration files. Review each file before applying
+desired state:
 
 ```powershell
 git clone https://github.com/norandom/DataWorkStation_Powershell.git "$HOME/Source/PowerShell"
@@ -15,7 +15,7 @@ Copy-Item .excluded.sample .excluded
 Copy-Item .wsl-env.sample .wsl-env
 Copy-Item .terminal-fonts-sample .terminal-fonts
 # Edit .excluded for this workstation before applying desired state.
-# Set WSL_USER in .wsl-env; the tracked sample selects Debian.
+# Set the ordinary Debian, Debian-MW, and NixOS users in .wsl-env.
 # Keep Fira Code in .terminal-fonts, or replace it with an installed family.
 ```
 
@@ -71,7 +71,8 @@ default run and requires its separate confirmation.
 
 Open a new PowerShell session after profile installation. The prompt should show
 `username@host path>`. Commands such as `rg`, `gh`, `uv`, `npx`, `contour`, `docker`, `mem`, `ports`,
-and `tricky` should resolve.
+and `tricky` should resolve. Use `wsl-nix helm version`, `wsl-nix kubectl version --client`, and
+`nixos-check` for the reproducible NixOS tool boundary.
 
 ## Enable contributor checks
 
@@ -81,7 +82,9 @@ Install the repository-local Git hook once after cloning:
 precommit-install
 ```
 
-Commits then lint staged PowerShell files automatically. Use `precommit-run` to check the full tracked tree without committing.
+Commits then check staged PowerShell, Python, Dockerfile, GitHub Actions, YAML, JSON, and TOML files.
+The hook also detects merge markers, case-conflicting paths, large files, private keys, and mixed
+line endings. Run `precommit-run` to check the complete tracked tree without committing.
 
 ## Build the documentation locally
 

@@ -31,7 +31,7 @@ binary-diff-report <case-directory>
 binary-diff-report <case-directory> -Json
 ```
 
-The pipeline is deliberately structural:
+The pipeline compares program structure:
 
 ```text
 baseline binary  -> Ghidra -> baseline.BinExport  --\
@@ -43,14 +43,14 @@ candidate binary -> Ghidra -> candidate.BinExport --/
 
 [BinExport](https://github.com/google/binexport) emits the call graph and per-function control-flow
 graphs that [BinDiff](https://github.com/google/bindiff) consumes. BinDiff matches normalized graph
-structure—basic blocks, edges, and calls—and records pair and function similarity/confidence. This
-is the primary comparison.
+structure, including basic blocks, edges, and calls. It records similarity and confidence for the
+binary pair and for each function. This is the primary comparison.
 
 The workflow does **not** compare file versions, raw bytes, string dumps, assembly text, or
 decompiled text as a substitute when graph export or matching fails. Those representations are
 useful supporting evidence, but address movement, compiler changes, inlining, and formatting make
 them unsuitable as the authoritative relationship. A graph-tool failure therefore produces
-`missing-tool`, `timed-out`, or `partial`, not a different kind of “successful” diff.
+`missing-tool`, `timed-out`, or `partial`, not a different kind of "successful" diff.
 
 BinNavi is not the storage layer here. Its public repository is archived, its original database is
 central PostgreSQL, and its exporter path is IDA-oriented. The maintained Ghidra path is BinExport;
@@ -144,7 +144,7 @@ confirmations. Documents and unsupported interpreters are refused for behavior e
 
 A high graph score means the analyzed structures are similar; it is not a trust verdict. A low
 score can reflect compiler or optimization changes. Packed, malformed, stripped, cross-architecture,
-split, merged, or inlined functions can reduce coverage or confidence. “Added” and “removed” mean
+split, merged, or inlined functions can reduce coverage or confidence. "Added" and "removed" mean
 unmatched functions in the analyzed graphs, not necessarily new or deleted source functions.
 
 Both Ghidra and BinDiff parse attacker-controlled bytes and graph files. They run rootless with no

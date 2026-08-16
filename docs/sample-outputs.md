@@ -1,12 +1,71 @@
 # Sample outputs
 
+## Local workstation snapshot
+
+These versions were reported by this workstation on 2026-08-16. They show the output shape; managed
+versions will change as package declarations are updated.
+
+```text
+PS> go version
+go version go1.26.5 windows/amd64
+
+PS> rustc --version
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+
+PS> cargo --version
+cargo 1.97.1 (c980f4866 2026-06-30)
+
+PS> cmake --version | Select-Object -First 1
+cmake version 4.4.2
+
+PS> javac -version
+javac 21.0.12
+
+PS> cl
+Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64
+usage: cl [ option... ] filename... [ /link linkoption... ]
+```
+
+The MSVC usage message confirms that the profile imported the compiler environment. It is expected
+when `cl` is called without a source file.
+
+## Managed aliases
+
+`workstation-help -Type Aliases` reported these six aliases on the same workstation:
+
+```text
+Kind  Name             Description                  Source
+----  ----             -----------                  ------
+Alias host-static      Alias for is-this-malware     loaded profile
+Alias sandbox-static   Alias for malware-sandbox     loaded profile
+Alias terminal-link    Alias for Show-TerminalLink   loaded profile
+Alias wget             Alias for aria2c               loaded profile
+Alias workstation-help Alias for Get-WorkstationHelp loaded profile
+Alias wshelp           Alias for Get-WorkstationHelp loaded profile
+```
+
+Each alias is a short name for an existing human-readable command:
+
+| Alias | Use case | Example |
+|---|---|---|
+| `host-static` | Inspect bounded bytes, hashes, entropy, PE metadata, and strings without executing or uploading a suspicious file. | `host-static C:\Samples\unknown.exe` |
+| `sandbox-static` | Plan static inspection or document dissection in Windows Sandbox. The example plans only; add the displayed confirmation switches after reviewing the generated `.wsb`. | `sandbox-static C:\Samples\invoice.pdf -Mode Dissect` |
+| `terminal-link` | Print a clickable OSC 8 link in Contour while retaining readable text in other terminals or redirected output. | `terminal-link 'https://learn.microsoft.com/sysinternals/' 'Sysinternals documentation'` |
+| `wget` | Download through the managed `aria2c` wrapper with resume and segmented-transfer defaults. | `wget https://example.invalid/archive.zip -d $HOME\Downloads` |
+| `workstation-help` | List managed commands, aliases, and repository skills, or filter them by name and type. | `workstation-help -Type Commands -Name '*memory*'` |
+| `wshelp` | Use the short interactive name for `workstation-help`. | `wshelp -Type Skills -Name '*crash*'` |
+
+Use `workstation-help -Type Aliases -Json` when another command needs the same inventory. Alias
+discovery is read-only. The static-analysis aliases remain plan-first or non-executing unless their
+documented confirmation switches are supplied.
+
 ## Workstation update plan
 
 The short command is observational until `-Run` is explicit:
 
 ```text
 PS> update
-Workstation update plan (release 2.0.0)
+Workstation update plan (release 2.1.0)
 
 Order Name                  Privilege            Status  DependsOn
 ----- ----                  ---------            ------  ---------
@@ -433,7 +492,7 @@ ActualBuildContextFingerprint    : 2917BC1C...
 Only `malware-container ... -Run -ConfirmContainer` starts the static parser. It cannot enable
 networking and never executes the sample or extracted content.
 
-The four boundary names are intentionally visible:
+The four boundary names identify where each command runs:
 
 ```text
 PS> workstation-help -Type Commands -Name '*static'
@@ -446,6 +505,31 @@ Command sandbox-static profile/Aliases.ps1
 PS> wsl-dev uname -a
 PS> wsl-mw podman info --format json
 ```
+
+The reproducible Kubernetes/IaC boundary reports both declared-state drift and content integrity:
+
+```text
+PS> nixos-check
+NixOS WSL: compliant
+  Distribution: NixOS
+  User: mc
+  Repository sources: matched
+  Store integrity: verified
+  Source integrity: matched
+  Command integrity: verified
+  Detail: Active generation matches the deployed flake and its Nix store closure is intact.
+
+PS> wsl-nix helm version --short
+v3.20.2+gv3.20.2
+
+PS> wsl-nix kubectl version --client
+Client Version: v1.36.3
+
+PS> wsl-nix pulumi version
+v3.255.0
+```
+
+Versions are examples from the locked input and change only when the reviewed flake lock changes. `nixos-check -Json` returns the same state for automation. A store content mismatch reports `altered`; a source or generation mismatch reports `drifted`.
 
 The explicitly approved benign integration check produces local, ignored evidence and requires an
 actual guest handle observation:

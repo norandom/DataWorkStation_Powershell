@@ -1,4 +1,4 @@
-// Best-effort headless Ghidra exporter. It runs only inside an isolated analysis boundary.
+// Export best-effort headless Ghidra decompilation only inside an analysis boundary.
 import java.io.File;
 import java.io.PrintWriter;
 import ghidra.app.decompiler.DecompInterface;

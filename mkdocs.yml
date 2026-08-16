@@ -54,6 +54,7 @@ nav:
       - Contour Terminal and BlueTerm: contour-terminal.md
       - Terminal keys and scrolling: terminal-keybindings.md
       - Native awk and sed: native-text-tools.md
+      - Reproducible NixOS WSL tools: nixos-wsl.md
   - Diagnose:
       - Choose a capability: capabilities/index.md
       - Something is not working: workflows/problem-not-working.md
@@ -65,6 +66,7 @@ nav:
   - Secure:
       - Analyze a suspicious file: malware-analysis.md
       - Compare behavior and binary graphs: analysis-differencing.md
+      - Verify NixOS integrity: nixos-integrity.md
       - Apply the hardening profile: hardening.md
       - Run opt-in debloat: debloat.md
   - Extend:

@@ -2,10 +2,14 @@
 
 ## Unreleased
 
+## 2.1.0 - 2026-08-16
+
+- Add a release-pinned NixOS-WSL environment for Helm, kubectl, a separately locked current Pulumi CLI, and native OpenSSH, with locked-flake drift checks, complete Nix-store content verification, and one permission-safe SSH client configuration shared by Windows, trusted Debian, and NixOS while excluding Debian-MW.
+- Document the NixOS environment lifecycle, SSH boundaries, reviewed input updates, generation rollback, alteration response, verification cost, and the exact boundary between complete immutable-store hashing and mutable WSL state.
+- Expand pre-commit with non-mutating YAML, JSON, TOML, staged-file safety, Hadolint, and actionlint checks backed by direct human lint commands and explicit native dependency installation.
 - Add a plan-first `update` command for Windows software servicing, WinGet, Scoop, WSL, both declared Debian distributions, managed Homebrew instances, Docker/Podman reconciliation, and final current-release drift correction.
-- Add general clean-versus-target Windows Sandbox behavior commands and graph-first binary
-  differencing through Ghidra, BinExport, and BinDiff, retaining canonical `.BinDiff` SQLite plus a
-  separate bounded address-keyed analysis sidecar without raw/version/decompiler fallback.
+- Add general clean-versus-target Windows Sandbox behavior commands and graph-first binary differencing through Ghidra, BinExport, and BinDiff, retaining canonical `.BinDiff` SQLite plus a separate bounded address-keyed analysis sidecar without raw/version/decompiler fallback.
+- Rewrite the developer documentation around human-operable commands, representative local output, execution boundaries, and direct paths from common Windows troubleshooting tasks to the corresponding evidence tools.
 
 ## 2.0.0 - 2026-08-15
 

@@ -59,7 +59,11 @@ Although the 0.6.3.8249 generated comments mention automatic light/dark mappings
 
 The managed PowerShell prompt emits Contour's `CSI > M` vertical-line mark before every prompt and wraps filesystem locations in an OSC 8 hyperlink. This behavior is enabled only when Contour identifies the session through `CONTOUR_PROFILE` or `TERMINAL_NAME`; redirected output and other terminals receive plain text. Use `terminal-link URI [TEXT]` to emit another explicit hyperlink.
 
-Selecting text with the mouse immediately copies it to the Windows system clipboard through `on_mouse_select: CopyToClipboard`; no additional copy chord is required. This is intentionally the primary clipboard rather than Contour's platform-dependent selection clipboard. Selecting sensitive terminal output therefore replaces the current clipboard contents, and other processes running in the interactive Windows session may be able to read that clipboard.
+Selecting text with the mouse immediately copies it to the Windows system clipboard through
+`on_mouse_select: CopyToClipboard`; no copy chord is required. The setting uses the primary Windows
+clipboard instead of Contour's platform-dependent selection clipboard. Selecting sensitive output
+therefore replaces the current clipboard contents, which other processes in the interactive Windows
+session may be able to read.
 
 The managed map preserves Contour 0.6.3's bindings and adds common scrolling and mouse tab switching:
 
@@ -80,7 +84,11 @@ For touch use, the profile enables smooth/momentum scrolling and keeps the right
 
 Contour's indicator status line supports configurable `left`, `middle`, and `right` templates. Built-in variables cover the clock, command output, history-line count, hyperlink under the pointer, input/protected/search modes, search prompt, tabs, title, and VT type. The default indicator already shows mode/tab state on the left, the title in the middle, and history count plus clock on the right.
 
-This can approximate a Byobu layout, but Contour has no Byobu-style catalog of CPU, memory, network, battery, or host modules. `{Command:Program=...}` can insert an external program's output; a future workstation helper could provide cached system metrics, but invoking uncached PowerShell commands during status-line redraw would add process overhead and is not enabled by this profile. The separate host-writable VT status line is application-driven and likewise is not a declarative item system.
+This can approximate a Byobu layout, but Contour has no Byobu-style catalog of CPU, memory, network,
+battery, or host modules. `{Command:Program=...}` can insert output from an external program. This
+profile does not run uncached PowerShell commands during status-line redraw because each redraw would
+start another process. The separate host-writable VT status line is controlled by the application;
+it is not a declarative item system.
 
 Contour replaces its entire built-in map when `input_mapping` is present. The managed YAML therefore declares the complete 0.6.3.8249 map rather than a partial override. See [Terminal keyboard and scrolling](terminal-keybindings.md) for the full Contour, Windows Terminal, compact-keyboard, and PSReadLine reference.
 

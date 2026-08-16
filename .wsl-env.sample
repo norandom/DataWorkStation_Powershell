@@ -1,5 +1,7 @@
-# Copy to .wsl-env and select the managed WSL distribution and its normal user.
+# Copy to .wsl-env and select each managed WSL distribution and its normal user.
 WSL_DISTRIBUTION=Debian
 WSL_USER=your-linux-user
 WSL_MALWARE_DISTRIBUTION=Debian-MW
 WSL_MALWARE_USER=your-linux-user
+WSL_NIXOS_DISTRIBUTION=NixOS
+WSL_NIXOS_USER=your-linux-user

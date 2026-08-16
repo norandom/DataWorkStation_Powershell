@@ -1,11 +1,11 @@
 # Managed Contour configuration translated from BlueTerm/Blue.json.
-# Contour requires the first color scheme to be named "default".
+# Contour requires "default" as the first color-scheme name.
 default_profile: main
 on_mouse_select: CopyToClipboard
 
-# Contour replaces its complete built-in map when input_mapping is present.
-# This list therefore preserves the 0.6.3.8249 defaults, standardizes page
-# scrolling with Windows Terminal, and makes tab switching available by mouse.
+# Defining input_mapping replaces Contour's complete built-in map.
+# Retain the 0.6.3.8249 defaults, match Windows Terminal page scrolling,
+# and add mouse-wheel tab switching.
 input_mapping:
   - { mods: [Alt], key: Enter, action: ToggleFullscreen }
   - { mods: [], key: Escape, action: CancelSelection, mode: 'Select|Insert' }

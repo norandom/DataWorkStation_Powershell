@@ -65,7 +65,12 @@ The focused `Caffeine` module installs the real Zhorn Software tray utility and 
 
 `.config/windows-terminal.winget` declares the stable Windows Terminal package. `config/windows-terminal.psd1` declares only the managed settings subset: PowerShell Core as the default profile, both PowerShell profiles visible, shared Blue appearance, and a visible scrollbar. `Set-WindowsTerminalState.ps1 -Mode Test` is observational and never invokes WinGet; `Ensure` backs up an existing settings file before a semantic merge and preserves unrelated profiles, actions, themes, schemes, and root properties. Reopen Terminal after changing its settings. The PowerShell profile resource continues to deploy the same component set to both `Documents\WindowsPowerShell` and `Documents\PowerShell`.
 
-`.config/go.winget` declares the official MSI-backed `GoLang.Go` package. The focused `Go` resource keeps `%USERPROFILE%\go` as `GOPATH`, keeps its `bin` directory on the user path, accepts an empty `GOBIN`, and requires effective `GOTOOLCHAIN=auto`. It deliberately leaves user `GOROOT` unset so the MSI owns the installation root. Go 1.21 and newer can select or download a compatible released toolchain from the `go` and `toolchain` lines in `go.mod`/`go.work`; no separate third-party version manager is installed. Inspect with `pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test`.
+`.config/go.winget` declares the official MSI-backed `GoLang.Go` package. The focused `Go` resource
+keeps `%USERPROFILE%\go` as `GOPATH`, adds its `bin` directory to the user path, accepts an empty
+`GOBIN`, and requires effective `GOTOOLCHAIN=auto`. It leaves user `GOROOT` unset so the MSI owns the
+installation root. Go 1.21 and newer can select or download a compatible released toolchain from the
+`go` and `toolchain` lines in `go.mod` or `go.work`; no third-party version manager is installed.
+Inspect with `pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test`.
 
 `config/malware-hashes.psd1` pins the v2.5.0 Windows amd64 asset from the project's GitHub release and its GitHub-published SHA-256. `MalwareHashes` installs it per-user into a versioned narrow directory, exposes a verified copy through the managed command bin, and smoke-tests the embedded release version. Target Sandbox plans run the bounded host invocation and map only the versioned directory read-only for the independent guest invocation. The module never launches Sandbox; launch confirmation remains part of the analysis command.
 
@@ -80,6 +85,8 @@ The focused `Caffeine` module installs the real Zhorn Software tray utility and 
 Defender exclusion paths are local state in ignored `.excluded`; `.excluded.sample` documents the portable format. Desired state refuses to guess paths when the local file is absent.
 
 SkillOpt 0.2.0 is installed automatically through an isolated `uv tool` environment. Desired state also enforces validation gating, mock backend defaults, no auto-adoption, no `CLAUDE.md` evolution, and no evidence log. Use `-SkipSkillOpt` to omit this resource.
+
+The default `NixOsWsl` module installs the pinned NixOS-WSL image and activates the repository's locked system generation for Helm, kubectl, the Pulumi CLI, Git, jq, and native OpenSSH. Its read-only self-check compares the active system with the evaluated flake, verifies the deployed source manifest, checks command provenance, and content-verifies the complete local Nix store. `SharedSshConfig` then links the canonical Windows `%USERPROFILE%\.ssh\config` into ordinary Debian and NixOS while explicitly excluding Debian-MW. Windows, Debian, and NixOS keep their native SSH clients. See [Reproducible NixOS WSL tools](nixos-wsl.md) and [NixOS integrity and alteration detection](nixos-integrity.md).
 
 The selectable `DeveloperTools` bundle pulls in `Go`, `LinuxHomebrew`, `LinuxAutomation`, and `DeveloperDocker` after the Debian and package prerequisites. `LinuxAutomation` installs Homebrew `uv` and the pinned pyinfra version. `DeveloperDocker` adopts the existing official Docker CE packages, root-owned service/socket, and selected user's group membership through `linux/developer_docker.py`; this rootful daemon is retained because Dagger requires privileged engine capabilities. The developer bundle then runs the repository's Debian-native deploy:
 
@@ -111,6 +118,7 @@ Credentials, rclone mounts, code scans, packet/ETW/TTD recordings, debugger atta
 
 Software removal is also explicit. `config/debloat-profiles.psd1` declares the opt-in `DeveloperMinimal` profile, which is excluded from `-Module All` and runs only when `-Module Debloat` is named. Use Test first. Ensure refuses to proceed without `-ConfirmRemoval` and writes a pre-removal inventory. See [Opt-in Windows debloat profile](debloat.md) for protected packages and rollback limits.
 
-SkillOpt transcript harvesting, task approval, provider-backed optimization, scheduling, and proposal adoption also remain explicit. Scheduling and automatic adoption are intentionally absent from the managed wrapper.
+SkillOpt transcript harvesting, task approval, provider-backed optimization, and proposal adoption
+also remain explicit. The managed wrapper provides no scheduling or automatic adoption.
 
 MkDocs is also not a global workstation dependency. Its exact version is locked in `uv.lock` and materialized only for this repository.

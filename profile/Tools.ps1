@@ -1,4 +1,4 @@
-# Reusable implementations and substantive diagnostic commands.
+# Shared implementations for diagnostic and workstation commands.
 
 function global:Find-NativeTool {
     param([Parameter(Mandatory = $true)][string] $Name, [string] $WinGetId)
@@ -518,7 +518,7 @@ function global:fanspeed {
     }
 
     if (-not $namespace) {
-        Write-Warning 'No fan sensors found. For the GPD Pocket 4, run MotionAssistant or LibreHardwareMonitor as administrator.'
+        Write-Warning 'No fan sensors found. Start a supported hardware-monitor provider with the permissions required to publish sensor data.'
         return
     }
 

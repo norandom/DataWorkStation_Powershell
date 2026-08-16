@@ -23,6 +23,9 @@ PowerShell 5.1 or Core session receives the same environment from the managed pr
 
 Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
 
+See [Sample outputs](sample-outputs.md#managed-aliases) for one use case and invocation for every
+managed PowerShell alias loaded on this workstation.
+
 ## Workstation updates
 
 | Command | Purpose |
@@ -146,6 +149,9 @@ AMD uProf 5.3 is optional and useful when AMD PMU events, IBS, power, memory ban
 
 | Command | Purpose |
 |---|---|
+| `ssh HOST` | Use the native Windows OpenSSH client and canonical `%USERPROFILE%\.ssh\config`. |
+| `wsl-dev ssh HOST` | Use Debian's native OpenSSH client with the same canonical configuration. |
+| `wsl-nix ssh HOST` | Use NixOS's store-backed OpenSSH client with the same canonical configuration. |
 | `ssh-copy-id user@host` | Install the first available `id_ed25519.pub`, `id_ecdsa.pub`, or `id_rsa.pub` on a POSIX SSH target. |
 | `ssh-copy-id user@host -i PATH -p 2222` | Select a public key and non-default SSH port. |
 
@@ -186,9 +192,10 @@ GitHub CLI is managed separately from GitHub Desktop through the official WinGet
 | `wslmem` | Show Debian memory and Docker container memory. |
 | `killapp NAME` | Confirm, then stop every process in an application group. |
 | `sensors` | Read temperature, load, power, and fan sensors exposed by Libre/OpenHardwareMonitor. |
-| `fanspeed` | Display detected fan speeds. MotionAssistant remains the practical fan controller for the GPD Pocket 4. |
+| `fanspeed` | Display fan speeds exposed by a supported hardware-monitor provider. It does not install or control a vendor-specific fan service. |
 
-For “what is consuming RAM, including system memory?”, use `memtop` for the live overview and `memmap` for the Windows kernel/cache breakdown.
+To find what is consuming RAM, including system memory, use `memtop` for the live overview and
+`memmap` for the Windows kernel/cache breakdown.
 
 Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicates allocation pressure even if some physical RAM remains available. Use `memapps` to identify browsers and Electron applications whose consumption is split across many processes, then `killapp NAME` only after reviewing the group.
 
@@ -208,7 +215,10 @@ Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicat
 
 The declared policy applies explicit block rules to physical wired and Wi-Fi interfaces. It allows inbound TCP 22 for SSH, 3389 for RDP, and 8080/8081 for HTTP/application services, plus UDP 41641 for direct Tailscale transport. All other inbound TCP/UDP ports on physical interfaces are blocked.
 
-The Tailscale interface is fully allowed, so SSH, RDP, and other services remain available inside the Tailnet subject to the Tailscale access policy. Loopback is unaffected. WSL/Docker services published on loopback are also local-only. Outbound traffic remains allowed. Router/NAT port forwarding still determines whether any physically allowed port—22, 3389, 8080, or 8081—is reachable from the public internet.
+The Tailscale interface is fully allowed, so SSH, RDP, and other services remain available inside the
+Tailnet subject to its access policy. Loopback is unaffected. WSL/Docker services published on
+loopback remain local. Outbound traffic is allowed. Router or NAT port forwarding determines whether
+the physically allowed ports 22, 3389, 8080, and 8081 are reachable from the public internet.
 
 Use a loopback binding for Docker services that should not be externally exposed:
 
@@ -247,7 +257,8 @@ Tamper Protection can reject these settings even for an administrator. `disable-
 | `unblock PATH` | Remove Mark-of-the-Web from selected files. |
 | `unblock-downloads [-Path PATH]` | Recursively remove existing zone markers, defaulting to Downloads. |
 
-SmartScreen and SaveZone are intentionally independent. Disabling SaveZone affects future downloads only; `unblock-downloads` handles existing files. Smart App Control is not modified.
+SmartScreen and SaveZone are independent controls. Disabling SaveZone affects future downloads only;
+`unblock-downloads` handles existing files. Smart App Control is not modified.
 
 ## Tailscale and Taildrive
 
@@ -359,7 +370,10 @@ PktMon is part of Windows and captures to ETL; the stop command converts it to P
 
 The ETL can contain Windows component and packet-drop context that is absent from a conventional wire capture. Use `pcap-debug-start` when Windows filtering is in question; the ordinary `pcap-start` produces a cleaner NIC-only wire view. A drop marker can identify a blocked path, but its absence is not proof that Windows Firewall allowed a flow. PktMon supports one machine-wide capture, and `pcap-start` owns its active filters until `pcap-stop`.
 
-The balanced template enables relevant channels, expands undersized logs, records command lines for process-creation events, and enables PowerShell script-block logging. It intentionally avoids high-volume file-system, registry, handle, packet, and per-connection auditing. Existing additional audit categories are preserved.
+The balanced template enables relevant channels, expands undersized logs, records command lines for
+process-creation events, and enables PowerShell script-block logging. It avoids high-volume
+file-system, registry, handle, packet, and per-connection auditing. Existing additional audit
+categories are preserved.
 
 Windows event channels do not have a time-based retention property. Live logs therefore use circular overwrite, while a SYSTEM task exports the most recent 48 hours daily. Archives in `E:\Logs` are kept for at most 14 days and also rotated against a 768 MiB budget with 128 MiB reserved free space.
 
@@ -448,13 +462,26 @@ Desired state installs `skillopt==0.2.0` through `uv tool`. It never harvests tr
 | Command | Purpose |
 |---|---|
 | `lint-powershell [PATH ...]` | Run PSScriptAnalyzer 1.25.0 on selected files, or all tracked PowerShell files when no paths are supplied. |
+| `lint-python [PATH ...]` | Run the pinned Ruff policy over Python deploy, parser, and test code. |
+| `lint-repository [-Category All\|Docker\|Actions] [PATH ...]` | Run the native repository linters; the default checks Dockerfiles with Hadolint and workflows with actionlint. |
+| `lint-docker [DOCKERFILE ...]` | Run Hadolint over selected Dockerfiles, or every tracked Dockerfile. |
+| `lint-actions [WORKFLOW ...]` | Run actionlint over selected GitHub Actions workflows, or every tracked workflow. |
 | `test-powershell [-Path PATH] [-ThrottleLimit N]` | Run standard PowerShell test files through pinned Pester with bounded file-level parallelism when supported. |
 | `test-powershell -Compatibility` | Run the compatible test suite sequentially through inbox Windows PowerShell 5.1. |
 | `test-powershell -Json` | Return the bounded aggregate test result for machine consumption. |
-| `precommit-install` | Install pinned pre-commit and PSScriptAnalyzer dependencies, validate the hook configuration, and install `.git/hooks/pre-commit`. |
-| `precommit-run` | Execute every configured pre-commit hook against all tracked files. |
+| `precommit-install` | Explicitly install pinned pre-commit/PSScriptAnalyzer plus native Hadolint/actionlint dependencies, validate the configuration, and install `.git/hooks/pre-commit`. |
+| `precommit-run` | Execute every configured non-mutating pre-commit check against all tracked files. |
 
-The PowerShell hook examines only staged `.ps1`, `.psm1`, and `.psd1` files during an ordinary commit. The same lint script runs in GitHub Actions. Hook installation is explicit per clone because `.git/hooks` is intentionally untracked.
+Ordinary commits check only matching staged files. PowerShell and Python use the same repository
+wrappers as `lint-powershell` and `lint-python`. Dockerfiles and workflows share `lint-repository`.
+Documentation changes run the strict MkDocs build. Portable upstream hooks parse YAML, including
+`.winget` declarations; JSON, including Spec Kit `.registry` files; and TOML. They also reject merge
+markers, case conflicts, oversized additions, private keys, and mixed line endings.
+
+`mixed-line-ending` runs with `--fix=no`. Generated `.agents/` and `.specify/` metadata retain their
+upstream line endings and are excluded from that check. No configured hook silently rewrites a
+staged file. Run one portable check directly with `pre-commit run check-yaml --all-files`. Hook
+installation is per clone because `.git/hooks` and tool installations are local state.
 ## Suspicious-file commands
 
 These commands plan potentially dangerous work before they run it. `-Json` provides the machine-readable form.
@@ -482,7 +509,10 @@ These commands plan potentially dangerous work before they run it. `-Json` provi
 | `binary-diff <baseline> <candidate> -Run -ConfirmContainer` | explicitly run non-executing graph parsers with two read-only inputs and networking disabled |
 | `binary-diff-report <case>` | show the bounded validated summary for an existing binary-diff case |
 
-Add `-Run -ConfirmSandbox` only after reviewing `analysis.wsb`. Detonation additionally requires `-ConfirmExecution`. `-AllowNetwork` is separate because it exposes networks reachable from the host. Documents are never opened automatically. Sandbox jobs close the guest after the terminal result is persisted; add `-KeepSandboxOpen` only when an interactive guest is intentionally required.
+Add `-Run -ConfirmSandbox` only after reviewing `analysis.wsb`. Detonation also requires
+`-ConfirmExecution`. `-AllowNetwork` is separate because it exposes networks reachable from the
+host. Documents never open automatically. Sandbox jobs close the guest after writing the terminal
+result; add `-KeepSandboxOpen` only when you need an interactive guest.
 
 For a differential run, plan `malware-control` and `malware-sandbox` with the same path, mode,
 duration, and network policy. Review and approve each Sandbox launch separately; the target
@@ -507,9 +537,12 @@ matching. See [Analysis and differencing cases](analysis-differencing.md) for ar
 | `sandbox-static <path> ...` | Windows Sandbox; complex parsing or explicitly approved execution |
 | `wsl-dev [command]` | configured developer distribution and user (`WSL_DISTRIBUTION`, `WSL_USER`) |
 | `wsl-mw [command]` | configured dedicated malware-analysis distribution and user (`WSL_MALWARE_DISTRIBUTION`, `WSL_MALWARE_USER`) |
+| `wsl-nix [command]` | configured reproducible NixOS distribution and user (`WSL_NIXOS_DISTRIBUTION`, `WSL_NIXOS_USER`) |
+| `nixos-check [-Json]` | read-only generation, source, command-provenance, and full Nix-store integrity check |
 
 Windows Sandbox is not a WSL distribution. `wsl-dev` is the ordinary Debian development boundary
 and must never receive suspicious samples. `wsl-mw` reaches the separate rootless analysis distro;
+`wsl-nix` reaches the locked Kubernetes/IaC tool environment. The shared SSH module excludes `wsl-mw`.
 it does not make arbitrary containers safe. Both commands read ignored `.wsl-env`, refuse a missing
 selection, and refuse to use the same distribution for developer and malware state. With no
 arguments they open the selected distribution; with arguments they execute that command directly.

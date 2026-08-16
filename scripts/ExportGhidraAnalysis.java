@@ -1,4 +1,4 @@
-// Bounded line-oriented Ghidra evidence exporter. It runs only inside static isolation.
+// Export bounded, line-oriented Ghidra evidence only inside the static-analysis boundary.
 import java.io.File;
 import java.io.PrintWriter;
 import ghidra.app.decompiler.DecompInterface;

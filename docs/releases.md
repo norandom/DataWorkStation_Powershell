@@ -4,9 +4,12 @@ Documentation is built reproducibly from `pyproject.toml` and `uv.lock`.
 
 ## GitHub Pages
 
-The Pages workflow builds in strict mode on pull requests and relevant pushes. A push to `main` additionally deploys the generated static artifact to the `github-pages` environment.
+The Pages workflow builds in strict mode on pull requests and relevant pushes. A push to `main` also
+deploys the generated static artifact to the `github-pages` environment.
 
-GitHub requires one repository-level bootstrap when Pages is not already enabled: open **Settings → Pages → Build and deployment** and select **GitHub Actions** as the source. The normal `GITHUB_TOKEN` deliberately cannot enable Pages administration by itself; all later deployments are handled by the workflow.
+If Pages is not enabled, open **Settings → Pages → Build and deployment** and select **GitHub
+Actions** as the source. This is a one-time repository setting. The normal `GITHUB_TOKEN` cannot
+enable Pages administration; the workflow handles later deployments.
 
 ## Tagged releases
 
@@ -18,8 +21,9 @@ Tags matching `v*.*.*` run the release workflow. It builds the same strict site 
 Prepare a release only after the main branch is green:
 
 ```powershell
-git tag -a v2.0.0 -m 'DataWorkStation PowerShell v2.0.0'
-git push origin v2.0.0
+$version = (Get-Content VERSION -Raw).Trim()
+git tag -a "v$version" -m "DataWorkStation PowerShell v$version"
+git push origin "v$version"
 ```
 
 The workflow uses the tag as the release version and generates release notes from Git history.

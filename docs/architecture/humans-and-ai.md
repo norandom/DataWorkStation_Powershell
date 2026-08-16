@@ -1,6 +1,11 @@
 # Humans and AI use the same workstation
 
-The shell commands are the product boundary. Documentation and Codex skills describe how to combine them, but neither hides a second automation-only implementation.
+Scripts and profile commands are the supported interface. Documentation and Codex skills call those
+commands directly instead of maintaining a separate automation implementation.
+
+The interface makes Windows diagnostic tools easier to find and operate. Humans can use the default
+output for direct troubleshooting. An AI can consume the structured form to handle slow or quirky
+evidence work, but it still reaches the same explicit privilege and state-change boundaries.
 
 ## Contract
 
@@ -22,4 +27,6 @@ The shell commands are the product boundary. Documentation and Codex skills desc
 | `.agents/skills/` | Focused AI procedures built from the same commands |
 | SkillOpt staging | Reviewed, validation-gated proposals for one skill at a time |
 
-SkillOpt may improve descriptions and routing examples, but generated changes remain reviewable, bounded to one skill, staged outside Git, and validated against the command catalog before explicit adoption.
+SkillOpt may improve descriptions and routing examples. It handles one skill at a time, stages its
+proposal outside Git, and validates the proposal against the command catalog. Adoption always
+requires a separate review and command.

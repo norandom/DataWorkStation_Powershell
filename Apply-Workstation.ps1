@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
         'MalwareHashes', 'MalwareAnalysisTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -18,6 +18,7 @@ param(
     [switch] $SkipHardening,
     [switch] $SkipFocusFollowsMouse,
     [switch] $SkipDeveloperTools,
+    [switch] $SkipNixOsWsl,
     [switch] $SkipSpecDrivenDevelopment,
     [switch] $SkipProfilingTools,
     [switch] $SkipSkillOpt,
@@ -59,6 +60,8 @@ $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalys
 $malwareContainerImageScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareContainerImageState.ps1'
 $linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
 $linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
+$nixOsWslScript = Join-Path $PSScriptRoot 'scripts\Set-NixOsWslState.ps1'
+$sharedSshConfigScript = Join-Path $PSScriptRoot 'scripts\Set-SharedSshConfigState.ps1'
 $rootlessPodmanScript = Join-Path $PSScriptRoot 'scripts\Set-RootlessPodmanState.ps1'
 $legacyDockerCleanupScript = Join-Path $PSScriptRoot 'scripts\Remove-LegacyDockerMwState.ps1'
 $developerDockerScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperDockerState.ps1'
@@ -352,6 +355,16 @@ function Invoke-WorkstationModule {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $linuxAutomationScript -Mode $Mode
             }
         }
+        'NixOsWsl' {
+            Invoke-CheckedProcess 'NixOS WSL state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nixOsWslScript -Mode $Mode
+            }
+        }
+        'SharedSshConfig' {
+            Invoke-CheckedProcess 'Shared SSH configuration state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $sharedSshConfigScript -Mode $Mode
+            }
+        }
         'RootlessPodman' {
             Invoke-CheckedProcess 'Rootless Podman state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $rootlessPodmanScript -Mode $Mode
@@ -461,7 +474,7 @@ function Invoke-WorkstationModule {
 }
 
 $skipSwitchUsed = $SkipPackages -or $SkipWindowsFeatures -or $SkipHardening -or
-    $SkipFocusFollowsMouse -or $SkipDeveloperTools -or $SkipSpecDrivenDevelopment -or $SkipProfilingTools -or
+    $SkipFocusFollowsMouse -or $SkipDeveloperTools -or $SkipNixOsWsl -or $SkipSpecDrivenDevelopment -or $SkipProfilingTools -or
     $SkipSkillOpt -or $SkipFirewall -or $SkipDefender -or $SkipSmartScreen -or
     $SkipMemoryPolicy -or $SkipEventLogs
 $explicitModules = @($Module | Where-Object { $_ -ne 'All' })
@@ -475,6 +488,10 @@ if ($SkipWindowsFeatures) { $excludedModules.Add('WindowsFeatures') }
 if ($SkipHardening) { $excludedModules.Add('Hardening') }
 if ($SkipFocusFollowsMouse) { $excludedModules.Add('FocusFollowsMouse') }
 if ($SkipDeveloperTools) { $excludedModules.Add('DeveloperTools') }
+if ($SkipNixOsWsl) {
+    $excludedModules.Add('NixOsWsl')
+    $excludedModules.Add('SharedSshConfig')
+}
 if ($SkipSpecDrivenDevelopment) { $excludedModules.Add('SpecDrivenDevelopment') }
 if ($SkipProfilingTools) { $excludedModules.Add('ProfilingTools') }
 if ($SkipSkillOpt) { $excludedModules.Add('SkillOpt') }

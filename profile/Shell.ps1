@@ -2,7 +2,7 @@
 
 $linuxShellProfileRoot = Join-Path $PSScriptRoot 'LinuxShell'
 if (-not (Test-Path -LiteralPath $linuxShellProfileRoot -PathType Container)) {
-    # Allows the loader to be dot-sourced directly from the repository too.
+    # Support direct dot-sourcing from the repository as well as the installed profile.
     $linuxShellProfileRoot = $PSScriptRoot
 }
 

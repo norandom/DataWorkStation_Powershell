@@ -1,6 +1,7 @@
 # Workstation modules and dependency order
 
-`Apply-Workstation.ps1` can run the complete default desired state or an inclusion-based subset. Each module maps to one focused resource or package stage.
+`Apply-Workstation.ps1` can run the complete default desired state or selected modules. Each module
+maps to one focused resource or package stage.
 
 ## Plan before running
 
@@ -23,9 +24,12 @@ Show the dependencies pulled in for one module:
 .\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module MalwareAnalysisTools -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module RootlessPodman -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module NixOsWsl,SharedSshConfig -Plan
 ```
 
-Add `-Json` to `-Plan` for machine-readable output. Every row includes `Stage` and `Runtime`. Plan mode validates module names, stage names, forward-stage dependencies, missing dependencies, cycles, exclusions, and mode compatibility without invoking a resource or resolving PowerShell 7.
+Add `-Json` to `-Plan` for machine-readable output. Every row includes `Stage` and `Runtime`. Plan
+mode validates module and stage names, dependency direction, missing dependencies, cycles,
+exclusions, and mode compatibility. It does not invoke a resource or resolve PowerShell 7.
 
 ## Dependency stages
 
@@ -77,14 +81,14 @@ The routing DSL is `config/workstation-modules.psd1`.
 
 | Module | Default | Dependency | Purpose |
 |---|---:|---|---|
-| `Sudo` | yes | — | bootstrap Windows sudo inline mode |
-| `Git` | yes | — | focused WinGet Configuration state for Scoop's Git dependency |
-| `PowerShell7` | yes | — | focused WinGet Configuration state for PowerShell 7 |
+| `Sudo` | yes | none | bootstrap Windows sudo inline mode |
+| `Git` | yes | none | focused WinGet Configuration state for Scoop's Git dependency |
+| `PowerShell7` | yes | none | focused WinGet Configuration state for PowerShell 7 |
 | `PowerShellTesting` | yes | `PowerShell7` | exact Pester release shared by bounded parallel and compatibility test lanes |
-| `Go` | yes | — | official MSI-backed Go package, user workspace, command path, and built-in toolchain selection |
+| `Go` | yes | none | official MSI-backed Go package, user workspace, command path, and built-in toolchain selection |
 | `Packages` | yes | `PowerShell7` | WinGet Configuration packages |
-| `NativeTextTools` | yes | — | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
-| `Caffeine` | yes | — | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
+| `NativeTextTools` | yes | none | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
+| `Caffeine` | yes | none | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
 | `Scoop` | yes | `Git` | per-user Scoop with official Main and Extras buckets |
 | `TerminalFonts` | yes | `PowerShell7` | hash-pinned per-user Fira Code installation |
 | `ContourTerminal` | yes | `Sudo`, `PowerShell7`, `TerminalFonts` | official machine-wide Contour MSI, translated BlueTerm theme, local font selection, and bounded graphics-compatibility gate |
@@ -93,21 +97,23 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `Hardening` | yes | `Sudo` | `DeveloperBaseline` security controls |
 | `LinuxHomebrew` | no | `Packages` | Homebrew inside Debian WSL; pulled in by the developer bundle |
 | `LinuxAutomation` | no | `LinuxHomebrew` | Homebrew `uv` and pinned pyinfra inside Debian WSL |
+| `NixOsWsl` | yes | `Packages` | locked NixOS-WSL generation with Helm, kubectl, Pulumi CLI, native OpenSSH, and integrity checks |
+| `SharedSshConfig` | yes | `NixOsWsl` | one canonical Windows SSH config linked into trusted Debian and NixOS; Debian-MW excluded |
 | `DeveloperDocker` | no | `LinuxAutomation` | pyinfra-adopted rootful Docker daemon in Debian for Dagger |
-| `RootlessPodman` | yes | — | clean Debian-MW distro with local pyinfra and daemonless rootless Podman |
+| `RootlessPodman` | yes | none | clean Debian-MW distro with local pyinfra and daemonless rootless Podman |
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
-| `MalwareHashes` | yes | — | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
+| `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
 | `MalwareAnalysisTools` | **no** | `Packages`, `WindowsFeatures`, `ProfilingTools`, `MalwareHashes` | opt-in isolated parsers and telemetry tools |
 | `MalwareContainerImage` | **no** | `RootlessPodman` | opt-in local build of the pinned rootless static-parser image |
 | `LegacyDockerCleanup` | **no** | `RootlessPodman` | destructive removal of retained Debian-MW Docker data after explicit confirmation |
 | `ProfilingTools` | yes | `Packages` | WPT, py-spy, dotnet-trace, and Speedscope |
 | `SkillOpt` | yes | `Packages` | pinned SkillOpt and conservative defaults |
 | `PowerShellProfile` | yes | `PowerShell7` | managed profile components |
-| `FocusFollowsMouse` | yes | — | hover focus without raising |
+| `FocusFollowsMouse` | yes | none | hover focus without raising |
 | `DefenderExclusions` | yes | `Sudo` | local exclusions and performance policy |
 | `SmartScreen` | yes | `Sudo` | warning/override policy |
-| `WslMemory` | yes | — | WSL memory and swap limits |
+| `WslMemory` | yes | none | WSL memory and swap limits |
 | `Pagefile` | yes | `Sudo` | Windows pagefile policy |
 | `EventLogs` | yes | `Sudo` | audit channels and EVTX export |
 | `Firewall` | yes | `Sudo` | managed firewall profiles and allowlist |

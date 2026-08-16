@@ -23,7 +23,7 @@
         @{ Name = 'Microsoft-Windows-AppLocker/MSI and Script'; MaxSizeMiB = 64; Enable = $true }
     )
 
-    # Minimum balanced audit coverage. Existing additional audit categories are preserved.
+    # Apply the minimum balanced audit set and preserve any additional categories.
     AuditSubcategories = @(
         @{ Guid = '{0CCE9210-69AE-11D9-BED3-505054503030}'; Name = 'Security State Change'; Success = $true; Failure = $true }
         @{ Guid = '{0CCE9211-69AE-11D9-BED3-505054503030}'; Name = 'Security System Extension'; Success = $true; Failure = $true }

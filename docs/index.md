@@ -1,8 +1,15 @@
 # Operate and diagnose the workstation
 
-DataWorkStation PowerShell gives developers one command surface for workstation state, diagnostics,
-development tools, and bounded security analysis. Start with `Plan` or `Test`. Use `Ensure`, capture,
-debugger attachment, or removal only when you intend to change state.
+DataWorkStation PowerShell provides one command set for workstation state, diagnostics, development
+tools, and bounded security analysis. Start with `Plan` or `Test`. Use `Ensure`, capture, debugger
+attachment, or removal only when you intend to change state.
+
+Linux troubleshooting tools are often easy to find because their command names and workflows are
+widely known. Windows provides powerful debuggers, event logs, ETW, packet capture, dump analysis,
+and Sysinternals tools, but they are spread across several interfaces and evidence formats. This
+project makes them available through documented PowerShell commands. A sysadmin can run those
+commands directly or delegate repetitive evidence handling to an AI while retaining control over
+elevation, capture, execution, and repair.
 
 <table>
   <tr>
@@ -15,6 +22,11 @@ debugger attachment, or removal only when you intend to change state.
   </tr>
 </table>
 
+This installation uses a GPD Pocket 4 as its concrete example. GPD Pocket systems are popular
+portable machines for data-center administrators. The default desired state installs no GPD-only
+software. Other Windows 11 Pro workstations use the same commands, and generic sensor commands
+report no data when no supported provider is running.
+
 ## Choose a task
 
 | What you need to do | Go here | Safe first action |
@@ -22,6 +34,8 @@ debugger attachment, or removal only when you intend to change state.
 | Install or verify the workstation | [Install and verify](getting-started.md) | `./Apply-Workstation.ps1 -Mode Test -Plan` |
 | Change one managed component | [Select modules and dependencies](workstation-modules.md) | `./Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` |
 | Update the complete workstation | [Review and run managed updates](workstation-update.md) | `update` |
+| Use reproducible Kubernetes/IaC tools | [Reproducible NixOS WSL tools](nixos-wsl.md) | `nixos-check` |
+| Investigate NixOS drift or alteration | [NixOS integrity and alteration detection](nixos-integrity.md) | `nixos-check -Json` |
 | Understand managed and explicit state | [Choose desired state](desired-state.md) | Review the mode and privilege boundary |
 | Diagnose a failure | [Choose a capability](capabilities/index.md) | Inspect current state and existing evidence |
 | Keep investigation evidence together | [Keep evidence in Tricky cases](tricky.md) | `tricky new NAME -Problem '...'` |
@@ -38,13 +52,12 @@ debugger attachment, or removal only when you intend to change state.
 4. Identify the exact state or evidence gap.
 5. Run the smallest explicit repair or capture command that closes that gap.
 
-This order keeps privilege, restart, capture, and destructive boundaries visible. It also avoids a
-new trace when the answer already exists in retained evidence.
+This order shows where a command needs elevation, may require a restart, starts a capture, or can
+remove data. It also avoids collecting a new trace when retained evidence already has the answer.
 
 ## Use one interface
 
-Humans use the default readable output. Automation uses the same commands with `-Json` or
-`-AsObject` where supported. Repository-local Codex skills compose those commands but do not hide a
-second implementation.
+The default output is for people. Automation uses the same commands with `-Json` or `-AsObject`
+where supported. Repository-local Codex skills call those commands directly.
 
 `tricky` is the shared case and routing interface. Capability discovery never starts capture.

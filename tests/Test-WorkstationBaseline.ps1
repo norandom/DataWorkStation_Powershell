@@ -575,7 +575,7 @@ function Test-DeveloperTools {
     $sample = Get-Content -LiteralPath (Join-Path $repositoryRoot '.wsl-env.sample') -Raw
     $importSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Import-WslEnvironment.ps1') -Raw
     Assert-True ($sample -match '(?m)^WSL_DISTRIBUTION=Debian$' -and $sample -match '(?m)^WSL_MALWARE_DISTRIBUTION=Debian-MW$') 'the public WSL sample separates developer Debian from Debian-MW'
-    Assert-True ($importSource -match 'WSL_DISTRIBUTION and WSL_MALWARE_DISTRIBUTION must be different') 'the WSL selector rejects a shared developer and malware distribution'
+    Assert-True ($importSource -match 'Developer Debian, malware Debian, and NixOS distribution names must be different') 'the WSL selector requires three distinct distribution boundaries'
 
     $homebrew = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\linux-homebrew.psd1')
     $automation = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\linux-automation.psd1')

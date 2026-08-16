@@ -1,0 +1,4 @@
+# The digest-pinned base image selects the Debian repositories and package revisions.
+# Exact apt revision pins would block routine security refreshes.
+ignored:
+  - DL3008

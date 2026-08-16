@@ -36,6 +36,23 @@
             CaptureCommand = 'tricky add {case} <test-result.json>'
         }
         @{
+            Id = 'repository-quality'
+            Title = 'Repository linters and non-mutating pre-commit checks'
+            Triggers = @('lint', 'pre-commit', 'dockerfile', 'hadolint', 'actionlint', 'yaml', 'json', 'toml', 'merge marker', 'private key')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'lint-powershell [path ...]'
+                'lint-python [path ...]'
+                'lint-repository [-Category <All|Docker|Actions>] [path ...]'
+                'lint-docker [Dockerfile ...]'
+                'lint-actions [.github/workflows/*.yml]'
+                'precommit-run'
+                'pre-commit run <hook-id> --all-files'
+            )
+            StateCommands = @('precommit-install')
+            CaptureCommand = 'tricky add {case} <repository-lint-output.txt>'
+        }
+        @{
             Id = 'memory-pressure'
             Title = 'Memory pressure'
             Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory')
@@ -188,8 +205,8 @@
         }
         @{
             Id = 'linux-developer-packages'
-            Title = 'Homebrew and Dagger inside Debian WSL'
-            Triggers = @('homebrew', 'brew', 'dagger', 'release pipeline', 'developer package')
+            Title = 'Trusted Debian and NixOS WSL developer environments'
+            Triggers = @('homebrew', 'brew', 'dagger', 'release pipeline', 'developer package', 'nixos', 'nix', 'helm', 'kubectl', 'pulumi', 'shared ssh config', 'wsl ssh')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test'
@@ -197,7 +214,19 @@
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-RootlessPodmanState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperToolsState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-NixOsWslState.ps1 -Mode Plan'
+                'pwsh -NoProfile -File .\scripts\Set-NixOsWslState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-SharedSshConfigState.ps1 -Mode Test'
+                'nixos-check'
+                'nixos-check -Json'
+                'wsl-nix helm version'
+                'wsl-nix kubectl version --client'
+                'wsl-nix pulumi version'
                 '.\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module NixOsWsl'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module SharedSshConfig'
             )
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }

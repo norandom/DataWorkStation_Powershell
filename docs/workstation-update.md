@@ -1,7 +1,7 @@
 # Managed workstation update
 
-`update` gives the workstation one readable update entry point without hiding the individual
-package managers or desired-state commands.
+`update` provides one readable update entry point. Its plan still shows each package manager and
+desired-state command.
 
 ## Review before changing anything
 
@@ -11,8 +11,8 @@ update -Json
 update -Target Homebrew,Containers
 ```
 
-These commands render a static dependency plan. They do not scan, download, install, restart,
-clean, prune, or reconcile anything. A focused target includes its hard prerequisites; the complete
+These commands print a static dependency plan. They do not scan, download, install, restart, clean,
+prune, or reconcile anything. A focused target includes its required prerequisites. The complete
 plan has eight stages:
 
 1. accepted Windows software updates;
@@ -30,10 +30,10 @@ plan has eight stages:
 update -Run
 ```
 
-This is a networked, state-changing command. It names every privilege boundary and prints each
-native command before running it. Windows software installation runs through managed Windows sudo;
-APT and the existing container pyinfra resources name WSL root explicitly. Homebrew remains the
-declared developer-user instance.
+This command uses the network and changes state. It names every privilege boundary and prints each
+native command before running it. Windows software installation uses managed Windows sudo. APT and
+the existing container pyinfra resources name WSL root explicitly. Homebrew runs as the declared
+developer user.
 
 The final stage does not fetch Git or silently adopt another release. It reads the local `VERSION`
 and uses the current checkout's ordinary default `Apply-Workstation.ps1 -Mode Ensure`, followed by
@@ -43,13 +43,14 @@ reconciliation so the new process receives the updated environment.
 
 ## Update boundaries
 
-| Surface | Included | Deliberately excluded |
+| Surface | Included | Excluded |
 |---|---|---|
 | Windows | Applicable software/security updates with already accepted EULAs | Drivers, automatic EULA acceptance, reboot |
 | WinGet | `upgrade --all` for known-version unpinned apps | Unknown versions, pinned apps, forced previous-version removal |
 | Scoop | Core/bucket refresh and every installed app | Cleanup of old versions or caches, package removal |
 | WSL | Supported host runtime update | Automatic distribution shutdown |
 | Debian | APT refresh and noninteractive distribution upgrade for the two `.wsl-env` names | Discovery or modification of other distributions |
+| NixOS | Current locked generation reconciliation in the final workstation stage | Automatic `flake.lock` rewrite or unreviewed upstream upgrade |
 | Homebrew | Declared instances and ordinary unpinned formulae | Undeclared instances and current-release pinned formulae |
 | Containers | Existing pyinfra Docker and rootless Podman Ensure | Image/container/volume prune or trust-boundary migration |
 | Workstation state | Default non-destructive Ensure and Test from the current checkout | Debloat, legacy Docker data deletion, repository replacement |

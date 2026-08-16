@@ -153,7 +153,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 - REQ-020: When Contour Terminal is ensured, the terminal resource shall remove the legacy Scoop package before installing the verified official release artifact.
 - REQ-021: When Contour Terminal is tested after installation, the terminal resource shall reject compliance if the bounded graphics initialization gate fails.
 - REQ-022: Where native awk and sed are selected, the text-tool resource shall expose native commands without installing Git Bash, MinGit, MSYS, MSYS2, or Cygwin.
-- REQ-023: Where Debian developer automation is selected, the Linux resources shall keep Homebrew, uv, pyinfra, and Dagger state inside the selected Debian distribution.
+- REQ-023: Where a Linux developer environment is selected, the Linux resources shall keep Debian automation inside Debian and the locked Helm, kubectl, Pulumi, and OpenSSH system closure inside NixOS WSL.
 - REQ-024: The developer-tool resources shall keep their pinned isolated environments separate from unrelated Python environments.
 - REQ-025: The managed PowerShell profile shall expose the documented aliases, key bindings, discovery commands, and Linux-style command mappings.
 - REQ-026: The capability catalog shall expose every route listed in the Capability Coverage Baseline.
@@ -196,8 +196,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 40 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 25 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 42 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 26 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -234,6 +234,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 | Hardening | REQ-016, REQ-017 |
 | LinuxHomebrew | REQ-023 |
 | LinuxAutomation | REQ-023 |
+| NixOsWsl | REQ-023, REQ-034, REQ-035 |
+| SharedSshConfig | REQ-023, REQ-025, REQ-034 |
 | DeveloperDocker | REQ-023 |
 | RootlessPodman | REQ-023, REQ-029 |
 | DeveloperTools | REQ-023, REQ-024 |
@@ -273,6 +275,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | security-state | REQ-026, REQ-029 |
 | malware-triage | REQ-026, REQ-028, REQ-029, REQ-043 |
 | workstation-help | REQ-025, REQ-026 |
+| repository-quality | REQ-026 |
 | powershell-testing | REQ-012, REQ-026 |
 | powershell-environment | REQ-025, REQ-044, REQ-048, REQ-049, REQ-050, REQ-051 |
 | idle-sleep-inhibition | REQ-025, REQ-026 |

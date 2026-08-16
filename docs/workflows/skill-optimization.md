@@ -1,6 +1,8 @@
 # Skill optimization
 
-Microsoft SkillOpt-Sleep is an offline development loop for improving one natural-language skill from repeated tasks. It does not train model weights. This integration pins PyPI `skillopt==0.2.0` in an isolated `uv tool` environment.
+Microsoft SkillOpt-Sleep uses reviewed task results to propose changes to one natural-language skill.
+It does not train model weights. This repository pins PyPI `skillopt==0.2.0` in an isolated `uv tool`
+environment.
 
 ## Installation boundary
 
@@ -17,7 +19,8 @@ Not automatically installed or configured:
 - provider credentials, a scheduled sleep cycle, auto-adoption, or an optimization target;
 - packages in the AMD/PyTorch or any project Python environment.
 
-The source-only preview currently contains interfaces newer than PyPI 0.2.0. The workstation stays on the released interface until a later version is deliberately reviewed and pinned.
+The source-only preview currently contains interfaces newer than PyPI 0.2.0. The workstation stays
+on the released interface until a later version is reviewed and pinned.
 
 ## Safety contract
 
@@ -57,11 +60,15 @@ skills-validate
 git diff
 ```
 
-`harvest` reads archived Codex sessions belonging to this project and writes a review draft marked `"reviewed": false`. Treat the draft as sensitive even though SkillOpt performs pattern-based redaction. The wrapper refuses real-backend use until an explicit approval marks it reviewed.
+`harvest` reads archived Codex sessions for this project and writes a review draft marked
+`"reviewed": false`. Treat the draft as sensitive even though SkillOpt applies pattern-based
+redaction. The wrapper blocks a real backend until an explicit approval marks the draft reviewed.
 
 ## What desired state does
 
-`Apply-Workstation.ps1 -Mode Ensure` installs the pinned CLI and maintains conservative user defaults under `~/.skillopt-sleep/config.json`. It does not read sessions, create a schedule, call a model provider, generate a proposal, or adopt a skill.
+`Apply-Workstation.ps1 -Mode Ensure` installs the pinned CLI and maintains conservative user defaults
+under `~/.skillopt-sleep/config.json`. It does not read sessions, create a schedule, call a model
+provider, generate a proposal, or adopt a skill.
 
 ## Interpreting results
 

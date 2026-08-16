@@ -3,9 +3,39 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$requiredAnalyzerVersion = '1.25.0'
-$requiredPreCommitVersion = '4.6.2'
+$configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\repository-lint.psd1')
+$requiredAnalyzerVersion = [string] $configuration.PSScriptAnalyzerVersion
+$requiredPreCommitVersion = [string] $configuration.PreCommitVersion
 $uv = (Get-Command uv.exe -CommandType Application -ErrorAction Stop).Source
+. (Join-Path $PSScriptRoot 'Resolve-RepositoryLinter.ps1')
+
+function Get-NativeLinterVersion {
+    param([string] $Executable)
+    $text = @(& $Executable --version 2>&1) -join ' '
+    if ($LASTEXITCODE -ne 0) { return $null }
+    $match = [regex]::Match($text, '\d+\.\d+\.\d+')
+    if (-not $match.Success) { return $null }
+    [version] $match.Value
+}
+
+function Install-NativeLinter {
+    param([hashtable] $Tool)
+    $executable = Resolve-RepositoryLinter -Tool $Tool
+    $version = if ($executable) { Get-NativeLinterVersion -Executable $executable } else { $null }
+    $minimumVersion = [version] $Tool.MinimumVersion
+    if ($version -and $version -ge $minimumVersion) { return }
+
+    $operation = if ($executable) { 'upgrade' } else { 'install' }
+    & winget.exe $operation --id $Tool.PackageId --exact --source winget `
+        --accept-package-agreements --accept-source-agreements --disable-interactivity
+    if ($LASTEXITCODE -ne 0) { throw "WinGet failed to $operation $($Tool.Name): $LASTEXITCODE" }
+
+    $executable = Resolve-RepositoryLinter -Tool $Tool -Require
+    $version = Get-NativeLinterVersion -Executable $executable
+    if (-not $version -or $version -lt $minimumVersion) {
+        throw "$($Tool.Name) $minimumVersion or newer is required; resolved version was $version."
+    }
+}
 
 $module = Get-Module -ListAvailable PSScriptAnalyzer |
     Where-Object Version -eq $requiredAnalyzerVersion |
@@ -15,6 +45,8 @@ if (-not $module) {
     if (-not $installer) { throw 'Install-PSResource is required to install the pinned PSScriptAnalyzer module.' }
     Install-PSResource -Name PSScriptAnalyzer -Version $requiredAnalyzerVersion -Scope CurrentUser -Repository PSGallery -TrustRepository -Quiet
 }
+
+foreach ($tool in @($configuration.Tools)) { Install-NativeLinter -Tool $tool }
 
 Push-Location $repositoryRoot
 try {
@@ -31,4 +63,6 @@ try {
 
 & (Join-Path $PSScriptRoot 'Invoke-PowerShellLint.ps1')
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Write-Host 'PowerShell pre-commit hook installed.'
+& (Join-Path $PSScriptRoot 'Invoke-RepositoryLint.ps1')
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Write-Host 'Repository pre-commit hooks and native linters installed.'

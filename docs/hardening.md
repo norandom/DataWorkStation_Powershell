@@ -1,6 +1,8 @@
 # Windows hardening profile and attack surface
 
-The `DeveloperBaseline` profile converts the defensible parts of the retired `WindowsHardeningScript\Harden_PS.ps1` into narrow, testable desired state. It is a Windows 11 Pro developer-workstation profile, not a generic CIS or Microsoft Security Baseline implementation.
+The `DeveloperBaseline` profile carries the applicable controls from the retired
+`WindowsHardeningScript\Harden_PS.ps1` into narrow, testable desired state. It targets a Windows 11
+Pro developer workstation. It is not a generic CIS or Microsoft Security Baseline implementation.
 
 ## Human-readable commands
 
@@ -53,7 +55,12 @@ The old script was not rerun. Each class of mutation was reviewed against the cu
 | Excluded | file-association hijacks, old Chrome/Edge/Office policy trees, telemetry/privacy preferences, broad service/task disabling, remote SCM/task-scheduler endpoint removal, and optional smart-card/domain-only policy |
 | Rejected as harmful or obsolete | Chrome minimum TLS 1.0, `DisableParallelAandAAAA`, multicast suppression, destructive removal of Desktop App Installer/OpenSSH/codecs, and blanket removal of Windows capabilities |
 
-LSA protection is intentionally observation-only because the legacy value `RunAsPPL=1` can create firmware-backed UEFI state that needs a special removal procedure. This workstation already reports that value as 1, and the profile does not make it more persistent. Microsoft distinguishes UEFI-locked value 1 from reversible value 2 in [Configure added LSA protection](https://learn.microsoft.com/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection). Credential Guard/VBS is likewise left to the Windows platform policy and reported separately during security review.
+LSA protection is observation-only because the legacy value `RunAsPPL=1` can create firmware-backed
+UEFI state that needs a special removal procedure. This workstation already reports value 1, and
+the profile does not make it more persistent. Microsoft distinguishes UEFI-locked value 1 from
+reversible value 2 in [Configure added LSA protection](https://learn.microsoft.com/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection).
+Credential Guard and VBS remain under Windows platform policy and are reported separately during a
+security review.
 
 Defender MAPS/sample submission and the legacy ASR rule are not silently adopted. Cloud submission changes privacy boundaries, and aggressive ASR blocking can interfere with newly built or low-prevalence developer binaries. Stage those settings in audit mode and review evidence before making them a separate Defender profile.
 
@@ -70,13 +77,13 @@ Hardening reduces attack paths; it does not make the host closed.
 | Surface | Current boundary |
 |---|---|
 | Physical Ethernet/Wi-Fi inbound | the managed firewall allows TCP 22, 3389, 8080, and 8081 plus the Tailscale UDP 41641 transport; all other managed physical TCP/UDP ports are blocked |
-| Tailscale inbound | the Tailscale interface is deliberately unrestricted, so authenticated tailnet peers can reach any service bound to that interface unless the service has its own access control |
+| Tailscale inbound | the Tailscale interface is unrestricted, so authenticated tailnet peers can reach any service bound to that interface unless the service has its own access control |
 | Listening Windows services | after convergence, RPC 135, SMB 445, and Hyper-V 2179 were bound on wildcard addresses; NetBIOS 139 remained on Hyper-V virtual-switch addresses, not the physical Wi-Fi address |
 | RDP and WinRM | both services were stopped and RDP connections were disabled at review time, but this hardening profile does not disable the services; if enabled later, the firewall already permits physical TCP 3389 |
 | SMB | SMB remains available to allowed networks. Signing and authentication protect integrity and identity but do not replace share permissions or least privilege |
 | Hyper-V and Sandbox | the hypervisor, VM management service, virtual switches, and Windows Sandbox component increase privileged virtualization code and host/guest integration surface |
 | Outbound traffic | outbound firewall policy is Allow. Malicious code that executes can contact external services unless Defender, DNS/network controls, or an application policy blocks it |
-| Application execution | no WDAC/AppLocker allowlist is imposed. SmartScreen warning mode permits user override, and the legacy script-file association tricks were deliberately rejected |
+| Application execution | no WDAC/AppLocker allowlist is imposed. SmartScreen warning mode permits user override, and the legacy script-file association tricks were rejected |
 | Defender exclusions | paths declared in the ignored `.excluded` file are scanning blind spots. Keep them narrow and treat code arriving there as trusted-input risk |
 | Print spooler | web discovery and HTTP printing are disabled, but the spooler remains enabled for local printing and retains its service/driver surface |
 
@@ -84,4 +91,7 @@ No process was started to test reachability. Listener and firewall inspection is
 
 ## Rollback and exceptions
 
-The resource converges only to the declared profile; it does not offer a bulk “undo legacy hardening” mode. Make an exception by changing one explicit DSL value with its compatibility rationale, then run Test before Ensure. For temporary diagnosis, prefer a narrowly scoped service, firewall, or protocol exception over disabling the complete profile.
+The resource converges only to the declared profile; it does not provide a bulk "undo legacy
+hardening" mode. To make an exception, change one DSL value, document its compatibility rationale,
+and run Test before Ensure. For temporary diagnosis, use a scoped service, firewall, or protocol
+exception instead of disabling the complete profile.

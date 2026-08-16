@@ -1,6 +1,6 @@
 # Tricky cases
 
-`tricky` gives a human and an AI the same investigation boundary and evidence index.
+`tricky` gives operators and automation the same case structure, evidence index, and commands.
 
 ```powershell
 tricky new api-timeout -Problem 'DNS succeeds but localhost port 8080 times out' -Target 'localhost:8080'
@@ -26,7 +26,9 @@ tricky-api-timeout/
 
 `tricky add` records a reference by default, which avoids duplicating a multi-gigabyte trace. Use `-Copy` when the case must be portable. Use `tricky inspect ... -Hash` when evidence integrity requires SHA-256; hashing is opt-in because large traces are common.
 
-The HTML report is self-contained and dependency-free. It visualizes evidence volume, lists every artifact, and distinguishes evidence already present from capture gaps. A suggested capture command is advice, not an automatic action.
+The HTML report is self-contained and has no runtime dependencies. It shows evidence volume, lists
+every artifact, and separates retained evidence from capture gaps. A suggested capture command does
+not run automatically.
 
 ## Stable automation output
 

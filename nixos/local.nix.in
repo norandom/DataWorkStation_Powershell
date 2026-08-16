@@ -1,0 +1,5 @@
+{ ... }:
+
+{
+  wsl.defaultUser = "@WSL_NIXOS_USER@";
+}

@@ -88,6 +88,15 @@ function global:skills-validate { skillopt validate @args }
 function global:lint-powershell {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PowerShellLint.ps1') @args
 }
+function global:lint-repository {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-RepositoryLint.ps1') @args
+}
+function global:lint-docker {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-RepositoryLint.ps1') -Category Docker @args
+}
+function global:lint-actions {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-RepositoryLint.ps1') -Category Actions @args
+}
 function global:test-powershell {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PowerShellTests.ps1') @args
 }
@@ -201,7 +210,7 @@ function global:ttd-open {
     & WinDbgX.exe -z (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
 }
 
-# Profiling: native/system ETW, Python sampling, .NET EventPipe, and AMD counters.
+# Profiling commands for system ETW, Python sampling, .NET EventPipe, and AMD counters.
 function global:profile-status {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Get-ProfilerStatus.ps1') @args
 }
@@ -357,14 +366,14 @@ function global:tailunshare {
     & tailscale.exe drive unshare $Name.ToLowerInvariant()
 }
 
-# Generic WSL boundaries keep the developer and malware distributions explicit.
-# Developer Docker remains a temporary fallback until Docker Desktop is declared;
-# Debian-MW uses local daemonless Podman only through its high-level analysis tools.
+# Keep Debian, NixOS, and malware WSL distributions explicit at the command boundary.
+# Developer Docker remains the current compatibility path. Debian-MW uses local,
+# daemonless Podman only through the high-level analysis commands.
 function global:Invoke-ConfiguredWsl {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [ValidateSet('Developer', 'Malware')]
+        [ValidateSet('Developer', 'Malware', 'NixOs')]
         [string] $Target,
         [Parameter(ValueFromRemainingArguments = $true)]
         [string[]] $ArgumentList
@@ -372,8 +381,16 @@ function global:Invoke-ConfiguredWsl {
     $repositoryRoot = Join-Path $env:USERPROFILE 'Source\PowerShell'
     . (Join-Path $repositoryRoot 'scripts\Import-WslEnvironment.ps1')
     $wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
-    $distribution = if ($Target -eq 'Developer') { $wslEnvironment.WSL_DISTRIBUTION } else { $wslEnvironment.WSL_MALWARE_DISTRIBUTION }
-    $user = if ($Target -eq 'Developer') { $wslEnvironment.WSL_USER } else { $wslEnvironment.WSL_MALWARE_USER }
+    $distribution = switch ($Target) {
+        'Developer' { $wslEnvironment.WSL_DISTRIBUTION }
+        'Malware' { $wslEnvironment.WSL_MALWARE_DISTRIBUTION }
+        'NixOs' { $wslEnvironment.WSL_NIXOS_DISTRIBUTION }
+    }
+    $user = switch ($Target) {
+        'Developer' { $wslEnvironment.WSL_USER }
+        'Malware' { $wslEnvironment.WSL_MALWARE_USER }
+        'NixOs' { $wslEnvironment.WSL_NIXOS_USER }
+    }
     if ($ArgumentList.Count -gt 0) {
         & wsl.exe -d $distribution --user $user --exec @ArgumentList
     } else {
@@ -389,6 +406,17 @@ function global:wsl-dev {
 function global:wsl-mw {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
     Invoke-ConfiguredWsl -Target Malware -ArgumentList $ArgumentList
+}
+
+function global:wsl-nix {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
+    Invoke-ConfiguredWsl -Target NixOs -ArgumentList $ArgumentList
+}
+
+function global:nixos-check {
+    $powerShell = Get-Command pwsh.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1
+    & $powerShell.Source -NoLogo -NoProfile `
+        -File (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-NixOsWslState.ps1') -Mode Test @args
 }
 
 if (-not (Get-Command docker.exe -CommandType Application -ErrorAction Ignore)) {
@@ -536,7 +564,7 @@ function global:pcap-firewall {
     Invoke-PcapTriage -Capture $Capture -View Firewall -Count $Count
 }
 
-# Linux-like front ends for the closest Sysinternals tools.
+# Map familiar process and handle names to the corresponding Sysinternals tools.
 if (Get-Command pslist.exe -ErrorAction Ignore) {
     if (Test-Path Alias:ps) { Remove-Item Alias:ps -Force }
     function global:ps { & pslist.exe -accepteula @args }
@@ -566,8 +594,8 @@ function global:top {
     btop @args
 }
 
-# Zhorn Software Caffeine is installed by WinGet as caffeine64.exe/caffeine32.exe
-# without a stable portable-command link. This wrapper starts that real tray tool.
+# WinGet installs Zhorn Software Caffeine as caffeine64.exe or caffeine32.exe
+# without a stable command link. This wrapper locates and starts the tray tool.
 function global:caffeine {
     [CmdletBinding()]
     param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
@@ -692,8 +720,8 @@ function global:malware-diff {
     & $script @parameters
 }
 
-# General-purpose names for the same reviewed clean-control Sandbox engine.
-# Planning remains the default; these wrappers do not introduce another runner.
+# Expose the reviewed clean-control Sandbox engine under general-purpose names.
+# These wrappers plan by default and do not add a second runner.
 function global:sandbox-behavior-control {
     [CmdletBinding()]
     param(

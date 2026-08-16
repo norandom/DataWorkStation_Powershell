@@ -34,9 +34,9 @@ explicit `-Module` selection.
 
 ## Adopt the policy in a project
 
-Tool installation and project adoption are separate on purpose. Adoption writes Spec Kit commands,
-templates, workflow metadata, launchers, and a project-local policy file, so run it explicitly from
-the target project and review the resulting diff:
+Tool installation does not modify a project. Adoption writes Spec Kit commands, templates, workflow
+metadata, launchers, and a project-local policy file. Run it from the target project and review the
+resulting diff:
 
 ```powershell
 ears-sdd init --project . --integration codex
@@ -66,7 +66,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\ears-sdd.ps1 status --
 For agent consumption, add `--json`. The installed Codex command is
 `$speckit-ears-validate-validate`, and the gated workflow is `ears-sdd`.
 
-## Boundary enforced
+## Enforced boundary
 
 - Specifications use stable `REQ-NNN` identifiers and one EARS `shall` obligation per requirement.
 - Every requirement maps to automated tests or a justified manual verification.

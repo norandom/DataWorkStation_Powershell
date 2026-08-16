@@ -97,7 +97,7 @@ foreach ($target in $targets) {
     }
 }
 
-# Keep the btop process list focused on RAM consumers.
+# Sort the btop process list by RAM consumption.
 $btopConfig = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages\aristocratos.btop4win_*\btop4win\btop.conf') -File -ErrorAction Ignore |
     Sort-Object LastWriteTime -Descending | Select-Object -First 1
 if ($btopConfig) {

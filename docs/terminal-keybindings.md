@@ -1,6 +1,8 @@
 # Terminal keyboard and scrolling
 
-This page distinguishes terminal shortcuts from bindings handled by PowerShell, Codex, or another full-screen terminal application. Terminal scrollback shortcuts continue to work when an application consumes plain arrow and page keys, provided the application has produced scrollback history.
+Terminal shortcuts and application bindings are separate. PowerShell, Codex, or another full-screen
+application may consume plain arrow and page keys. Terminal scrollback shortcuts still work when the
+application has produced scrollback history.
 
 ## Inspect the active bindings
 
@@ -34,7 +36,8 @@ Plain `Page Up` or `Fn+Up` is application input and may be consumed by Codex or 
 
 Windows Terminal keeps its scrollbar visible; drag it with one finger to move through terminal history. Contour now keeps a right-side scrollbar visible on both the primary and alternate screens, which provides the same deterministic touch target. A one-finger vertical swipe may also work when Windows translates the gesture into pixel scrolling.
 
-Contour's unmodified wheel bindings are limited to the primary screen. In an alternate-screen application such as Codex, Contour leaves scroll events to the application instead of consuming them as shell history. This preserves two distinct paths:
+Contour handles unmodified wheel events only on the primary screen. In an alternate-screen
+application such as Codex, it passes scroll events to the application. This provides two paths:
 
 - At a PowerShell prompt, swipe or drag the scrollbar to move through terminal scrollback.
 - In Codex or another mouse-aware TUI, swipe over the content first so the application can handle it; drag the visible scrollbar when terminal history is the intended target.
@@ -52,7 +55,7 @@ Contour 0.6.3.8249 treats the line along the bottom as a status-line tab indicat
 | `Ctrl+Shift+T` | Create a tab. |
 | `Alt+wheel up` / `Alt+wheel down` | Switch to the left/right tab. |
 | `Shift+Left` / `Shift+Right` | Switch to the left/right tab. |
-| `Alt+1` … `Alt+9`, `Alt+0` | Switch directly to tabs 1 … 10. |
+| `Alt+1` through `Alt+9`, `Alt+0` | Switch directly to tabs 1 through 10. |
 | `Ctrl+Alt+K` / `Ctrl+Alt+J` | Jump to the previous/next PowerShell prompt mark outside the alternate screen. |
 
 ### Scrollback, selection, and search
@@ -93,7 +96,8 @@ Contour 0.6.3.8249 treats the line along the bottom as a status-line tab indicat
 | `Ctrl+Alt+V` | Paste the clipboard with control characters stripped. |
 | `Ctrl+Shift+Q` | Quit Contour. |
 
-Contour's upstream default used `Alt+wheel` to adjust opacity. The managed map intentionally replaces that pair with tab switching; the rest of the pinned release's default map is retained.
+Contour's upstream default uses `Alt+wheel` to adjust opacity. The managed map assigns that pair to
+tab switching and retains the rest of the pinned release's default map.
 
 ## Managed PowerShell and PSReadLine bindings
 

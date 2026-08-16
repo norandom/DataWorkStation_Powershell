@@ -28,8 +28,8 @@ $arguments = @('-p', "$Port")
 foreach ($value in $Option) { $arguments += @('-o', $value) }
 $arguments += @($Destination, 'sh -s')
 
-# Send a complete shell program over stdin. This avoids Windows OpenSSH
-# re-parsing quotes around a key stored in a remote shell variable.
+# Send the complete remote shell program over standard input. This prevents
+# Windows OpenSSH from reparsing quotes around the public-key variable.
 $delimiter = 'SSH_COPY_ID_' + [Guid]::NewGuid().ToString('N')
 $remoteScript = @'
 set -eu
@@ -97,9 +97,8 @@ $startInfo.RedirectStandardInput = $true
 if ($null -ne $startInfo.PSObject.Properties['ArgumentList']) {
     foreach ($argument in $arguments) { [void]$startInfo.ArgumentList.Add($argument) }
 } else {
-    # Windows PowerShell 5.1 runs on .NET Framework, which only exposes the
-    # single command-line string property. Quote it using CommandLineToArgvW
-    # compatible escaping.
+    # Windows PowerShell 5.1 uses .NET Framework and exposes only one command-line
+    # string property. Escape it according to CommandLineToArgvW rules.
     function ConvertTo-WindowsProcessArgument {
         param([AllowEmptyString()][string] $Value)
         if ($Value.Length -gt 0 -and $Value -notmatch '[\s"]') { return $Value }

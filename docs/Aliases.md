@@ -580,8 +580,8 @@ arguments they open the selected distribution; with arguments they execute that 
 | Command | Behavior |
 |---|---|
 | `quant-status [-Project name] [-Json]` | observational uv/OpenBB/base/overlay status; returns nonzero on drift |
-| `quant-sync [-Project name] [-Json]` | explicit exact synchronization from the existing lock |
-| `quant-rebuild [-Project name] [-Json]` | explicit generated `.venv` replacement with rollback |
+| `quant-sync [-Project name] [-ConfirmPyXllInstall] [-Json]` | exact synchronization; the switch explicitly starts PyXLL's first-install workflow for the base |
+| `quant-rebuild [-Project name] [-ConfirmPyXllInstall] [-Json]` | generated `.venv` replacement with rollback; the switch is the same first-install boundary |
 | `quant-overlay -Name name [-Dependency package] [-Run] [-Json]` | plan by default; explicitly stage and create an independently locked overlay with `-Run` |
 | `quant-notebook [-Project name] [-JupyterArguments args]` | run locked project-local JupyterLab without global kernel registration |
 | `source-relocation-plan [-Source path] [-Target D:\Source] [-Json]` | inspect future relocation readiness without copying, renaming, deleting, or linking anything |

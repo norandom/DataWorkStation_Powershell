@@ -37,6 +37,27 @@ pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Ensu
 
 Use `Reinitialize` only when the generated `.venv` must be replaced. It preserves the prior environment until the replacement validates and never treats research content as generated state.
 
+## Enable the licensed Excel integration
+
+Copy `.licenses.yaml.sample` to the ignored `.licenses.yaml` and enter the local PyXLL key there.
+Do not add the file to Git. Review PyXLL state first:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Test -Project Base
+```
+
+The first payload download is an explicit interactive vendor step:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 `
+    -Mode Ensure -Project Base -ConfirmPyXllInstall
+```
+
+Close Excel before running it. Subsequent `Ensure` runs maintain the registered add-in and active
+configuration without repeating first-install consent. The configuration selects the OpenBB base
+environment and enables interactive HTML plots, SVG fallback, resizing, and a local WebView2 data
+folder. Status and logs never contain the key.
+
 ## Create an independent overlay
 
 Preview first:

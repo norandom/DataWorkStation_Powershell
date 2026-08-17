@@ -6,7 +6,9 @@ param(
         'OutputParity', 'ObservationalStatus', 'OpenBbExtensions', 'FailureAtomicity',
         'ReconciliationScope', 'UserContentPreservation', 'CredentialBoundary',
         'CapabilityRouting', 'RelocationNonMutation', 'RelocationPlanContract',
-        'RelocationGuard', 'MovedRootRebuild', 'FocusedBoundary')]
+        'RelocationGuard', 'MovedRootRebuild', 'FocusedBoundary', 'PyXllDeclaration',
+        'PyXllStatus', 'PyXllActivation', 'PyXllLicenseBoundary',
+        'PyXllInteractivePlots', 'PyXllFailureAtomicity', 'PyXllJupyterRibbon')]
     [string] $Section = 'All'
 )
 
@@ -326,6 +328,131 @@ function Test-FocusedBoundary {
     Assert-True ($entry -match 'Privileged\s*=\s*\$false' -and $entry -match 'Destructive\s*=\s*\$false') 'module is non-privileged and non-destructive'
 }
 
+function Test-PyXllDeclaration {
+    $config = Get-PublicConfig
+    foreach ($dependency in @('pyxll', 'plotly', 'kaleido')) {
+        Assert-True ($dependency -in @($config.Base.RequiredDependencies)) "base declares $dependency"
+    }
+    Assert-True ([bool] $config.PyXLL.Enabled) 'PyXLL integration is explicitly enabled in quant desired state'
+    Assert-Equal '5.12.4' ([string] $config.PyXLL.Version) 'the reviewed PyXLL version is exact'
+
+    $manifest = Join-Path ([Environment]::ExpandEnvironmentVariables($config.Root)) 'quant-base\pyproject.toml'
+    if (Test-Path -LiteralPath $manifest -PathType Leaf) {
+        $manifestText = Get-Content -LiteralPath $manifest -Raw
+        foreach ($dependency in @('pyxll', 'plotly', 'kaleido')) {
+            Assert-True ($manifestText -match ('(?i)' + [regex]::Escape($dependency))) "live base declares $dependency"
+        }
+    }
+}
+
+function Test-PyXllStatus {
+    $state = Get-Source 'scripts/Set-QuantResearchEnvironmentState.ps1'
+    $core = Get-Source 'scripts/PyXll.Core.ps1'
+    foreach ($term in @('pyxll-package', 'pyxll-architecture', 'pyxll-addin', 'pyxll-config', 'pyxll-webview2', 'pyxll-license')) {
+        Assert-True (($state + $core) -match [regex]::Escape($term)) "PyXLL status reports $term"
+    }
+    Assert-True (($state + $core) -match 'Get-ItemProperty' -and ($state + $core) -match 'OPEN') 'Excel add-in registration is observed'
+    Assert-True (($state + $core) -match 'WebView2') 'WebView2 availability is observed'
+}
+
+function Test-PyXllActivation {
+    $state = Get-Source 'scripts/Set-QuantResearchEnvironmentState.ps1'
+    Assert-True ($state -match 'ConfirmPyXllInstall') 'first install requires a dedicated confirmation switch'
+    Assert-True ($state -match "'pyxll',\s*'install'|pyxll install") 'confirmed first install uses the official module command'
+    Assert-True ($state -match "'pyxll',\s*'activate',\s*'--non-interactive'|pyxll activate --non-interactive") 'an existing payload is activated non-interactively'
+    Assert-True ($state -match 'Get-Process.+EXCEL|EXCEL.+Get-Process') 'activation refuses a running Excel process'
+}
+
+function Test-PyXllLicenseBoundary {
+    $ignore = Get-Source '.gitignore'
+    $sample = Get-Source '.licenses.yaml.sample'
+    $corePath = Join-Path $repositoryRoot 'scripts\PyXll.Core.ps1'
+    Assert-True ($ignore -match '(?m)^\.licenses\.yaml$') 'the local license store is ignored'
+    Assert-True ($sample -match '(?m)^\s*key:\s*$') 'the tracked sample contains an empty key'
+    Assert-True ($sample -notmatch '(?i)[a-f0-9]{32,}') 'the tracked sample contains no key-like value'
+    Assert-True (Test-Path -LiteralPath $corePath -PathType Leaf) 'the focused PyXLL core exists'
+
+    . $corePath
+    $fixture = Join-Path $temporaryRoot ('pyxll-license-' + [guid]::NewGuid().ToString('N'))
+    [IO.Directory]::CreateDirectory($fixture) | Out-Null
+    $licensePath = Join-Path $fixture '.licenses.yaml'
+    $dummyKey = 'fixture-' + [guid]::NewGuid().ToString('N')
+    Write-TestUtf8File $licensePath "schema_version: 1`npyxll:`n  key: $dummyKey`n"
+    $parsed = Get-PyXllLicenseKey -Path $licensePath
+    Assert-Equal $dummyKey $parsed 'bounded local license parser returns the fixture value'
+    $rendered = Merge-PyXllConfiguration -ExistingText "[PYXLL]`nlog_level = info`n[LICENSE]`nkey = old`n" -PythonExecutable 'X:\base\.venv\Scripts\pythonw.exe' -WebView2UserDataFolder 'X:\local\webview2' -LicenseKey $parsed
+    Assert-True ($rendered.EndsWith("[LICENSE]`r`nkey = $dummyKey`r`n")) 'license is the final configuration section'
+    Assert-Equal 1 ([regex]::Matches($rendered, '(?m)^\[LICENSE\]\r?$').Count) 'configuration contains one license section'
+
+    $tracked = @(git -C $repositoryRoot ls-files | ForEach-Object { Join-Path $repositoryRoot $_ } | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+    foreach ($path in $tracked) {
+        Assert-True ((Get-Content -LiteralPath $path -Raw) -notmatch [regex]::Escape($dummyKey)) "fixture key is absent from tracked $path"
+    }
+}
+
+function Test-PyXllInteractivePlots {
+    $config = Get-PublicConfig
+    Assert-True ([bool] $config.PyXLL.Plotting.AllowHtml) 'interactive HTML plots are enabled'
+    Assert-True ([bool] $config.PyXLL.Plotting.AllowSvg) 'SVG plots are enabled'
+    Assert-True ([bool] $config.PyXLL.Plotting.AllowResize) 'plot resizing is enabled'
+    Assert-True ([string] $config.PyXLL.Plotting.WebView2UserDataFolder -match '%LOCALAPPDATA%') 'WebView2 data remains machine-local'
+
+    $corePath = Join-Path $repositoryRoot 'scripts\PyXll.Core.ps1'
+    Assert-True (Test-Path -LiteralPath $corePath -PathType Leaf) 'the focused PyXLL core exists'
+    . $corePath
+    $rendered = Merge-PyXllConfiguration -ExistingText "[PYXLL]`nlog_level = info`n" -PythonExecutable 'X:\base\.venv\Scripts\pythonw.exe' -WebView2UserDataFolder 'X:\local\webview2' -LicenseKey 'fixture-key'
+    foreach ($setting in @('plot_allow_html = 1', 'plot_allow_svg = 1', 'plot_allow_resize = 1', 'webview2_userdata_folder = X:\local\webview2')) {
+        Assert-True ($rendered -match [regex]::Escape($setting)) "rendered config contains $setting"
+    }
+    Assert-True ($rendered -match 'log_level = info') 'unmanaged PyXLL settings are preserved'
+}
+
+function Test-PyXllFailureAtomicity {
+    $state = Get-Source 'scripts/Set-QuantResearchEnvironmentState.ps1'
+    $core = Get-Source 'scripts/PyXll.Core.ps1'
+    foreach ($term in @('license', 'architecture', 'WebView2', 'EXCEL', 'temporary', 'Move-Item')) {
+        Assert-True (($state + $core) -match [regex]::Escape($term)) "PyXLL prerequisite/transaction covers $term"
+    }
+    Assert-True (($state + $core) -notmatch '(?i)Write-(Host|Output|Verbose|Debug|Warning).*(LicenseKey|license\.key)') 'license value is never passed to output commands'
+}
+
+function Test-PyXllJupyterRibbon {
+    $config = Get-PublicConfig
+    foreach ($dependency in @('pyxll-jupyter', 'jupyterlab')) {
+        Assert-True ($dependency -in @($config.Base.RequiredDependencies)) "base declares $dependency"
+    }
+    Assert-Equal '0.7.1' ([string] $config.PyXLL.Jupyter.Version) 'the PyXLL Jupyter integration version is exact'
+    Assert-Equal 'lab' ([string] $config.PyXLL.Jupyter.Subcommand) 'JupyterLab is the embedded interface'
+    Assert-Equal 'Explicit' ([string] $config.PyXLL.Jupyter.RibbonMode) 'the packaged Jupyter ribbon is loaded explicitly for deterministic startup'
+    Assert-True ([bool] $config.PyXLL.Jupyter.UseWorkbookDirectory) 'saved workbooks select their own notebook directory'
+
+    $corePath = Join-Path $repositoryRoot 'scripts\PyXll.Core.ps1'
+    . $corePath
+    $jupyter = [ordered]@{
+        use_workbook_dir = '1'
+        notebook_dir = 'X:\quant-research'
+        subcommand = 'lab'
+        qt = 'PySide6'
+        timeout = '60'
+        disable_ribbon = '1'
+    }
+    $rendered = Merge-PyXllConfiguration -ExistingText "[PYXLL]`nmodules = pyxll_jupyter.pyxll`n    misc`nribbon = X:\base\.venv\Lib\site-packages\pyxll_jupyter\resources\ribbon.xml`n    ./examples/ribbon/ribbon.xml`nlog_level = info`n" -PythonExecutable 'X:\base\.venv\Scripts\pythonw.exe' -WebView2UserDataFolder 'X:\local\webview2' -LicenseKey 'fixture-key' -JupyterSettings $jupyter -JupyterRibbonPath 'X:\base\.venv\Lib\site-packages\pyxll_jupyter\resources\ribbon.xml' -UseExplicitJupyterRibbon
+    foreach ($setting in @('[JUPYTER]', 'use_workbook_dir = 1', 'notebook_dir = X:\quant-research', 'subcommand = lab', 'qt = PySide6', 'timeout = 60', 'disable_ribbon = 1')) {
+        Assert-True ($rendered -match [regex]::Escape($setting)) "rendered config contains $setting"
+    }
+    Assert-True ($rendered.IndexOf('[JUPYTER]') -lt $rendered.IndexOf('[LICENSE]')) 'Jupyter configuration precedes the terminal license section'
+    Assert-True ($rendered -match '(?m)^modules = misc\r?$') 'unrelated example modules remain configured'
+    Assert-True ($rendered -notmatch 'pyxll_jupyter\.pyxll') 'the Jupyter callback module is loaded only through its package entry point'
+    Assert-Equal 1 ([regex]::Matches($rendered, [regex]::Escape('X:\base\.venv\Lib\site-packages\pyxll_jupyter\resources\ribbon.xml')).Count) 'the packaged Jupyter ribbon is configured exactly once'
+    Assert-True ($rendered -notmatch '(?i)examples[/\\]ribbon[/\\]ribbon\.xml') 'the example ribbon cannot take ownership of the shared PyXLL tab id'
+    Assert-True ($rendered -notmatch '(?im)^\s*ribbon\s*=\s*$') 'an empty ribbon setting cannot produce a PyXLL startup warning'
+
+    $state = Get-Source 'scripts/Set-QuantResearchEnvironmentState.ps1'
+    foreach ($check in @('pyxll-jupyter-package', 'pyxll-jupyterlab', 'pyxll-jupyter-ribbon', 'pyxll-jupyter-config')) {
+        Assert-True ($state -match [regex]::Escape($check)) "status includes $check"
+    }
+}
+
 $sections = [ordered]@{
     ConfigurationContract = ${function:Test-ConfigurationContract}
     CommandContract = ${function:Test-CommandContract}
@@ -349,6 +476,13 @@ $sections = [ordered]@{
     RelocationGuard = ${function:Test-RelocationGuard}
     MovedRootRebuild = ${function:Test-MovedRootRebuild}
     FocusedBoundary = ${function:Test-FocusedBoundary}
+    PyXllDeclaration = ${function:Test-PyXllDeclaration}
+    PyXllStatus = ${function:Test-PyXllStatus}
+    PyXllActivation = ${function:Test-PyXllActivation}
+    PyXllLicenseBoundary = ${function:Test-PyXllLicenseBoundary}
+    PyXllInteractivePlots = ${function:Test-PyXllInteractivePlots}
+    PyXllFailureAtomicity = ${function:Test-PyXllFailureAtomicity}
+    PyXllJupyterRibbon = ${function:Test-PyXllJupyterRibbon}
 }
 
 $selected = if ($Section -eq 'All') { @($sections.Keys) } else { @($Section) }

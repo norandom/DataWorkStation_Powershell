@@ -457,17 +457,19 @@
         @{
             Id = 'quant-research-environment'
             Title = 'Independent uv/OpenBB quantitative research overlays'
-            Triggers = @('quant research', 'openbb', 'jupyter', 'notebook', 'uv overlay', 'thesis environment', 'source relocation plan')
+            Triggers = @('quant research', 'openbb', 'pyxll', 'excel plots', 'jupyter', 'notebook', 'uv overlay', 'thesis environment', 'source relocation plan')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'quant-status'
                 'quant-status -Json'
                 'pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Test -Project All'
+                'pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Test -Project Base'
                 'source-relocation-plan -Target D:\Source'
                 'source-relocation-plan -Target D:\Source -Json'
             )
             StateCommands = @(
                 'quant-sync -Project thesis'
+                'quant-sync -Project Base -ConfirmPyXllInstall'
                 'quant-rebuild -Project thesis'
                 'quant-overlay -Name <name> -Dependency <package> -Run'
                 'quant-notebook -Project thesis'

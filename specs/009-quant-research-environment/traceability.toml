@@ -87,3 +87,47 @@ tests = ["tests/Test-QuantResearchEnvironment.ps1#MovedRootRebuild"]
 [requirements.REQ-022]
 verification = "automated"
 tests = ["tests/Test-QuantResearchEnvironment.ps1#FocusedBoundary"]
+
+[requirements.REQ-023]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllDeclaration"]
+
+[requirements.REQ-024]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllStatus"]
+
+[requirements.REQ-025]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllActivation"]
+
+[requirements.REQ-026]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllLicenseBoundary"]
+
+[requirements.REQ-027]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllLicenseBoundary"]
+
+[requirements.REQ-028]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllInteractivePlots"]
+
+[requirements.REQ-029]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllFailureAtomicity"]
+
+[requirements.REQ-030]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllActivation"]
+
+[requirements.REQ-031]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllJupyterRibbon"]
+
+[requirements.REQ-032]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllJupyterRibbon"]
+
+[requirements.REQ-033]
+verification = "automated"
+tests = ["tests/Test-QuantResearchEnvironment.ps1#PyXllJupyterRibbon"]

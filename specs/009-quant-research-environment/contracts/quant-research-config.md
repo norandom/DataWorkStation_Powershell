@@ -14,6 +14,7 @@
 | `OpenBB` | Entry-point groups, reference metadata location, and representative provider/router probes. |
 | `GlobalKernelRoots` | Portable user and system Jupyter kernel locations. |
 | `ProtectedPatterns` | Notebook, source, data, export, secret, and credential patterns excluded from ownership. |
+| `PyXLL` | Non-secret version, local-license path/key name, payload roots, Python/config expectations, interactive-plot settings, and enabled JupyterLab ribbon policy. |
 | `Relocation` | Portable source, default `D:\Source` target, local/NTFS requirements, reserve policy, and `ExecutionEnabled = $false`. |
 
 Additional user overlays are discovered from direct children of the configured overlay root that
@@ -23,3 +24,7 @@ projects elsewhere in Source.
 Configuration may require a package or import but cannot remove overlay-owned dependencies. Local
 credentials, provider keys, datasets, exports, notebook outputs, or expanded workstation-specific
 paths are not valid public configuration values.
+
+`.licenses.yaml` is a separate ignored input with schema version `1` and a `pyxll.key` scalar. Its
+tracked sample contains no usable value. Status may report only whether the key is present; the
+value is prohibited from human output, JSON, errors, logs, process arguments, and evidence.

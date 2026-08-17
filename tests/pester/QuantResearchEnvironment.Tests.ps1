@@ -16,7 +16,11 @@ Describe 'Quantitative research environment contracts' {
         @{ Section = 'UserContentPreservation' }, @{ Section = 'CredentialBoundary' },
         @{ Section = 'CapabilityRouting' }, @{ Section = 'RelocationNonMutation' },
         @{ Section = 'RelocationPlanContract' }, @{ Section = 'RelocationGuard' },
-        @{ Section = 'MovedRootRebuild' }, @{ Section = 'FocusedBoundary' }
+        @{ Section = 'MovedRootRebuild' }, @{ Section = 'FocusedBoundary' },
+        @{ Section = 'PyXllDeclaration' }, @{ Section = 'PyXllStatus' },
+        @{ Section = 'PyXllActivation' }, @{ Section = 'PyXllLicenseBoundary' },
+        @{ Section = 'PyXllInteractivePlots' }, @{ Section = 'PyXllFailureAtomicity' },
+        @{ Section = 'PyXllJupyterRibbon' }
     ) {
         $output = @(& $script:runtime -NoLogo -NoProfile -File $script:contract -Section $Section 2>&1)
         $LASTEXITCODE | Should -Be 0 -Because ($output -join "`n")

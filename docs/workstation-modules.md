@@ -110,7 +110,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
-| `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | independently locked uv/OpenBB research projects and project-local notebooks |
+| `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | independently locked uv/OpenBB projects, project-local notebooks, and licensed PyXLL Excel integration |
 | `SleuthKitCli` | **no** | `PowerShell7` | matching official native Windows TSK command suite on the user PATH |
 | `Autopsy` | **no** | `Sudo`, `PowerShell7`, `PowerShellProfile`, `SleuthKitCli` | signed Windows GUI MSI, private CLI bindings, case root, and Defender exclusions |
 | `MalwareAnalysisTools` | **no** | `Packages`, `WindowsFeatures`, `ProfilingTools`, `MalwareHashes` | opt-in isolated parsers and telemetry tools |
@@ -134,7 +134,9 @@ The routing DSL is `config/workstation-modules.psd1`.
 `QuantResearchEnvironment` is opt-in because dependency synchronization can be large and doctoral
 research state is user-owned. `Test` is observational. `Ensure` exact-syncs generated environments
 from existing locks, and `Reinitialize` replaces only `.venv` with rollback. The module never owns
-notebooks, research source, datasets, exports, credentials, or the deferred Source junction.
+notebooks, research source, datasets, exports, credentials, or the deferred Source junction. PyXLL
+uses the base environment; its ignored license, payload, Excel registration, and active config stay
+local, and first installation requires a dedicated explicit switch.
 
 ## Explicit debloat module
 

@@ -79,7 +79,7 @@ Read [Reproducible NixOS WSL tools](docs/nixos-wsl.md) for operation and [NixOS 
 | Triage a suspicious file | bounded host inspection, isolated document/reverse-engineering jobs, and explicitly confirmed Windows Sandbox detonation |
 | Verify an EWF image | `ewf-verify` with held read-only segment handles, pre/post hashes, pinned native tooling, and durable human/JSON reports |
 | Examine media in a forensic GUI | optional Autopsy Windows GUI, matching native Sleuth Kit CLI, Recent Activity helpers, and explicit Defender boundaries |
-| Run doctoral quantitative research | an OpenBB base plus independently locked uv overlays and project-local JupyterLab without global kernels |
+| Run doctoral quantitative research | an OpenBB base with licensed PyXLL, interactive Excel plots, an embedded JupyterLab ribbon action, independently locked uv overlays, and project-local notebooks |
 
 Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 

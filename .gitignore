@@ -42,5 +42,6 @@ out/
 *.pdb
 *.ilk
 .env*
+.licenses.yaml
 .idea/
 .vscode/

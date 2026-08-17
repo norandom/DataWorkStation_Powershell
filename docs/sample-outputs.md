@@ -750,6 +750,17 @@ Quantitative research environment: drift detected
   openbb-extensions: Generated OpenBB reference omits installed extensions.
 ```
 
+The base status also reports licensed Excel integration without exposing the key:
+
+```text
+PS> quant-status -Project Base
+Quantitative research environment: compliant
+Root: C:\Users\mariu\Source\quant-research
+- base quant-base: compliant
+  PyXLL: package, x64 add-in, OpenBB pythonw.exe, WebView2, and interactive plots compliant
+  License: present (value redacted)
+```
+
 The relocation report never executes its preview:
 
 ```text

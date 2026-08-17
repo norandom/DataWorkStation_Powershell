@@ -6,6 +6,7 @@
 pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 `
     -Mode <Test|Ensure|Reinitialize> `
     [-Project <All|Base|name>] `
+    [-ConfirmPyXllInstall] `
     [-Json]
 ```
 
@@ -21,6 +22,13 @@ reviewed lock, or performs relocation.
 `Reinitialize` replaces only a selected generated `.venv`. It renames the old environment to a
 bounded backup, creates and verifies the replacement at the final path, restores the backup on
 failure, and removes no backup until success. It refuses a busy or ambiguously resolved path.
+
+For the base project, all modes also evaluate declared PyXLL state. `Test` is registry/config/file
+observational. `Ensure` and `Reinitialize` may activate an existing payload and reconcile the
+machine-local config only after all license, architecture, WebView2, and closed-Excel preconditions
+pass. If no payload exists, ordinary reconciliation stops and prints the direct first-install
+command. Only `-ConfirmPyXllInstall` may launch that vendor-owned interactive workflow; it never
+supplies identity or accepts terms on the operator's behalf.
 
 Human output is the default. `-Json` emits exactly one object conforming to
 [quant-research-status.schema.json](quant-research-status.schema.json) and performs the same checks.

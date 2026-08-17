@@ -132,6 +132,38 @@ Overall state is `compliant` only when the base and all declared overlays are lo
 relationship-valid, probe-valid, and extension-current. Missing optional user overlays are not
 inventoried unless declared.
 
+## PyXllIntegrationState
+
+The machine-local bridge from Excel to the base OpenBB environment.
+
+| Field | Meaning |
+|---|---|
+| `Enabled` | Whether PyXLL integration is declared. |
+| `PackageVersion` | Exact PyXLL version required by the base lock. |
+| `PayloadPath` | Existing machine-local folder containing `pyxll.xll`. |
+| `AddInRegistered` | Whether current-user Excel options load that exact XLL. |
+| `PythonExecutable` | Expected base `.venv\Scripts\pythonw.exe`. |
+| `ConfigurationPath` | Active machine-local `pyxll.cfg`. |
+| `WebView2Available` | Whether the runtime needed for interactive HTML plots is present. |
+| `PlottingOptions` | Expected HTML, SVG, resizing, and WebView2 data-folder settings. |
+| `JupyterIntegration` | Exact integration package, JupyterLab runtime, ribbon entry point, and active `[JUPYTER]` policy. |
+| `LicensePresent` | Redacted boolean only. |
+| `State` | `Unavailable`, `Drifted`, `ReadyForActivation`, `Compliant`, or `Blocked`. |
+
+The license value is deliberately not part of this entity. It is transient input from the ignored
+`LocalLicenseStore`; it may be compared and rendered but cannot be serialized into status.
+
+The Jupyter kernel runs inside Excel's PyXLL interpreter. It therefore shares the OpenBB base
+environment and is not a separately selectable kernel or global kernelspec.
+
+State transitions:
+
+```text
+Unavailable -> InteractiveInstallConfirmed -> PayloadInstalled -> ReadyForActivation
+ReadyForActivation -> AddInActivated -> Configured -> Compliant
+Any state -> Blocked when Excel is open or architecture/prerequisites are incompatible
+```
+
 ## RelocationPlan
 
 A read-only assessment for a future Source move.

@@ -10,18 +10,18 @@ function global:quant-status {
 
 function global:quant-sync {
     [CmdletBinding()]
-    param([string] $Project = 'All', [switch] $Json)
+    param([string] $Project = 'All', [switch] $ConfirmPyXllInstall, [switch] $Json)
 
     $scriptPath = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-QuantResearchEnvironmentState.ps1'
-    & $scriptPath -Mode Ensure -Project $Project -Json:$Json
+    & $scriptPath -Mode Ensure -Project $Project -ConfirmPyXllInstall:$ConfirmPyXllInstall -Json:$Json
 }
 
 function global:quant-rebuild {
     [CmdletBinding()]
-    param([string] $Project = 'All', [switch] $Json)
+    param([string] $Project = 'All', [switch] $ConfirmPyXllInstall, [switch] $Json)
 
     $scriptPath = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-QuantResearchEnvironmentState.ps1'
-    & $scriptPath -Mode Reinitialize -Project $Project -Json:$Json
+    & $scriptPath -Mode Reinitialize -Project $Project -ConfirmPyXllInstall:$ConfirmPyXllInstall -Json:$Json
 }
 
 function global:quant-notebook {

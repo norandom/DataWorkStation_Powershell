@@ -1,0 +1,4 @@
+# Copy this file to .licenses.yaml and keep the copy untracked.
+schema_version: 1
+pyxll:
+  key:

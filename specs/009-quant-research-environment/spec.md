@@ -72,6 +72,24 @@ As the workstation operator, I can later request a non-mutating relocation plan 
 2. **Given** a future request for relocation planning, **When** plan mode runs, **Then** it reports exact paths, prerequisites, conflicts, verification steps, rollback, and the explicit command boundary without changing state.
 3. **Given** a failed copy verification or a conflicting destination, **When** a future relocation is attempted, **Then** the original Source directory remains the authoritative recoverable location and no junction replaces it.
 
+---
+
+### User Story 5 - Use PyXLL from the shared OpenBB environment (Priority: P2)
+
+As the researcher, I can call Python-backed quantitative functions and open interactive Plotly charts in Excel through PyXLL, while the Python package remains part of the shared OpenBB environment and the licensed add-in remains machine-local.
+
+**Why this priority**: Excel is a primary quantitative work surface, and one shared runtime avoids a second unmanaged Python environment.
+
+**Independent Test**: In a disposable fixture, reconcile a pre-existing PyXLL payload and local license, then verify the registered Excel add-in, selected `pythonw.exe`, plotting options, terminal license section, and redacted status without exposing the key.
+
+**Acceptance Scenarios**:
+
+1. **Given** the OpenBB base environment and an installed PyXLL payload, **When** explicit reconciliation runs, **Then** Excel is registered to load that payload and PyXLL uses the base environment's `pythonw.exe`.
+2. **Given** a valid key in the ignored local license file, **When** PyXLL configuration is rendered, **Then** the active configuration ends with a `[LICENSE]` section containing the key and no status, log, tracked file, or error reveals it.
+3. **Given** WebView2 and the declared plotting packages, **When** a PyXLL function returns a Plotly figure, **Then** HTML plotting, SVG fallback, and resizing are enabled in the Excel task pane.
+4. **Given** no installed PyXLL payload, **When** ordinary workstation reconciliation runs without first-install confirmation, **Then** it stops with the documented interactive vendor command and does not imply acceptance of vendor terms.
+5. **Given** the PyXLL add-in and OpenBB base environment, **When** Excel starts, **Then** the PyXLL ribbon includes its Jupyter Notebook action and opens the declared JupyterLab interface in an Excel task pane.
+
 ### Edge Cases
 
 - The selected Python runtime or package source is unavailable.
@@ -84,6 +102,10 @@ As the workstation operator, I can later request a non-mutating relocation plan 
 - The proposed destination contains a junction, symbolic-link loop, or content not present in the source.
 - A copied environment contains move-sensitive absolute paths and must be recreated after relocation.
 - The copy succeeds but content verification, repository verification, or overlay restoration fails.
+- Excel is running while add-in activation or configuration replacement is requested.
+- The Excel, Python, and PyXLL architectures do not match.
+- The local license file is missing, malformed, or contains no PyXLL key.
+- WebView2 is absent, or HTML plotting is disabled in the active PyXLL configuration.
 
 ## Requirements *(mandatory)*
 
@@ -111,6 +133,17 @@ As the workstation operator, I can later request a non-mutating relocation plan 
 - **REQ-020**: When future relocation is separately confirmed after successful verification, the workstation manager shall retain the original Source tree under a recoverable backup name before creating the directory junction.
 - **REQ-021**: When the research tree's physical root changes, the environment manager shall recreate generated overlay environments and reverify each relative base relationship before reporting success.
 - **REQ-022**: The quantitative research environment shall remain a focused capability separate from unrelated workstation, diagnostic, profiling, and forensic environment management.
+- **REQ-023**: Where PyXLL integration is enabled, the base research project shall declare PyXLL and the selected interactive plotting packages as part of its exact dependency resolution.
+- **REQ-024**: When PyXLL status is requested, the environment manager shall observationally verify the base-environment package, Excel/Python/PyXLL architecture compatibility, active Excel add-in registration, active configuration path, selected base `pythonw.exe`, WebView2 availability, plotting options, and license presence without changing state.
+- **REQ-025**: When PyXLL reconciliation is explicitly requested and an installed payload is available, the environment manager shall activate the Excel add-in and configure it to use the OpenBB base environment.
+- **REQ-026**: Where the ignored local `.licenses.yaml` contains a PyXLL key, the environment manager shall place the key only in the final `[LICENSE]` section of the active machine-local `pyxll.cfg` and never in tracked files.
+- **REQ-027**: While PyXLL state is tested or reconciled, the environment manager shall not emit the license key in human output, JSON, logs, errors, process arguments, or verification evidence.
+- **REQ-028**: Where interactive plotting is enabled, the active PyXLL configuration shall allow HTML plots, SVG plots, plot resizing, and a machine-local WebView2 user-data directory.
+- **REQ-029**: If the license, PyXLL payload, WebView2 runtime, compatible architecture, or closed-Excel prerequisite is missing, then reconciliation shall stop with an actionable explanation before partially activating or rewriting the add-in configuration.
+- **REQ-030**: When the PyXLL payload is absent, the environment manager shall require a separate explicit first-install confirmation before launching the vendor's interactive installer.
+- **REQ-031**: Where PyXLL Jupyter integration is enabled, the base research project shall declare an exact `pyxll-jupyter` release and JupyterLab 4 or later in its dependency resolution.
+- **REQ-032**: When PyXLL Jupyter status is requested, the environment manager shall observationally verify the installed integration package, JupyterLab runtime, PyXLL ribbon entry point, and active Jupyter configuration.
+- **REQ-033**: Where PyXLL Jupyter integration is enabled, the active configuration shall select JupyterLab, load exactly one explicit copy of the package-provided ribbon while disabling its automatic ribbon injection, remove duplicate module entries and the colliding installer-example ribbon, prefer a saved workbook's directory, and use the quantitative research root as its fallback notebook directory.
 
 ### Key Entities
 
@@ -121,6 +154,8 @@ As the workstation operator, I can later request a non-mutating relocation plan 
 - **Notebook Entry Point**: The documented project-local action that starts interactive research without registering a global kernel.
 - **Environment Status**: Observed compliance results for runtime, dependency, relationship, extension, notebook, and import checks.
 - **Relocation Plan**: A deferred, non-mutating description of the future Source move, validation gates, recovery path, and directory junction.
+- **PyXLL Integration State**: The relationship among the base environment, installed PyXLL payload, Excel add-in registration, active configuration, WebView2 runtime, and plotting prerequisites.
+- **Local License Store**: An ignored machine-local YAML file whose PyXLL value may be read for reconciliation but is never part of portable or reported state.
 
 ## Success Criteria *(mandatory)*
 
@@ -134,6 +169,10 @@ As the workstation operator, I can later request a non-mutating relocation plan 
 - **SC-006**: A failed dependency resolution preserves one hundred percent of the previously recorded project declarations and user research content.
 - **SC-007**: A future relocation plan identifies all required safety gates and produces zero filesystem changes before explicit relocation authorization.
 - **SC-008**: After any later approved relocation, all tracked repositories and overlay dependency relationships pass verification before the familiar Source path is declared operational.
+- **SC-009**: One hundred percent of PyXLL status and reconciliation outputs contain zero license-key characters or values.
+- **SC-010**: After successful PyXLL reconciliation, Excel's active add-in, configured Python executable, and all four interactive-plot prerequisites pass verification.
+- **SC-011**: Repeated PyXLL observational checks produce zero registry, configuration, environment, or user-file changes.
+- **SC-012**: After reconciliation and an Excel restart, the PyXLL ribbon exposes one working Jupyter Notebook action backed by JupyterLab 4 or later from the OpenBB environment.
 
 ## Assumptions
 
@@ -146,3 +185,5 @@ As the workstation operator, I can later request a non-mutating relocation plan 
 - The future relocation target is intended to be a local NTFS volume at `D:\Source`; network shares and removable media are excluded.
 - The future directory junction preserves `C:\Users\mariu\Source` as the familiar logical path, but its creation requires a separate explicit relocation operation.
 - The original Source tree is retained under a recoverable backup name until post-relocation verification is accepted by the operator.
+- The licensed PyXLL payload and active configuration are machine-local generated state; the package declaration and non-secret desired settings are portable.
+- The operator owns vendor identity, license entitlement, and first-install consent; automation does not invent or commit any of them.

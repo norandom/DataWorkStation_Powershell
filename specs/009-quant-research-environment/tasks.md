@@ -214,6 +214,40 @@ Task: T042 update specs/001-workstation-baseline/spec.md
 | REQ-021 | T032 | T036, T037, T044 |
 | REQ-022 | T005, T006 | T007, T028, T039, T040, T042, T044 |
 
+---
+
+## Phase 8: User Story 5 - PyXLL Excel Integration (Priority: P2)
+
+**Goal**: Put PyXLL in the OpenBB base environment, activate its Excel add-in, and enable interactive plotting while keeping the entitlement local and secret.
+
+**Independent Test**: Reconcile disposable base/payload/config/license/registry fixtures and prove the exact Python, active add-in, plot settings, terminal license section, failure atomicity, and zero secret disclosure.
+
+- [X] T045 [US5] Extend `spec.md`, `plan.md`, `research.md`, `data-model.md`, contracts, quickstart, and traceability for REQ-023 through REQ-030 before production changes.
+- [X] T046 [US5] Add and observe failing `PyXllDeclaration`, `PyXllStatus`, `PyXllActivation`, `PyXllLicenseBoundary`, `PyXllInteractivePlots`, and `PyXllFailureAtomicity` selectors in `tests/Test-QuantResearchEnvironment.ps1` and the Pester adapter.
+- [X] T047 [US5] Add an ignored `.licenses.yaml` boundary and tracked non-secret sample for REQ-026 and REQ-027; prove no usable key exists in tracked content.
+- [X] T048 [US5] Implement deterministic local-license parsing, config merge/validation, payload discovery, Excel add-in observation/activation, architecture/WebView2 checks, and redacted result helpers in `scripts/PyXll.Core.ps1`.
+- [X] T049 [US5] Extend `config/quant-research.psd1` with portable non-secret PyXLL and plotting desired state; add PyXLL, Plotly, and Kaleido to the external base declaration and exact lock for REQ-023 and REQ-028.
+- [X] T050 [US5] Integrate observational status, prerequisite-first Ensure/Reinitialize, existing-payload activation, and explicit `-ConfirmPyXllInstall` vendor handoff into `scripts/Set-QuantResearchEnvironmentState.ps1` for REQ-024, REQ-025, REQ-029, and REQ-030.
+- [X] T051 [US5] Document the direct human commands before updating `config/capabilities.psd1`, operator docs, aliases, desired-state/module docs, samples, README, changelog, and navigation for REQ-024 through REQ-030.
+- [X] T052 [US5] Run all focused selectors, Pester, final EARS validation, `lint-powershell`, direct and Tricky human/JSON smoke tests, strict docs build, `git diff --check`, secret scans, and a bounded live base/Add-in verification; record red/green evidence without the entitlement.
+
+| Requirements | Preceding failing-test tasks | Implementation / verification tasks |
+|---|---|---|
+| REQ-023 | T046 | T049, T052 |
+| REQ-024 | T046 | T048, T050, T052 |
+| REQ-025 | T046 | T048, T050, T052 |
+| REQ-026, REQ-027 | T046 | T047, T048, T052 |
+| REQ-028 | T046 | T048 through T050, T052 |
+| REQ-029, REQ-030 | T046 | T048, T050 through T052 |
+
+### PyXLL Jupyter ribbon correction
+
+- [X] T053 [US5] Record REQ-031 through REQ-033 and their design/traceability before correcting the missing ribbon behavior.
+- [X] T054 [US5] Add and observe a failing `PyXllJupyterRibbon` selector for declaration, runtime, entry point, and configuration state.
+- [X] T055 [US5] Declare and lock `pyxll-jupyter==0.7.1` plus JupyterLab 4 or later in the external OpenBB base.
+- [X] T056 [US5] Extend PyXLL configuration rendering and observational status with the enabled JupyterLab ribbon policy.
+- [X] T057 [US5] Reconcile the live add-in config, verify the entry point and runtime, update operator documentation, and rerun final publication gates.
+
 Coverage: 22 of 22 requirements have a preceding failing-test task or, for the deferred execution portion of REQ-020, a preceding executable boundary test plus an explicit retained manual rationale.
 
 ## Implementation Strategy

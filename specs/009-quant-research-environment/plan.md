@@ -199,6 +199,17 @@ Production code does not embed requirement IDs. Focused tests may use these stab
 | REQ-020 | Execution is intentionally deferred to a separately approved future feature. | Manual: verify executor absence now; future disposable cutover test must prove backup-before-junction ordering. |
 | REQ-021 | Recreate generated environments after a disposable whole-tree move and reverify paths/imports. | `MovedRootRebuild` |
 | REQ-022 | Keep the opt-in module and scripts separate from diagnostic/profiling/forensic capabilities. | `FocusedBoundary` |
+| REQ-023 | Add PyXLL and plotting packages to the base declaration and lock. | `PyXllDeclaration` |
+| REQ-024 | Observe package, architecture, add-in, config, WebView2, plots, and redacted license state. | `PyXllStatus` |
+| REQ-025 | Activate only an installed payload against the base environment. | `PyXllActivation` |
+| REQ-026 | Read the ignored local key and append only the final config license section. | `PyXllLicenseBoundary` |
+| REQ-027 | Keep the key out of every output and process boundary. | `PyXllLicenseBoundary` |
+| REQ-028 | Enable HTML/SVG/resizing and a local WebView2 data folder. | `PyXllInteractivePlots` |
+| REQ-029 | Complete all prerequisites before activation or config replacement. | `PyXllFailureAtomicity` |
+| REQ-030 | Gate the vendor's interactive installer behind a dedicated confirmation switch. | `PyXllActivation` |
+| REQ-031 | Lock pyxll-jupyter and JupyterLab in the OpenBB base environment. | `PyXllJupyterRibbon` |
+| REQ-032 | Observe the distributions, ribbon entry point, runtime, and active settings. | `PyXllJupyterRibbon` |
+| REQ-033 | Render an enabled JupyterLab ribbon policy before the terminal license section. | `PyXllJupyterRibbon` |
 
 The planned selector form is:
 
@@ -219,6 +230,11 @@ After implementation, run in this order:
 5. `uv run --group docs mkdocs build --strict`.
 
 Documentation updates include direct command contracts, profile aliases, sample outputs, capability routing, desired-state/module catalogs, README, changelog, and mkdocs navigation. The frozen inventories in `specs/001-workstation-baseline/spec.md` must be updated from 45 to 46 modules and 28 to 29 capabilities with the new entries.
+
+The PyXLL extension adds no module or capability-count change. Its implementation uses a focused
+core helper for deterministic config/license/registry checks and keeps first-install interaction in
+the existing direct quant state command. Tests inject disposable payload, registry-view, WebView2,
+and license fixtures; they never require or expose the real entitlement.
 
 ## Complexity Tracking
 

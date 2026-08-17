@@ -4,6 +4,7 @@ param(
     [string] $Mode = 'Test',
     [string] $Project = 'All',
     [switch] $Json,
+    [switch] $ConfirmPyXllInstall,
     [string] $ConfigurationPath = (Join-Path $PSScriptRoot '..\config\quant-research.psd1')
 )
 
@@ -14,6 +15,7 @@ $supportedOpenBbEntryPointGroups = @(
     'openbb_obbject_extension'
 )
 $script:mutationPerformed = $false
+. (Join-Path $PSScriptRoot 'PyXll.Core.ps1')
 
 function Expand-PortablePath {
     param([Parameter(Mandatory)][string] $Value)
@@ -126,6 +128,182 @@ function New-Check {
     [pscustomobject]@{ name = $Name; state = $State; detail = $Detail }
 }
 
+function Get-PyXllPaths {
+    param([object] $ProjectDefinition, [hashtable] $Configuration)
+
+    $repositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+    $licensePath = [string] $Configuration.PyXLL.LicensePath
+    if (-not [IO.Path]::IsPathRooted($licensePath)) { $licensePath = Join-Path $repositoryRoot $licensePath }
+    $roots = @($Configuration.PyXLL.PayloadRoots | ForEach-Object { [IO.Path]::GetFullPath((Expand-PortablePath ([string] $_))) })
+    $xll = Find-PyXllPayload -Roots $roots
+    $pythonw = Join-Path $ProjectDefinition.Path ($Configuration.EnvironmentName + '\Scripts\pythonw.exe')
+    $webViewData = Expand-PortablePath ([string] $Configuration.PyXLL.Plotting.WebView2UserDataFolder)
+    $notebookDirectory = if ($Configuration.PyXLL.ContainsKey('Jupyter')) {
+        Expand-PortablePath ([string] $Configuration.PyXLL.Jupyter.NotebookDirectory)
+    } else { $null }
+    $jupyterRibbon = Join-Path $ProjectDefinition.Path ($Configuration.EnvironmentName + '\Lib\site-packages\pyxll_jupyter\resources\ribbon.xml')
+    [pscustomobject]@{
+        License = [IO.Path]::GetFullPath($licensePath)
+        Roots = $roots
+        Xll = $xll
+        Config = if ($xll) { Join-Path (Split-Path -Parent $xll) 'pyxll.cfg' } else { $null }
+        Pythonw = [IO.Path]::GetFullPath($pythonw)
+        Excel = [IO.Path]::GetFullPath((Expand-PortablePath ([string] $Configuration.PyXLL.ExcelExecutable)))
+        WebViewData = [IO.Path]::GetFullPath($webViewData)
+        NotebookDirectory = if ($notebookDirectory) { [IO.Path]::GetFullPath($notebookDirectory) } else { $null }
+        JupyterRibbon = [IO.Path]::GetFullPath($jupyterRibbon)
+    }
+}
+
+function Get-PyXllState {
+    param([object] $ProjectDefinition, [hashtable] $Configuration)
+
+    $checks = [Collections.Generic.List[object]]::new()
+    $paths = Get-PyXllPaths $ProjectDefinition $Configuration
+    $manifest = Join-Path $ProjectDefinition.Path 'pyproject.toml'
+    $manifestText = if (Test-Path -LiteralPath $manifest -PathType Leaf) { Get-Content -LiteralPath $manifest -Raw } else { '' }
+    $packageDeclared = $manifestText -match '(?i)["'']pyxll(?:[=<>~!\[]|["''])'
+    $checks.Add((New-Check 'pyxll-package' $(if ($packageDeclared) { 'compliant' } else { 'drift detected' }) $(if ($packageDeclared) { 'PyXLL is declared in the base environment.' } else { 'PyXLL is not declared in the base environment.' })))
+
+    $licensePresent = $false
+    $licenseKey = $null
+    try {
+        $licenseKey = Get-PyXllLicenseKey -Path $paths.License
+        $licensePresent = $true
+    } catch {
+        $licensePresent = $false
+        $licenseKey = $null
+    }
+    $checks.Add((New-Check 'pyxll-license' $(if ($licensePresent) { 'compliant' } else { 'blocked' }) $(if ($licensePresent) { 'A local PyXLL license is present (value redacted).' } else { 'The ignored local PyXLL license is missing or invalid.' })))
+
+    $webViewPresent = Test-PyXllWebView2Runtime
+    $checks.Add((New-Check 'pyxll-webview2' $(if ($webViewPresent) { 'compliant' } else { 'blocked' }) $(if ($webViewPresent) { 'Microsoft WebView2 Runtime is available.' } else { 'Microsoft WebView2 Runtime is required for interactive HTML plots.' })))
+
+    if ($Configuration.PyXLL.ContainsKey('Jupyter') -and [bool] $Configuration.PyXLL.Jupyter.Enabled) {
+        $sitePackages = Join-Path $ProjectDefinition.Path ($Configuration.EnvironmentName + '\Lib\site-packages')
+        $integrationMetadata = Get-ChildItem -LiteralPath $sitePackages -Filter 'pyxll_jupyter-*.dist-info' -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+        $jupyterLabMetadata = Get-ChildItem -LiteralPath $sitePackages -Filter 'jupyterlab-*.dist-info' -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+        $integrationVersion = $null
+        if ($integrationMetadata) {
+            $metadataPath = Join-Path $integrationMetadata.FullName 'METADATA'
+            if (Test-Path -LiteralPath $metadataPath -PathType Leaf) {
+                $versionLine = Get-Content -LiteralPath $metadataPath | Where-Object { $_ -match '^Version:\s*(\S+)' } | Select-Object -First 1
+                if ($versionLine -match '^Version:\s*(\S+)') { $integrationVersion = $Matches[1] }
+            }
+        }
+        $integrationOk = $integrationVersion -eq [string] $Configuration.PyXLL.Jupyter.Version
+        $checks.Add((New-Check 'pyxll-jupyter-package' $(if ($integrationOk) { 'compliant' } else { 'drift detected' }) $(if ($integrationOk) { "PyXLL Jupyter $integrationVersion is installed." } else { 'The declared PyXLL Jupyter integration is missing or has the wrong version.' })))
+        $checks.Add((New-Check 'pyxll-jupyterlab' $(if ($jupyterLabMetadata) { 'compliant' } else { 'drift detected' }) $(if ($jupyterLabMetadata) { 'JupyterLab is installed in the OpenBB base environment.' } else { 'JupyterLab is missing from the OpenBB base environment.' })))
+
+        $entryPointsPath = if ($integrationMetadata) { Join-Path $integrationMetadata.FullName 'entry_points.txt' } else { $null }
+        $entryPointsText = if ($entryPointsPath -and (Test-Path -LiteralPath $entryPointsPath -PathType Leaf)) { Get-Content -LiteralPath $entryPointsPath -Raw } else { '' }
+        $ribbonEntryPoint = $entryPointsText -match '(?ims)^\[pyxll\]\s*$.*?^\s*ribbon\s*='
+        $checks.Add((New-Check 'pyxll-jupyter-ribbon' $(if ($ribbonEntryPoint) { 'compliant' } else { 'drift detected' }) $(if ($ribbonEntryPoint) { 'The PyXLL Jupyter ribbon entry point is available.' } else { 'The PyXLL Jupyter ribbon entry point is unavailable.' })))
+    }
+
+    if (-not $paths.Xll) {
+        $checks.Add((New-Check 'pyxll-addin' 'drift detected' 'No installed PyXLL payload was found; use -ConfirmPyXllInstall for the explicit vendor workflow.'))
+        $checks.Add((New-Check 'pyxll-architecture' 'drift detected' 'Architecture cannot be checked until the PyXLL payload and base environment exist.'))
+        $checks.Add((New-Check 'pyxll-config' 'drift detected' 'The active PyXLL configuration is unavailable until the payload is installed.'))
+        return @($checks)
+    }
+
+    $registered = @(Get-PyXllExcelAddIns)
+    $active = @($registered | Where-Object { $_.Trim('"') -ieq $paths.Xll }).Count -gt 0
+    $checks.Add((New-Check 'pyxll-addin' $(if ($active) { 'compliant' } else { 'drift detected' }) $(if ($active) { 'Excel loads the selected PyXLL add-in.' } else { 'Excel does not load the selected PyXLL add-in.' })))
+
+    $xllArchitecture = Get-PortableExecutableArchitecture -Path $paths.Xll
+    $pythonArchitecture = Get-PortableExecutableArchitecture -Path $paths.Pythonw
+    $excelArchitecture = Get-PortableExecutableArchitecture -Path $paths.Excel
+    $architectureOk = $xllArchitecture -and $pythonArchitecture -and $excelArchitecture -and
+        $xllArchitecture -eq $pythonArchitecture -and $xllArchitecture -eq $excelArchitecture
+    $checks.Add((New-Check 'pyxll-architecture' $(if ($architectureOk) { 'compliant' } else { 'blocked' }) $(if ($architectureOk) { "Excel, PyXLL, and Python are $xllArchitecture." } else { 'Excel, PyXLL, and base Python architectures are missing or incompatible.' })))
+
+    $configOk = $false
+    $jupyterConfigOk = -not ($Configuration.PyXLL.ContainsKey('Jupyter') -and [bool] $Configuration.PyXLL.Jupyter.Enabled)
+    if ($paths.Config -and (Test-Path -LiteralPath $paths.Config -PathType Leaf)) {
+        $configText = Get-Content -LiteralPath $paths.Config -Raw
+        $configuredLicense = [regex]::Match($configText, '(?ims)^\[LICENSE\]\s*.*?^\s*key\s*=\s*(\S+)\s*$')
+        $configOk = $configText -match ('(?im)^\s*executable\s*=\s*' + [regex]::Escape($paths.Pythonw) + '\s*$') -and
+            $configText -match '(?im)^\s*plot_allow_html\s*=\s*1\s*$' -and
+            $configText -match '(?im)^\s*plot_allow_svg\s*=\s*1\s*$' -and
+            $configText -match '(?im)^\s*plot_allow_resize\s*=\s*1\s*$' -and
+            $configText -match ('(?im)^\s*webview2_userdata_folder\s*=\s*' + [regex]::Escape($paths.WebViewData) + '\s*$') -and
+            $configuredLicense.Success -and $configuredLicense.Groups[1].Value -ceq $licenseKey
+        if ($Configuration.PyXLL.ContainsKey('Jupyter') -and [bool] $Configuration.PyXLL.Jupyter.Enabled) {
+            $jupyterConfigOk = $configText -match '(?im)^\s*subcommand\s*=\s*lab\s*$' -and
+                $configText -match '(?im)^\s*disable_ribbon\s*=\s*1\s*$' -and
+                $configText -match '(?im)^\s*use_workbook_dir\s*=\s*1\s*$' -and
+                $configText -match ('(?im)^\s*notebook_dir\s*=\s*' + [regex]::Escape($paths.NotebookDirectory) + '\s*$') -and
+                $configText -notmatch '(?im)^\s*(?:modules\s*=\s*)?pyxll_jupyter\.pyxll\s*$' -and
+                $configText -match ('(?im)^\s*ribbon\s*=\s*' + [regex]::Escape($paths.JupyterRibbon) + '\s*$') -and
+                $configText -notmatch '(?im)^\s*(?:ribbon\s*=\s*)?(?:\./)?examples[/\\]ribbon[/\\]ribbon\.xml\s*$' -and
+                $configText -notmatch '(?im)^\s*ignore_entry_points\s*=\s*1\s*$'
+        }
+    }
+    $checks.Add((New-Check 'pyxll-config' $(if ($configOk) { 'compliant' } else { 'drift detected' }) $(if ($configOk) { 'PyXLL uses the base Python and all interactive plot settings; license value redacted.' } else { 'PyXLL configuration does not match the base Python and interactive plot policy.' })))
+    if ($Configuration.PyXLL.ContainsKey('Jupyter') -and [bool] $Configuration.PyXLL.Jupyter.Enabled) {
+        $checks.Add((New-Check 'pyxll-jupyter-config' $(if ($jupyterConfigOk) { 'compliant' } else { 'drift detected' }) $(if ($jupyterConfigOk) { 'The PyXLL JupyterLab ribbon configuration is enabled.' } else { 'The active PyXLL JupyterLab ribbon configuration is missing or drifted.' })))
+    }
+    @($checks)
+}
+
+function Invoke-PyXllReconciliation {
+    param([object] $ProjectDefinition, [hashtable] $Configuration, [switch] $AllowInteractiveInstall)
+
+    if (Get-Process -Name EXCEL -ErrorAction SilentlyContinue) {
+        throw 'Close Excel before activating or configuring PyXLL.'
+    }
+    $paths = Get-PyXllPaths $ProjectDefinition $Configuration
+    $licenseKey = Get-PyXllLicenseKey -Path $paths.License
+    if (-not (Test-PyXllWebView2Runtime)) { throw 'Microsoft WebView2 Runtime is required before PyXLL reconciliation.' }
+    if (-not (Test-Path -LiteralPath $paths.Pythonw -PathType Leaf)) { throw 'The OpenBB base pythonw.exe is missing after locked synchronization.' }
+
+    if (-not $paths.Xll) {
+        if (-not $AllowInteractiveInstall) {
+            throw 'No PyXLL payload is installed. Re-run this direct command with -ConfirmPyXllInstall to start the vendor interactive installer.'
+        }
+        $python = Join-Path $ProjectDefinition.Path ($Configuration.EnvironmentName + '\Scripts\python.exe')
+        Push-Location -LiteralPath $ProjectDefinition.Path
+        try {
+            & $python -m pyxll install ("--version=$([string] $Configuration.PyXLL.Version)")
+            if ($LASTEXITCODE -ne 0) { throw 'The interactive PyXLL installer did not complete successfully.' }
+        } finally { Pop-Location }
+        $paths = Get-PyXllPaths $ProjectDefinition $Configuration
+        if (-not $paths.Xll) { throw 'The interactive PyXLL installer completed without a discoverable pyxll.xll payload.' }
+    }
+
+    $xllArchitecture = Get-PortableExecutableArchitecture -Path $paths.Xll
+    $pythonArchitecture = Get-PortableExecutableArchitecture -Path $paths.Pythonw
+    $excelArchitecture = Get-PortableExecutableArchitecture -Path $paths.Excel
+    if (-not $xllArchitecture -or -not $excelArchitecture -or $xllArchitecture -ne $pythonArchitecture -or $xllArchitecture -ne $excelArchitecture) {
+        throw 'Excel, the PyXLL add-in, and OpenBB base Python architectures are incompatible.'
+    }
+
+    $registered = @(Get-PyXllExcelAddIns)
+    if (@($registered | Where-Object { $_.Trim('"') -ieq $paths.Xll }).Count -eq 0) {
+        $activate = Invoke-Uv $ProjectDefinition.Path @('run', '--frozen', '--no-sync', 'python', '-m', 'pyxll', 'activate', '--non-interactive', (Split-Path -Parent $paths.Xll))
+        if ($activate.ExitCode -ne 0) { throw "PyXLL add-in activation failed: $($activate.Text)" }
+        $script:mutationPerformed = $true
+    }
+    $jupyterSettings = $null
+    if ($Configuration.PyXLL.ContainsKey('Jupyter') -and [bool] $Configuration.PyXLL.Jupyter.Enabled) {
+        if ([string] $Configuration.PyXLL.Jupyter.RibbonMode -ne 'Explicit') {
+            throw "Unsupported PyXLL Jupyter ribbon mode '$([string] $Configuration.PyXLL.Jupyter.RibbonMode)'."
+        }
+        $jupyterSettings = [ordered]@{
+            use_workbook_dir = $(if ([bool] $Configuration.PyXLL.Jupyter.UseWorkbookDirectory) { '1' } else { '0' })
+            notebook_dir = $paths.NotebookDirectory
+            subcommand = [string] $Configuration.PyXLL.Jupyter.Subcommand
+            qt = [string] $Configuration.PyXLL.Jupyter.Qt
+            timeout = [string] $Configuration.PyXLL.Jupyter.TimeoutSeconds
+            disable_ribbon = '1'
+        }
+    }
+    Set-PyXllConfigurationFile -Path $paths.Config -PythonExecutable $paths.Pythonw -WebView2UserDataFolder $paths.WebViewData -LicenseKey $licenseKey -JupyterSettings $jupyterSettings -JupyterRibbonPath $paths.JupyterRibbon -UseExplicitJupyterRibbon
+    $script:mutationPerformed = $true
+}
+
 function Get-OpenBbExtensionState {
     param([object] $ProjectDefinition, [hashtable] $Configuration)
 
@@ -182,6 +360,9 @@ function Get-ProjectState {
         if ($Definition.Kind -eq 'base') {
             $missingDependencies = @($Configuration.Base.RequiredDependencies | Where-Object { $manifestText -notmatch ('(?i)["'']' + [regex]::Escape($_) + '([>=<~!\[]|["''])') })
             $checks.Add((New-Check 'base-dependencies' $(if ($missingDependencies.Count -eq 0) { 'compliant' } else { 'drift detected' }) $(if ($missingDependencies.Count -eq 0) { 'Required base dependencies are declared.' } else { "Missing: $($missingDependencies -join ', ')" })))
+            if ($Configuration.ContainsKey('PyXLL') -and [bool] $Configuration.PyXLL.Enabled) {
+                foreach ($pyxllCheck in @(Get-PyXllState $Definition $Configuration)) { $checks.Add($pyxllCheck) }
+            }
         } else {
             $sourceMatch = [regex]::Match($manifestText, '(?m)^quant-base\s*=\s*\{[^\r\n]*path\s*=\s*"([^"]+)"')
             if (-not $sourceMatch.Success) {
@@ -320,6 +501,9 @@ foreach ($definition in $selectedProjects) {
             $build = Invoke-Uv $definition.Path @('run', '--frozen', '--no-sync', 'openbb-build')
             if ($build.ExitCode -ne 0) { throw "OpenBB extension refresh failed for '$($definition.Name)': $($build.Text)" }
         }
+        if ($definition.Kind -eq 'base' -and $configuration.ContainsKey('PyXLL') -and [bool] $configuration.PyXLL.Enabled) {
+            Invoke-PyXllReconciliation $definition $configuration -AllowInteractiveInstall:$ConfirmPyXllInstall
+        }
     } else {
         $backup = "$environment.pre-reinitialize-$([DateTime]::UtcNow.ToString('yyyyMMddHHmmssfff'))"
         if (Test-Path -LiteralPath $backup) { throw "Generated environment backup already exists: $backup" }
@@ -336,6 +520,9 @@ foreach ($definition in $selectedProjects) {
             $probe = Invoke-Uv $definition.Path @('run', '--frozen', '--no-sync', 'python', '-B', '-c', "import " + (@($definition.Imports) -join '; import '))
             if ($probe.ExitCode -ne 0) { throw "Replacement environment validation failed for '$($definition.Name)': $($probe.Text)" }
             $script:mutationPerformed = $true
+            if ($definition.Kind -eq 'base' -and $configuration.ContainsKey('PyXLL') -and [bool] $configuration.PyXLL.Enabled) {
+                Invoke-PyXllReconciliation $definition $configuration -AllowInteractiveInstall:$ConfirmPyXllInstall
+            }
             if ($moved -and (Test-Path -LiteralPath $backup -PathType Container)) {
                 Remove-Item -LiteralPath $backup -Recurse -Force
             }

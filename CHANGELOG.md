@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add an opt-in uv/OpenBB quantitative research environment with an installable shared base, independently locked project overlays, project-local JupyterLab, observational drift reporting, bounded generated-environment recovery, and a strictly non-mutating future Source-relocation plan.
+- Extend the quant environment with exact PyXLL/Plotly/Kaleido state, a locally licensed Excel add-in using the OpenBB venv, redacted configuration reconciliation, WebView2-backed interactive plots, and a locked PyXLL-Jupyter/JupyterLab integration with one deterministic, non-duplicated PyXLL ribbon.
 - Cache managed native-command availability during explicit profile reconciliation, while retaining path validation and live fallback for missing or stale entries at shell startup.
 
 ## 2.3.0 - 2026-08-16

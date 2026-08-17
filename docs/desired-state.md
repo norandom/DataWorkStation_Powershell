@@ -128,7 +128,10 @@ hash-pinned container file in `Debian-MW`; no analysis command builds, downloads
 The opt-in `QuantResearchEnvironment` module depends on `Packages` for uv and on the managed
 profile for human commands. It validates one installable OpenBB base plus independently locked
 overlay projects. Reconciliation is limited to declared package state and generated `.venv` or
-OpenBB reference assets. Notebooks, source, data, exports, credentials, and undeclared content are
+OpenBB reference assets. For the base it also maintains an existing PyXLL Excel payload,
+current-user add-in registration, and machine-local config after a local ignored license and all
+preconditions pass. First install requires `-ConfirmPyXllInstall`; ordinary runs never accept
+vendor terms. Notebooks, source, data, exports, credentials, and undeclared content are
 not desired-state resources. Source relocation is exposed only as an observational readiness plan;
 the module cannot copy, rename, delete, or create a junction. See [Quantitative research
 environment](quant-research-environment.md).

@@ -202,3 +202,60 @@ Sources:
 - https://docs.python.org/3/library/venv.html
 - https://docs.astral.sh/uv/concepts/projects/layout/
 - https://docs.astral.sh/uv/reference/cli/#uv-sync
+
+## PyXLL package, payload, and activation
+
+**Decision**: Declare `pyxll`, `plotly`, and `kaleido` in `quant-base`, but treat the downloaded
+PyXLL payload, Excel add-in registration, and active `pyxll.cfg` as machine-local generated state.
+Use the official `python -m pyxll install` workflow only behind an explicit first-install switch;
+activate an already installed payload non-interactively during reviewed reconciliation.
+
+**Rationale**: The Python package belongs to the OpenBB runtime requested by the user. The vendor
+installer collects first-time information and terms interactively, so ordinary desired-state runs
+must not imply consent. Activation can be deterministic after the payload exists.
+
+Sources:
+
+- https://www.pyxll.com/docs/userguide/installation/firsttime.html
+- https://www.pyxll.com/docs/userguide/installation/cli.html
+
+## PyXLL configuration and secret boundary
+
+**Decision**: Keep the key in an ignored root `.licenses.yaml` with a bounded `pyxll.key` field.
+Render a machine-local config that selects `quant-base\.venv\Scripts\pythonw.exe`, preserves
+unmanaged sections, enables HTML/SVG/resizable plots, assigns a WebView2 data directory, and appends
+`[LICENSE]` last. Compare only presence or keyed equality; never return the value.
+
+**Rationale**: PyXLL supports a license key in its config, and its plotting integration uses an
+embedded WebView2 control for interactive Plotly figures. A single redacted boundary keeps the
+portable repository useful without treating the entitlement as desired-state source.
+
+Sources:
+
+- https://www.pyxll.com/docs/userguide/config/license.html
+- https://www.pyxll.com/docs/userguide/config/pyxll.html
+- https://www.pyxll.com/docs/userguide/plotting/index.html
+- https://www.pyxll.com/docs/userguide/plotting/plotly.html
+
+## Embedded Jupyter ribbon
+
+**Decision**: Lock `pyxll-jupyter==0.7.1` and JupyterLab 4 or later in `quant-base`. Verify the
+package's `pyxll` module/ribbon entry points, but load its installed ribbon XML explicitly and set
+`disable_ribbon = 1` so its automatic ribbon entry point does not inject a second copy. Remove the
+installer example ribbon from the active ribbon list because it has the same `pyxll` tab ID and
+takes ownership of the merged tab label. Render the remaining `[JUPYTER]` policy with
+`subcommand = lab`, saved-workbook directory preference, PySide6, and the research root as the
+fallback directory.
+
+**Rationale**: Installing PyXLL alone does not supply the Jupyter action. The integration package
+owns the ribbon resource and runs its kernel inside Excel's existing PyXLL interpreter, so keeping
+it in the same OpenBB environment is required for consistent imports and Excel magic functions.
+The installed package remains the source of callbacks and ribbon XML, while explicit composition
+makes ribbon construction deterministic in the installed PyXLL build. Disabling only automatic
+ribbon injection prevents duplicate IDs; the module entry point and explicit callback imports remain
+available. Configuration normalization also prevents the misleading installer-example label.
+
+Sources:
+
+- https://pypi.org/project/pyxll-jupyter/0.7.1/
+- https://www.pyxll.com/docs/videos/pyxll-jupyter.html

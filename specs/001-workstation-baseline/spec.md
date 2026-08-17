@@ -196,8 +196,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 47 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 30 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 50 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 31 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -237,6 +237,9 @@ the feature artifacts, and confirm that every future behavior task names its req
 | LinuxAutomation | REQ-023 |
 | NixOsWsl | REQ-023, REQ-034, REQ-035 |
 | SharedSshConfig | REQ-023, REQ-025, REQ-034 |
+| AiNixOsWsl | governed by `specs/010-ai-tools-isolation` |
+| AiTools | governed by `specs/010-ai-tools-isolation` |
+| DeveloperEditor | governed by `specs/010-ai-tools-isolation` |
 | DeveloperDocker | REQ-023 |
 | RootlessPodman | REQ-023, REQ-029 |
 | DeveloperTools | REQ-023, REQ-024 |
@@ -300,6 +303,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | windows-virtualization | REQ-014, REQ-015, REQ-026 |
 | desktop-focus | REQ-026 |
 | quant-research-environment | REQ-012, REQ-025, REQ-026 |
+| ai-tools-isolation | governed by `specs/010-ai-tools-isolation` |
 
 ## EARS requirements
 

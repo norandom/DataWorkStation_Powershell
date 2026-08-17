@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'DeveloperEditor', 'SpecDrivenDevelopment',
         'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -57,6 +57,8 @@ $debloatScript = Join-Path $PSScriptRoot 'scripts\Set-DebloatState.ps1'
 $focusFollowsMouseScript = Join-Path $PSScriptRoot 'scripts\Set-FocusFollowsMouseState.ps1'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
+$aiToolsScript = Join-Path $PSScriptRoot 'scripts\Set-AiToolsState.ps1'
+$developerEditorScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperEditorState.ps1'
 $specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
 $quantResearchEnvironmentScript = Join-Path $PSScriptRoot 'scripts\Set-QuantResearchEnvironmentState.ps1'
 $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalysisToolsState.ps1'
@@ -67,6 +69,7 @@ $malwareContainerImageScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareConta
 $linuxHomebrewScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxHomebrewState.ps1'
 $linuxAutomationScript = Join-Path $PSScriptRoot 'scripts\Set-LinuxAutomationState.ps1'
 $nixOsWslScript = Join-Path $PSScriptRoot 'scripts\Set-NixOsWslState.ps1'
+$aiNixOsWslScript = Join-Path $PSScriptRoot 'scripts\Set-AiNixOsWslState.ps1'
 $sharedSshConfigScript = Join-Path $PSScriptRoot 'scripts\Set-SharedSshConfigState.ps1'
 $rootlessPodmanScript = Join-Path $PSScriptRoot 'scripts\Set-RootlessPodmanState.ps1'
 $legacyDockerCleanupScript = Join-Path $PSScriptRoot 'scripts\Remove-LegacyDockerMwState.ps1'
@@ -371,6 +374,11 @@ function Invoke-WorkstationModule {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nixOsWslScript -Mode $Mode
             }
         }
+        'AiNixOsWsl' {
+            Invoke-CheckedProcess 'AI NixOS WSL state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $aiNixOsWslScript -Mode $Mode
+            }
+        }
         'SharedSshConfig' {
             Invoke-CheckedProcess 'Shared SSH configuration state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $sharedSshConfigScript -Mode $Mode
@@ -389,6 +397,16 @@ function Invoke-WorkstationModule {
         'DeveloperTools' {
             Invoke-CheckedProcess 'Developer tool state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $developerToolsScript -Mode $Mode
+            }
+        }
+        'AiTools' {
+            Invoke-CheckedProcess 'Optional AI tool state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $aiToolsScript -Mode $Mode
+            }
+        }
+        'DeveloperEditor' {
+            Invoke-CheckedProcess 'Developer editor state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $developerEditorScript -Mode $Mode
             }
         }
         'SpecDrivenDevelopment' {

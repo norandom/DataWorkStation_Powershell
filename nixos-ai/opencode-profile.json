@@ -1,0 +1,50 @@
+{
+  "extends": "opencode",
+  "meta": {
+    "name": "dataworkstation-opencode",
+    "version": "1.0.0",
+    "description": "Reviewed OpenCode profile for the private AI WSL project boundary",
+    "upstream": "nolabs-ai/opencode"
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "read": [
+      "$HOME/.config/opencode",
+      "$HOME/.local/share/opencode"
+    ],
+    "allow": [
+      "$HOME/.cache/opencode"
+    ]
+  },
+  "policy": {
+    "add_deny_access": [
+      "$HOME/.ssh",
+      "$HOME/.aws",
+      "$HOME/.azure",
+      "$HOME/.kube",
+      "$HOME/.config/gcloud",
+      "$HOME/.docker",
+      "$HOME/.config/containers",
+      "/mnt",
+      "/mnt/wsl",
+      "/run/WSL",
+      "/run/desktop",
+      "/run/guest-services",
+      "/var/run/docker.sock",
+      "/run/user/$UID/podman/podman.sock",
+      "/run/user/$UID/bus"
+    ]
+  },
+  "network": {
+    "network_profile": "opencode",
+    "allow_domain": [
+      "api.openai.com",
+      "api.anthropic.com",
+      "generativelanguage.googleapis.com",
+      "github.com",
+      "api.github.com"
+    ]
+  }
+}

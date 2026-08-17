@@ -34,4 +34,12 @@
     )
     Deploy = 'linux/rootless_podman.py'
     RetireDeploy = 'linux/retire_rootless_docker.py'
+    BoundaryConfiguration = @'
+[interop]
+enabled=false
+appendWindowsPath=false
+
+[automount]
+enabled=false
+'@
 }

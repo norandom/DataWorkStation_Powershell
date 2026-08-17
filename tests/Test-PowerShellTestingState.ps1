@@ -91,6 +91,7 @@ function Test-Adapters {
         @{ Path = 'tests/pester/QuantResearchEnvironment.Tests.ps1'; Script = 'Test-QuantResearchEnvironment.ps1'; Section = 'ObservationalStatus' }
         @{ Path = 'tests/pester/ExploitProtectionState.Tests.ps1'; Script = 'Test-ExploitProtectionState.ps1'; Section = 'NonMutation' }
         @{ Path = 'tests/pester/SpecFeatureGovernance.Tests.ps1'; Script = 'Test-SpecFeatureGovernance.ps1'; Section = 'NonMutation' }
+        @{ Path = 'tests/pester/AiToolsIsolation.Tests.ps1'; Script = 'Test-AiToolsIsolation.ps1'; Section = 'NonoFailClosed' }
     )
     foreach ($adapter in $adapters) {
         $source = Get-Source $adapter.Path

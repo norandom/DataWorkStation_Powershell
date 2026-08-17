@@ -101,10 +101,13 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `LinuxHomebrew` | no | `Packages` | Homebrew inside Debian WSL; pulled in by the developer bundle |
 | `LinuxAutomation` | no | `LinuxHomebrew` | Homebrew `uv` and pinned pyinfra inside Debian WSL |
 | `NixOsWsl` | yes | `Packages` | locked NixOS-WSL generation with Helm, kubectl, Pulumi CLI, native OpenSSH, and integrity checks |
-| `SharedSshConfig` | yes | `NixOsWsl` | one canonical Windows SSH config linked into trusted Debian and NixOS; Debian-MW excluded |
+| `SharedSshConfig` | yes | `NixOsWsl` | canonical Windows SSH config linked only into trusted Debian; restricted WSLs excluded |
+| `AiNixOsWsl` | **no** | `Packages` | restricted NixOS-AI generation with OpenCode, maintenance-owned nono, and fail-closed integrity checks |
 | `DeveloperDocker` | no | `LinuxAutomation` | pyinfra-adopted rootful Docker daemon in Debian for Dagger |
 | `RootlessPodman` | yes | none | clean Debian-MW distro with local pyinfra and daemonless rootless Podman |
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
+| `AiTools` | **no** | `Packages` | OpenCode Desktop, Claude Code, Antigravity, Cline, and Copilot CLI through reviewed channels |
+| `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
 | `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | independently locked uv/OpenBB research projects and project-local notebooks |

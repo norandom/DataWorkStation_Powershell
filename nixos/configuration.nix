@@ -5,9 +5,12 @@
 
   wsl = {
     enable = true;
-    wslConf.interop = {
-      enabled = true;
-      appendWindowsPath = false;
+    wslConf = {
+      interop = {
+        enabled = false;
+        appendWindowsPath = false;
+      };
+      automount.enabled = false;
     };
   };
 

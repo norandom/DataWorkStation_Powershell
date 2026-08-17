@@ -37,6 +37,17 @@ function Invoke-MalwareUserCommand {
     }
 }
 
+function Send-BytesToMalwareGuest {
+    param(
+        [Parameter(Mandatory = $true)][byte[]] $Bytes,
+        [Parameter(Mandatory = $true)][string] $Destination,
+        [string] $Mode = '0644'
+    )
+    $base64 = [Convert]::ToBase64String($Bytes)
+    $base64 | & wsl.exe -d $distribution --user root --exec sh -c "umask 022; base64 --decode > '$Destination' && chmod '$Mode' '$Destination'"
+    if ($LASTEXITCODE -ne 0) { throw "Failed to stream '$Destination' into '$distribution' through StandardInput." }
+}
+
 function Get-PackageRows {
     param([string[]] $Names)
     foreach ($package in $Names) {
@@ -114,6 +125,12 @@ function Get-RootlessPodmanState {
     $dockerRootEnabled = (Invoke-MalwareUserShell 'systemctl is-enabled docker.service docker.socket 2>/dev/null || true') -split "`n" | Where-Object { $_ -in @('enabled', 'static', 'indirect') }
     $dockerRepository = (Invoke-MalwareUserShell 'test -e /etc/apt/sources.list.d/docker.sources -o -e /etc/apt/sources.list.d/docker.list -o -e /etc/apt/keyrings/docker.asc && printf present || true').Trim() -eq 'present'
     $dockerDesktopIntegrated = $dockerCommand -match '(?i)docker-desktop|/mnt/wsl/'
+    $wslConf = Invoke-MalwareUserShell 'cat /etc/wsl.conf 2>/dev/null || true'
+    $interopDisabled = $wslConf -match '(?ims)^\s*\[interop\].*?^\s*enabled\s*=\s*false\s*$' -and
+        $wslConf -match '(?ims)^\s*\[interop\].*?^\s*appendWindowsPath\s*=\s*false\s*$'
+    $automountDisabled = $wslConf -match '(?ims)^\s*\[automount\].*?^\s*enabled\s*=\s*false\s*$'
+    $groups = (Invoke-MalwareUserShell 'id -nG').Trim() -split '\s+'
+    $withoutSudo = @($groups | Where-Object { $_ -in @('sudo', 'wheel', 'admin') }).Count -eq 0
     $legacyData = @($configuration.LegacyDockerDataPaths | ForEach-Object { Get-PathRecord -LinuxHome $linuxHome -RelativePath $_ })
     $checks = [ordered]@{
         DistributionInstalled = $true
@@ -134,6 +151,9 @@ function Get-RootlessPodmanState {
         DockerServicesAbsent = (-not $dockerUserActive -and -not $dockerUserEnabled -and $dockerRootActive.Count -eq 0 -and $dockerRootEnabled.Count -eq 0)
         DockerRepositoryAbsent = -not $dockerRepository
         DockerDesktopIntegrated = -not $dockerDesktopIntegrated
+        InteropDisabled = $interopDisabled
+        AutomountDisabled = $automountDisabled
+        DailyUserWithoutSudo = $withoutSudo
     }
     $pending = @($checks.GetEnumerator() | Where-Object { -not $_.Value } | ForEach-Object Key)
     [pscustomobject]@{
@@ -174,9 +194,11 @@ function Write-State {
 function Invoke-PyinfraDeploy {
     param([Parameter(Mandatory = $true)][string] $RelativePath)
     $deployWindows = Join-Path $repositoryRoot $RelativePath
-    $deployPortable = [IO.Path]::GetFullPath($deployWindows).Replace('\', '/')
-    $deploy = (& wsl.exe -d $distribution --user $linuxUser --exec wslpath -a $deployPortable).Trim()
-    if (-not $deploy) { throw "Failed to resolve pyinfra deploy '$RelativePath' inside WSL." }
+    $deployDirectory = '/opt/dataworkstation/deploy'
+    $deploy = "$deployDirectory/$([IO.Path]::GetFileName($RelativePath))"
+    & wsl.exe -d $distribution --user root --exec install -d -m 0755 $deployDirectory
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to prepare the private Debian-MW deploy directory.' }
+    Send-BytesToMalwareGuest -Bytes ([IO.File]::ReadAllBytes($deployWindows)) -Destination $deploy
     $path = '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
     & wsl.exe -d $distribution --user root --exec env "PATH=$path" "ROOTLESS_PODMAN_USER=$linuxUser" `
         $configuration.Pyinfra '@local' $deploy '-y'
@@ -202,6 +224,15 @@ if (-not (Test-DistributionInstalled)) {
     if ($LASTEXITCODE -ne 0) { throw "Failed to create $linuxUser in $distribution." }
     & wsl.exe --manage $distribution --set-default-user $linuxUser
     if ($LASTEXITCODE -ne 0) { throw "Failed to set the default user for $distribution." }
+}
+
+$currentBoundary = Invoke-MalwareUserShell 'cat /etc/wsl.conf 2>/dev/null || true'
+if ($currentBoundary.Replace("`r`n", "`n").Trim() -ne $configuration.BoundaryConfiguration.Replace("`r`n", "`n").Trim()) {
+    Write-Host "Applying the restricted WSL boundary and restarting only '$distribution'."
+    Send-BytesToMalwareGuest -Bytes ([Text.Encoding]::UTF8.GetBytes($configuration.BoundaryConfiguration)) -Destination '/etc/wsl.conf'
+    & wsl.exe --terminate $distribution | Out-Null
+    & wsl.exe -d $distribution --user root --exec true
+    if ($LASTEXITCODE -ne 0) { throw "'$distribution' did not start after applying its WSL boundary." }
 }
 
 Write-Host "Bootstrapping pinned pyinfra inside $distribution. This is a privileged networked package change."

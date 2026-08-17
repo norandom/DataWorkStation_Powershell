@@ -29,6 +29,7 @@ let
       store_integrity=verified
       source_integrity=matched
       command_integrity=verified
+      boundary_integrity=verified
       detail="Active generation matches the deployed flake and its Nix store closure is intact."
       status=compliant
       exit_code=0
@@ -64,6 +65,16 @@ let
         esac
       done
 
+      if ! grep -A4 -E '^\[interop\]' /etc/wsl.conf | grep -Eq '^enabled[[:space:]]*=[[:space:]]*false' ||
+         ! grep -A4 -E '^\[interop\]' /etc/wsl.conf | grep -Eq '^appendWindowsPath[[:space:]]*=[[:space:]]*false' ||
+         ! grep -A3 -E '^\[automount\]' /etc/wsl.conf | grep -Eq '^enabled[[:space:]]*=[[:space:]]*false' ||
+         findmnt -rn -o TARGET | grep -Eq '^/mnt/(c|d|wsl)(/|$)'; then
+        boundary_integrity=failed
+        status=altered
+        detail="The DevOps WSL host-integration boundary failed."
+        exit_code=2
+      fi
+
       if target_system="$(nix eval --raw /etc/nixos#nixosConfigurations.workstation.config.system.build.toplevel.outPath 2>/dev/null)"; then
         if [ "$status" = compliant ] && [ "$active_system" != "$target_system" ]; then
           status=drifted
@@ -87,12 +98,14 @@ let
           --arg storeIntegrity "$store_integrity" \
           --arg sourceIntegrity "$source_integrity" \
           --arg commandIntegrity "$command_integrity" \
-          '{schemaVersion:1,status:$status,detail:$detail,activeSystem:$activeSystem,targetSystem:$targetSystem,storeIntegrity:$storeIntegrity,sourceIntegrity:$sourceIntegrity,commandIntegrity:$commandIntegrity}'
+          --arg boundaryIntegrity "$boundary_integrity" \
+          '{schemaVersion:1,status:$status,detail:$detail,activeSystem:$activeSystem,targetSystem:$targetSystem,storeIntegrity:$storeIntegrity,sourceIntegrity:$sourceIntegrity,commandIntegrity:$commandIntegrity,boundaryIntegrity:$boundaryIntegrity}'
       else
         printf 'NixOS WSL self-check: %s\n' "$status"
         printf '  Store integrity: %s\n' "$store_integrity"
         printf '  Source integrity: %s\n' "$source_integrity"
         printf '  Command integrity: %s\n' "$command_integrity"
+        printf '  Boundary integrity: %s\n' "$boundary_integrity"
         printf '  Active system: %s\n' "$active_system"
         printf '  Target system: %s\n' "''${target_system:-unavailable}"
         printf '  Detail: %s\n' "$detail"

@@ -239,9 +239,16 @@ function Invoke-UpdateStage {
         }
         'PowerShellEnvironment' {
             $applyWorkstation = Join-Path $repositoryRoot 'Apply-Workstation.ps1'
+            $wslTrustBoundary = Join-Path $PSScriptRoot 'Test-WslTrustBoundary.ps1'
             $responses = @()
             $responses += Invoke-UpdateCommand -Stage $stageName -FilePath 'powershell.exe' -Privilege 'Mixed' -ArgumentList @('-NoLogo', '-NoProfile', '-File', $applyWorkstation, '-Mode', 'Ensure')
             if ($responses[-1].Succeeded) { $responses += Invoke-UpdateCommand -Stage $stageName -FilePath 'powershell.exe' -Privilege 'Mixed' -ArgumentList @('-NoLogo', '-NoProfile', '-File', $applyWorkstation, '-Mode', 'Test') }
+            if ($responses[-1].Succeeded) {
+                foreach ($role in @('TrustedUtility', 'MalwareAnalysis', 'DevOps')) {
+                    $responses += Invoke-UpdateCommand -Stage $stageName -FilePath 'pwsh.exe' -Privilege 'Observational' -ArgumentList @('-NoLogo', '-NoProfile', '-File', $wslTrustBoundary, '-Role', $role)
+                    if (-not $responses[-1].Succeeded) { break }
+                }
+            }
             Complete-CommandStage $responses 'Current-release default workstation state ensured and verified.'
         }
         default { throw "Unknown update executor '$($Definition.Executor)'." }

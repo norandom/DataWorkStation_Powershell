@@ -110,20 +110,21 @@ See [NixOS integrity and alteration detection](nixos-integrity.md) for the verif
 
 ## One SSH client configuration, native clients
 
-`SharedSshConfig` uses `%USERPROFILE%\.ssh\config` as the canonical client configuration. Trusted Debian and NixOS `~/.ssh/config` paths are symlinks to that file. Each environment still uses its native client:
+`SharedSshConfig` uses `%USERPROFILE%\.ssh\config` as the canonical client configuration for Windows and ordinary trusted Debian. DevOps NixOS keeps its SSH configuration and keys inside its private VHD; it does not receive a symlink to the Windows file. Each environment still uses its native client:
 
 | Context | Default client |
 |---|---|
 | Windows PowerShell | Windows `ssh.exe` |
 | ordinary Debian via `wsl-dev` | Debian `/usr/bin/ssh` |
-| NixOS via `wsl-nix` | Nix store OpenSSH |
+| DevOps NixOS via `wsl-nix` | Nix store OpenSSH; private configuration and keys |
+| AI NixOS | excluded; no shared config |
 | Debian-MW | excluded; no shared config |
 
-The resource creates a comment-only canonical file when none exists. Through NixOS's metadata-aware Windows mount it records mode 0600 for OpenSSH, then verifies that both Linux clients observe that mode. It refuses to replace an existing regular `~/.ssh/config` in either trusted Linux distribution, so reconcile that file manually before Ensure. It validates the canonical syntax with all three native clients. Private keys are not copied or managed; use explicit `IdentityFile` paths that are readable in every context where a host entry is used.
+The resource creates a comment-only canonical file when none exists. Through Debian's metadata-aware Windows mount it records mode 0600 for OpenSSH, then verifies that Debian observes that mode. It refuses to replace an existing regular Debian `~/.ssh/config`, so reconcile that file manually before Ensure. It validates the canonical syntax with the Windows and Debian clients. Private keys are not copied or managed.
 
 Portable host options such as `HostName`, `User`, `Port`, `ProxyJump`, and `ForwardAgent` work well in the canonical file. Be careful with OS-specific absolute `IdentityFile` and `Include` paths: Windows and Linux interpret them differently. `IdentityFile ~/.ssh/id_ed25519` is portable syntax, but it refers to a separate key in each environment's home. The module deliberately does not copy private keys into WSL.
 
-If a Windows editor replaces the canonical file and loses its DrvFS mode metadata, `Test` reports drift. A focused `SharedSshConfig` Ensure reapplies mode 0600 and validates every native client.
+If a Windows editor replaces the canonical file and loses its DrvFS mode metadata, `Test` reports drift. A focused `SharedSshConfig` Ensure reapplies mode 0600 and validates the Windows and trusted Debian clients.
 
 Examples:
 
@@ -150,7 +151,7 @@ Update the lock as a reviewed source change:
 
 ```powershell
 wsl-nix
-cd /mnt/c/Users/<windows-user>/Source/PowerShell/nixos
+cd /etc/nixos
 nix flake update
 exit
 

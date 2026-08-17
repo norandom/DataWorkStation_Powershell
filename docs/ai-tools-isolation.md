@@ -1,0 +1,124 @@
+# AI tools, editor, and WSL isolation
+
+The AI tooling is split into three focused modules. `DeveloperEditor` is part of the normal
+developer workstation. `AiTools` and `AiNixOsWsl` are opt-in because they execute vendor installers
+or create a separate WSL distribution.
+
+## Inspect before changing anything
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json
+pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1
+pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1 -Json
+```
+
+These commands are observational. The trust command does not start stopped distributions; a
+stopped distribution is reported as not inspected and returns drift instead.
+
+## Selected tools and sources
+
+| Product | Location | Declared channel |
+|---|---|---|
+| OpenCode Desktop | Windows | pinned official GitHub release asset and SHA-256 |
+| OpenCode CLI | `NixOS-AI` | pinned Nix derivation in the complete verified Nix store |
+| Claude Code | Windows | `irm https://claude.ai/install.ps1 \| iex` |
+| Antigravity CLI (`agy`) | Windows | `irm https://antigravity.google/cli/install.ps1 \| iex` |
+| Cline CLI | Windows | `npm i -g cline` |
+| GitHub Copilot CLI | Windows | `npm i -g @github/copilot` |
+| nono | `NixOS-AI` | `brew install nono`, pinned after review |
+
+Claude Code is not declared through WinGet. If the state command observes the former
+`Anthropic.ClaudeCode` WinGet path, an explicit `AiTools` Ensure removes it before running the
+official installer. A failed installer stops the module; no alternate package source is used.
+
+An Ensure executes network-delivered vendor code as the current Windows user:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Ensure -Module AiTools,AiNixOsWsl
+```
+
+Review the Plan output first. Automated repository tests never run this command.
+
+## Developer editor
+
+`DeveloperEditor` maintains stable `Microsoft.VisualStudioCode`, activates the pinned Berg theme,
+installs these exact extensions, and owns only the theme and two font keys in the user settings:
+
+- `saoudrizwan.claude-dev` (Cline)
+- `ms-toolsai.jupyter`
+- `ms-python.python`
+- `GitHub.copilot-chat` (the current stable VS Code bundled GitHub Copilot extension)
+
+The historical `jx22/berg` repository does not contain a package manifest. The resource therefore
+wraps its hash-pinned theme JSON from commit
+`32e03bf59ae9408edc2d0c382a7003a57f1d2bc0` as a local extension. It does not substitute an
+unrelated Marketplace package. The managed `workbench.colorTheme` value is `Berg`.
+
+The ignored `.terminal-fonts` file remains the local font choice. A valid registered Berkeley Mono
+family is selected when it is installed locally. Public configuration, and a machine with only an
+unregistered font file, falls back to the installed `Fira Code` family. Existing settings are
+backed up and unrelated settings, extensions, profiles, and workspace configuration are preserved.
+
+## WSL trust matrix
+
+| Distribution role | Interop | Windows PATH | Windows automount | Daily sudo | Intended content |
+|---|---:|---:|---:|---:|---|
+| ordinary Debian (`TrustedUtility`) | on | on | on | allowed | trusted administration, Homebrew, Docker/Dagger |
+| DevOps NixOS | off | off | off | off | private SSH/cloud/Kubernetes credentials and IaC tools |
+| Debian-MW | off | off | off | off | hostile static inputs and rootless parser containers |
+| AI NixOS | off | off | off | off | private agent projects and OpenCode runtime state |
+
+Ordinary Debian is trusted. Do not run autonomous AI agents or hostile parsers there, and do not
+store DevOps private keys there. The three restricted distributions receive tracked configuration
+through `wsl.exe` standard input rather than `/mnt/c` or `/mnt/d`.
+
+DevOps credentials stay under the DevOps NixOS private Linux home. The trust check inspects only
+path resolution, owner, mode, kind, mounts, and sockets. It never reads a private key, token, or
+credential file. Shared Windows SSH configuration is now limited to ordinary Debian; DevOps NixOS,
+AI NixOS, and Debian-MW are excluded.
+
+This is an intra-WSL workload boundary. The trusted Windows user and Windows administrators can
+still enter every distribution as root and access its VHD. It is not a boundary against a
+compromised Windows host, WSL kernel, or administrator.
+
+## Managed OpenCode launch
+
+Keep AI projects in the private AI VHD beneath `/home/<ai-user>/projects`. Windows VS Code can open
+the distribution explicitly. The guest does not receive a Windows drive mount.
+
+```powershell
+pwsh -NoProfile -File .\scripts\Invoke-OpenCodeSandbox.ps1 `
+  -Project /home/ai/projects/example `
+  -CheckOnly
+```
+
+Remove `-CheckOnly` only after the preflight is compliant. The immutable launcher checks the
+maintenance-owned `nono` binary, exact root-owned profile hash, `nono setup --check-only`, secure
+Landlock TCP rule support, representative credential/host/socket denials, and a dry-run. It then
+runs `opencode` through `nono`; it never falls back to a direct launch.
+
+The tracked policy records the official `nolabs-ai/opencode` lineage. The WSL2
+`insecure_proxy` fallback is not enabled. If secure network enforcement is unavailable, the
+managed launch is blocked before OpenCode starts.
+
+## Debian-MW case transfer
+
+Debian-MW no longer needs a host mount. Import and export are explicit streamed state changes:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Import-MalwareCase.ps1 `
+  -Source D:\Cases\input `
+  -CaseId case-20260817
+
+pwsh -NoProfile -File .\scripts\Export-MalwareCase.ps1 `
+  -CaseId case-20260817 `
+  -Destination D:\Cases\case-20260817-results
+```
+
+Import refuses an existing case, reparse points, links, traversal-like names, devices, pipes, and
+sockets; it compares every SHA-256 before committing the private case directory. Export performs
+the corresponding guest and Windows staging checks and refuses an existing destination. The
+receipts contain paths, sizes, and hashes—not evidence bytes.

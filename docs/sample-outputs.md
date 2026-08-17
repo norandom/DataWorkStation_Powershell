@@ -763,3 +763,31 @@ Future dry-run copy preview: robocopy "C:\Users\mariu\Source" "D:\Source" ... /L
 
 Paths, capacity, warnings, and fingerprints are workstation-specific. Use `-Json` for the same
 checks as one structured object; a blocker returns nonzero.
+
+## AI tools and WSL trust boundary
+
+The native AI category is opt-in. Its default human report names each reviewed delivery channel
+without installing anything:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test
+AI tools: drifted (opt-in)
+  OpenCode Desktop: absent; target=Windows; channel=GitHubRelease
+  Claude Code: wrong-channel; target=Windows; channel=OfficialPowerShell
+  Antigravity CLI: absent; target=Windows; channel=OfficialPowerShell
+  Cline CLI: absent; target=Windows; channel=NpmGlobal
+  GitHub Copilot CLI: absent; target=Windows; channel=NpmGlobal
+```
+
+The trust report is observational and leaves stopped distributions stopped:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1
+WSL trust boundary: drifted
+  TrustedUtility: mariu@Debian; trust=trusted-integrated; status=compliant
+  DevOps: mariu@NixOS; trust=restricted; status=drifted
+    failure: StoppedNotInspected
+```
+
+Use the corresponding `-Json` switch for the same fields as structured data. Distribution names,
+users, installed products, and drift are host-specific.

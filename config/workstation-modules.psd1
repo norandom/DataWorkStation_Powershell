@@ -248,7 +248,20 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'One Windows OpenSSH client configuration linked into trusted Debian and NixOS WSL users while excluding Debian-MW.'
+            Description = 'One Windows OpenSSH client configuration linked only into trusted Debian while excluding DevOps NixOS, AI NixOS, and Debian-MW.'
+        }
+        @{
+            Name = 'AiNixOsWsl'
+            FeatureSpec = 'specs/010-ai-tools-isolation'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 48
+            Default = $false
+            DependsOn = @('Packages')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Opt-in restricted NixOS-WSL environment for the OpenCode CLI and maintenance-owned nono sandbox.'
         }
         @{
             Name = 'RootlessPodman'
@@ -297,6 +310,32 @@
             Privileged = $false
             Destructive = $false
             Description = 'Release-pinned Spec Kit EARS/TDD policy tool installed through uv.'
+        }
+        @{
+            Name = 'AiTools'
+            FeatureSpec = 'specs/010-ai-tools-isolation'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 51
+            Default = $false
+            DependsOn = @('Packages')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Opt-in Windows AI agent clients through explicitly reviewed vendor and npm channels.'
+        }
+        @{
+            Name = 'DeveloperEditor'
+            FeatureSpec = 'specs/010-ai-tools-isolation'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 52
+            Default = $true
+            DependsOn = @('PowerShell7', 'TerminalFonts')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Stable VS Code, pinned Berg theme, developer extensions, and merge-preserved font settings.'
         }
         @{
             Name = 'MalwareHashes'

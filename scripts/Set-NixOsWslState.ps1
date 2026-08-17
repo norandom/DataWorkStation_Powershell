@@ -39,6 +39,17 @@ function Get-StringSha256 {
     ([Convert]::ToHexString($hash)).ToLowerInvariant()
 }
 
+function Send-BytesToGuest {
+    param(
+        [Parameter(Mandatory = $true)][byte[]] $Bytes,
+        [Parameter(Mandatory = $true)][string] $Destination,
+        [string] $Mode = '0644'
+    )
+    $base64 = [Convert]::ToBase64String($Bytes)
+    $base64 | & wsl.exe -d $distribution -u root -- sh -c "umask 022; base64 --decode > '$Destination' && chmod '$Mode' '$Destination'"
+    if ($LASTEXITCODE -ne 0) { throw "Failed to stream '$Destination' into '$distribution' through StandardInput." }
+}
+
 function Get-GuestSourceHash {
     param([Parameter(Mandatory = $true)][string] $FileName)
     $value = & wsl.exe -d $distribution -u root -- sha256sum "/etc/nixos/$FileName" 2>$null
@@ -68,6 +79,7 @@ function Get-LiveState {
         StoreIntegrity = 'not-checked'
         SourceIntegrity = 'not-checked'
         CommandIntegrity = 'not-checked'
+        BoundaryIntegrity = 'not-checked'
         Detail = "NixOS WSL distribution '$distribution' is not installed."
     }
     if (-not (Test-NixOsDistribution)) { return [pscustomobject] $result }
@@ -83,6 +95,9 @@ function Get-LiveState {
             $result.StoreIntegrity = [string] $guest.storeIntegrity
             $result.SourceIntegrity = [string] $guest.sourceIntegrity
             $result.CommandIntegrity = [string] $guest.commandIntegrity
+            if ($guest.PSObject.Properties.Name -contains 'boundaryIntegrity') {
+                $result.BoundaryIntegrity = [string] $guest.boundaryIntegrity
+            }
             $result.Detail = [string] $guest.detail
         } catch {
             $result.Status = 'drifted'
@@ -110,6 +125,7 @@ function Write-State {
     Write-Host "  Store integrity: $($State.StoreIntegrity)"
     Write-Host "  Source integrity: $($State.SourceIntegrity)"
     Write-Host "  Command integrity: $($State.CommandIntegrity)"
+    Write-Host "  Boundary integrity: $($State.BoundaryIntegrity)"
     Write-Host "  Detail: $($State.Detail)"
 }
 
@@ -174,22 +190,13 @@ if (-not (Test-NixOsDistribution)) {
 
 if (-not (Test-NixOsDistribution)) { throw "Distribution '$distribution' did not start as NixOS." }
 
-$temporaryDirectory = Join-Path $stateDirectory 'deploy'
-New-Item -ItemType Directory -Path $temporaryDirectory -Force | Out-Null
 $localSource = Get-LocalNixSource
-[IO.File]::WriteAllText((Join-Path $temporaryDirectory 'local.nix'), $localSource, [Text.UTF8Encoding]::new($false))
-$linuxRepository = (& wsl.exe -d $distribution -u root -- wslpath -a -u $repositoryRoot.Replace('\', '\\')).Trim()
-$linuxTemporary = (& wsl.exe -d $distribution -u root -- wslpath -a -u $temporaryDirectory.Replace('\', '\\')).Trim()
-if (-not $linuxRepository -or -not $linuxTemporary) { throw 'Failed to translate Nix deployment paths into WSL.' }
-
 & wsl.exe -d $distribution -u root -- install -d -m 0755 /etc/nixos
 if ($LASTEXITCODE -ne 0) { throw 'Failed to prepare /etc/nixos.' }
 foreach ($fileName in @($configuration.SourceFiles)) {
-    & wsl.exe -d $distribution -u root -- install -m 0644 "$linuxRepository/nixos/$fileName" "/etc/nixos/$fileName"
-    if ($LASTEXITCODE -ne 0) { throw "Failed to deploy nixos/$fileName." }
+    Send-BytesToGuest -Bytes ([IO.File]::ReadAllBytes((Join-Path $sourceDirectory $fileName))) -Destination "/etc/nixos/$fileName"
 }
-& wsl.exe -d $distribution -u root -- install -m 0644 "$linuxTemporary/local.nix" /etc/nixos/local.nix
-if ($LASTEXITCODE -ne 0) { throw 'Failed to deploy the local NixOS user selection.' }
+Send-BytesToGuest -Bytes ([Text.Encoding]::UTF8.GetBytes($localSource)) -Destination '/etc/nixos/local.nix'
 
 Write-Host "Building the locked NixOS boot generation for '$distribution'."
 & wsl.exe -d $distribution -u root -- nixos-rebuild boot --flake "/etc/nixos#$($configuration.FlakeTarget)"

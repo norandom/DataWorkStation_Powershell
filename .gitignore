@@ -1,5 +1,7 @@
 # Generated local state and backups
 state/
+state/ai/
+state/cases/
 eventlog-*/
 pcap-*/
 ttd/

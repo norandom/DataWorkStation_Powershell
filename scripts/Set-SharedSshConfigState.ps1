@@ -11,13 +11,15 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\shared-ssh.psd1')
 $windowsConfig = [Environment]::ExpandEnvironmentVariables($configuration.WindowsConfig)
-$excludedDistribution = $wslEnvironment[$configuration.ExcludedDistributionVariable]
+$excludedDistributions = @($configuration.ExcludedDistributionVariables | ForEach-Object {
+    if ($wslEnvironment.ContainsKey($_)) { $wslEnvironment[$_] }
+})
 
 function Get-TargetState {
     param([Parameter(Mandatory = $true)] $Target)
     $distribution = $wslEnvironment[$Target.DistributionVariable]
     $linuxUser = $wslEnvironment[$Target.UserVariable]
-    if ($distribution -eq $excludedDistribution) { throw 'The malware-analysis distribution cannot receive shared SSH state.' }
+    if ($distribution -in $excludedDistributions) { throw "Restricted distribution '$distribution' cannot receive shared SSH state." }
     $windowsPath = (& wsl.exe -d $distribution -u $linuxUser -- wslpath -a -u $windowsConfig.Replace('\', '\\') 2>$null).Trim()
     if ($LASTEXITCODE -ne 0 -or -not $windowsPath) {
         return [pscustomobject]@{ Distribution = $distribution; User = $linuxUser; State = 'missing-distribution'; Target = '' ; Ssh = ''; Mode = '' }
@@ -41,7 +43,7 @@ function Get-State {
         SchemaVersion = 1
         WindowsConfig = $windowsConfig
         WindowsState = $windowsState
-        ExcludedDistribution = $excludedDistribution
+        ExcludedDistributions = $excludedDistributions
         LinuxTargets = $targets
         Status = if ($windowsState -eq 'present' -and $targets.State -notcontains 'drifted' -and $targets.State -notcontains 'missing-distribution') { 'compliant' } else { 'drifted' }
     }
@@ -55,7 +57,7 @@ function Write-State {
     foreach ($target in $State.LinuxTargets) {
         Write-Host "  $($target.Distribution): $($target.State); ssh=$($target.Ssh); config=$($target.Target); mode=$($target.Mode)"
     }
-    Write-Host "  Excluded: $($State.ExcludedDistribution)"
+    Write-Host "  Excluded: $($State.ExcludedDistributions -join ', ')"
 }
 
 if ($Mode -eq 'Plan') {
@@ -63,7 +65,7 @@ if ($Mode -eq 'Plan') {
         SchemaVersion = 1
         CanonicalConfig = $windowsConfig
         LinkedDistributions = @($configuration.LinuxTargets | ForEach-Object { $wslEnvironment[$_.DistributionVariable] })
-        ExcludedDistribution = $excludedDistribution
+        ExcludedDistributions = $excludedDistributions
         WindowsSshRemainsDefault = $true
         ExistingRegularLinuxConfig = 'refuse-overwrite'
     }
@@ -91,14 +93,14 @@ if ($LASTEXITCODE -ne 0) { throw "Windows OpenSSH rejected '$windowsConfig'." }
 $permissionDistribution = $wslEnvironment[$configuration.PermissionDistributionVariable]
 $permissionUser = $wslEnvironment[$configuration.PermissionUserVariable]
 $permissionPath = (& wsl.exe -d $permissionDistribution -u $permissionUser -- wslpath -a -u $windowsConfig.Replace('\', '\\')).Trim()
-if ($LASTEXITCODE -ne 0 -or -not $permissionPath) { throw 'Failed to resolve the canonical SSH config through the metadata-aware NixOS mount.' }
+if ($LASTEXITCODE -ne 0 -or -not $permissionPath) { throw 'Failed to resolve the canonical SSH config through the trusted Debian metadata-aware mount.' }
 & wsl.exe -d $permissionDistribution -u $permissionUser -- chmod 0600 $permissionPath
 if ($LASTEXITCODE -ne 0) { throw 'Failed to set mode 0600 metadata on the canonical SSH config.' }
 
 foreach ($target in $configuration.LinuxTargets) {
     $distribution = $wslEnvironment[$target.DistributionVariable]
     $linuxUser = $wslEnvironment[$target.UserVariable]
-    if ($distribution -eq $excludedDistribution) { throw 'Refusing to configure SSH in the malware-analysis distribution.' }
+    if ($distribution -in $excludedDistributions) { throw "Refusing to configure shared SSH state in restricted distribution '$distribution'." }
     $windowsPath = (& wsl.exe -d $distribution -u $linuxUser -- wslpath -a -u $windowsConfig.Replace('\', '\\')).Trim()
     if ($LASTEXITCODE -ne 0 -or -not $windowsPath) { throw "Failed to resolve the shared SSH path in '$distribution'." }
     $linuxConfig = "/home/$linuxUser/.ssh/config"

@@ -221,9 +221,14 @@ function Test-ReconciliationContract {
     Assert-True ($synthetic.Result.ReleaseVersion -eq (Get-Content -Raw (Join-Path $repositoryRoot 'VERSION')).Trim()) 'synthetic run uses current release version'
     Assert-True ($synthetic.Result.NewShellRecommended) 'successful reconciliation recommends a new shell'
     $reconciliationRequests = @($synthetic.Requests | Where-Object Stage -eq 'PowerShellEnvironment')
-    Assert-True ($reconciliationRequests.Count -eq 2) 'reconciliation runs Ensure and Test'
+    Assert-True ($reconciliationRequests.Count -eq 5) 'reconciliation runs Ensure, Test, and three restricted-boundary checks'
     Assert-True ((@($reconciliationRequests[0].ArgumentList) -join ' ') -match '-Mode Ensure') 'reconciliation ensures first'
     Assert-True ((@($reconciliationRequests[1].ArgumentList) -join ' ') -match '-Mode Test') 'reconciliation tests remaining drift second'
+    $boundaryRequests = @($reconciliationRequests | Select-Object -Skip 2)
+    Assert-True (@($boundaryRequests | Where-Object { $_.Privilege -ne 'Observational' }).Count -eq 0) 'post-update boundary checks are observational'
+    foreach ($role in @('TrustedUtility', 'MalwareAnalysis', 'DevOps')) {
+        Assert-True (@($boundaryRequests | Where-Object { (@($_.ArgumentList) -join ' ') -match "-Role $role" }).Count -eq 1) "$role is revalidated once"
+    }
 }
 
 function Test-PrivilegeContract {

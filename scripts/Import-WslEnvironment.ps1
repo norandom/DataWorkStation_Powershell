@@ -24,15 +24,21 @@ function Import-WslEnvironment {
     foreach ($required in @('WSL_DISTRIBUTION', 'WSL_USER', 'WSL_MALWARE_DISTRIBUTION', 'WSL_MALWARE_USER', 'WSL_NIXOS_DISTRIBUTION', 'WSL_NIXOS_USER')) {
         if (-not $values.ContainsKey($required)) { throw "Missing $required in $environmentFile." }
     }
-    foreach ($key in @('WSL_DISTRIBUTION', 'WSL_MALWARE_DISTRIBUTION', 'WSL_NIXOS_DISTRIBUTION')) {
+    if ($values.ContainsKey('WSL_AI_DISTRIBUTION') -xor $values.ContainsKey('WSL_AI_USER')) {
+        throw 'WSL_AI_DISTRIBUTION and WSL_AI_USER must be declared together.'
+    }
+    foreach ($key in @('WSL_DISTRIBUTION', 'WSL_MALWARE_DISTRIBUTION', 'WSL_NIXOS_DISTRIBUTION', 'WSL_AI_DISTRIBUTION')) {
+        if (-not $values.ContainsKey($key)) { continue }
         if ($values[$key] -notmatch '^[A-Za-z0-9._-]+$') { throw "Invalid distribution name in $key." }
     }
-    foreach ($key in @('WSL_USER', 'WSL_MALWARE_USER', 'WSL_NIXOS_USER')) {
+    foreach ($key in @('WSL_USER', 'WSL_MALWARE_USER', 'WSL_NIXOS_USER', 'WSL_AI_USER')) {
+        if (-not $values.ContainsKey($key)) { continue }
         if ($values[$key] -notmatch '^[a-z_][a-z0-9_-]*$') { throw "Invalid Linux user name in $key." }
     }
     $distributions = @($values.WSL_DISTRIBUTION, $values.WSL_MALWARE_DISTRIBUTION, $values.WSL_NIXOS_DISTRIBUTION)
+    if ($values.ContainsKey('WSL_AI_DISTRIBUTION')) { $distributions += $values.WSL_AI_DISTRIBUTION }
     if (@($distributions | Sort-Object -Unique).Count -ne $distributions.Count) {
-        throw 'Developer Debian, malware Debian, and NixOS distribution names must be different.'
+        throw 'Developer Debian, malware Debian, DevOps NixOS, and AI NixOS distribution names must be different.'
     }
 
     return $values

@@ -291,6 +291,30 @@
             CaptureCommand = 'tricky add {case} <go-state.json>'
         }
         @{
+            Id = 'ai-tools-isolation'
+            FeatureSpec = 'specs/010-ai-tools-isolation'
+            Modules = @('AiTools', 'AiNixOsWsl', 'DeveloperEditor')
+            Title = 'AI tools, developer editor, and restricted WSL trust boundaries'
+            Triggers = @('opencode', 'claude code', 'antigravity cli', 'cline', 'copilot cli', 'vscode', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json'
+                'pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1'
+                'pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1 -Json'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module DeveloperEditor'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module AiTools,AiNixOsWsl'
+                'pwsh -NoProfile -File .\scripts\Invoke-OpenCodeSandbox.ps1 -Project <path>'
+                'pwsh -NoProfile -File .\scripts\Import-MalwareCase.ps1 -Source <path> -CaseId <id>'
+                'pwsh -NoProfile -File .\scripts\Export-MalwareCase.ps1 -CaseId <id> -Destination <path>'
+            )
+            CaptureCommand = 'tricky add {case} <ai-tools-or-wsl-boundary-status.json>'
+        }
+        @{
             Id = 'native-development'
             Title = 'Native Windows C/C++, CMake, Rust, and Java development'
             Triggers = @('msvc', 'cl.exe', 'msbuild', 'cmake', 'ninja', 'rust', 'rustup', 'java', 'javac', 'jdk', 'JAVA_HOME', 'native development')

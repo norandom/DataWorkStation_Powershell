@@ -53,11 +53,14 @@ Assert-True ($resource -match 'Get-FileHash.*SHA256') 'the release asset is veri
 $nixModule = @($moduleCatalog.Modules | Where-Object Name -eq 'NixOsWsl')[0]
 $sshModule = @($moduleCatalog.Modules | Where-Object Name -eq 'SharedSshConfig')[0]
 Assert-True ($nixModule.DependsOn -contains 'Packages') 'NixOS WSL follows the package bootstrap stage'
-Assert-True ($sshModule.DependsOn -contains 'NixOsWsl') 'shared SSH waits for NixOS WSL'
+Assert-True ($sshModule.DependsOn -contains 'NixOsWsl') 'shared SSH remains ordered after the DevOps WSL bootstrap'
 Assert-True ($nixModule.Default -and $sshModule.Default) 'both trusted developer environment resources are in default desired state'
 
-Assert-True ($sshSettings.LinuxTargets.Count -eq 2) 'only Debian and NixOS receive the canonical SSH config'
-Assert-True ($sshSettings.ExcludedDistributionVariable -eq 'WSL_MALWARE_DISTRIBUTION') 'the malware WSL boundary is explicit'
+Assert-True ($sshSettings.LinuxTargets.Count -eq 1) 'only trusted Debian receives the canonical SSH config'
+Assert-True (@($sshSettings.LinuxTargets)[0].DistributionVariable -eq 'WSL_DISTRIBUTION') 'the shared target is ordinary Debian'
+foreach ($restricted in @('WSL_MALWARE_DISTRIBUTION', 'WSL_NIXOS_DISTRIBUTION', 'WSL_AI_DISTRIBUTION')) {
+    Assert-True ($sshSettings.ExcludedDistributionVariables -contains $restricted) "$restricted is explicitly excluded from shared SSH state"
+}
 Assert-True ($sshResource -match 'chmod 0600') 'the resource gives the shared config an OpenSSH-compatible DrvFS mode'
 Assert-True ($sshResource -match 'Refusing to replace the existing regular') 'an existing Linux SSH config is never overwritten'
 Assert-True ($sshResource -match 'WindowsSshRemainsDefault = \$true') 'the plan states that Windows OpenSSH remains the host default'

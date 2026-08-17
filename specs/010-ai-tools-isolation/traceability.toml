@@ -1,0 +1,149 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#EnabledProducts"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#OptInBoundary"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#ObservationalStatus"]
+
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#OutputParity"]
+
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#OpenCodeTargets"]
+
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#ClaudeInstallChannel"]
+
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#AntigravityCliChannel"]
+
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#ClineCliChannel"]
+
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#CopilotCli"]
+
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#EditorInventory"]
+
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#LocalFontPreference"]
+
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#PortableFontFallback"]
+
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#EditorMerge"]
+
+[requirements.REQ-014]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#AiDistributionIdentity"]
+
+[requirements.REQ-015]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#AiNixIntegrity"]
+
+[requirements.REQ-016]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoInstallChannel"]
+
+[requirements.REQ-017]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoLaunchContract"]
+
+[requirements.REQ-018]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoFailClosed"]
+
+[requirements.REQ-019]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoFilesystemPolicy"]
+
+[requirements.REQ-020]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoCredentialPolicy"]
+
+[requirements.REQ-021]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoNetworkPolicy"]
+
+[requirements.REQ-022]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#NonoProfileDrift"]
+
+[requirements.REQ-023]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#AiDailyPrivilege"]
+
+[requirements.REQ-024]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#AiInteropBoundary"]
+
+[requirements.REQ-025]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#AiMountBoundary"]
+
+[requirements.REQ-026]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#DevOpsInteropBoundary"]
+
+[requirements.REQ-027]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#DevOpsCredentialBoundary"]
+
+[requirements.REQ-028]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#MalwareWslBoundary"]
+
+[requirements.REQ-029]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#MalwareCaseImport"]
+
+[requirements.REQ-030]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#MalwareCaseExport"]
+
+[requirements.REQ-031]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#TrustedDebianRole"]
+
+[requirements.REQ-032]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#TrustMatrixStatus"]
+
+[requirements.REQ-033]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#BoundaryFailure"]
+
+[requirements.REQ-034]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#UpdateRevalidation"]
+
+[requirements.REQ-035]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#RoutingAndDocumentation"]
+
+[requirements.REQ-036]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#FocusedModuleBoundary"]
+
+[requirements.REQ-037]
+verification = "automated"
+tests = ["tests/Test-AiToolsIsolation.ps1#PortableSecretExclusions"]

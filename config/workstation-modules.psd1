@@ -190,6 +190,18 @@
             Description = 'DeveloperBaseline Windows security controls.'
         }
         @{
+            Name = 'ExploitProtection'
+            Stage = 'Extended'
+            Runtime = 'Inbox'
+            Order = 41
+            Default = $true
+            DependsOn = @('Sudo')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Captured and recommended Windows Exploit Protection system mitigations.'
+        }
+        @{
             Name = 'LinuxHomebrew'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

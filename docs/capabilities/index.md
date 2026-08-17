@@ -56,6 +56,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `native-text-tools` | Inspect native `awk` and `sed` for PowerShell | `pwsh -NoProfile -File .\scripts\Set-NativeTextToolsState.ps1 -Mode Test` |
 | `contour-terminal` | Inspect the official MSI, BlueTerm configuration, and graphics gate | `pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test` |
 | `windows-hardening` | Compare the developer hardening baseline and residual exposure | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Plan` |
+| `windows-exploit-protection` | Compare DEP, ASLR, CFG, SEHOP, heap, and related process mitigations | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Plan` |
 | `windows-debloat` | Review opt-in application and legacy-component removal | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Plan` |
 | `windows-virtualization` | Inspect Hyper-V and Windows Sandbox dependency order | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` |
 | `desktop-focus` | Inspect focus-follows-mouse without raising windows | `pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test` |

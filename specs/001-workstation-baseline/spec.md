@@ -146,7 +146,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 - REQ-013: The workstation documentation shall identify Windows 11 Pro as the supported host platform.
 - REQ-014: When Windows Sandbox is selected, the feature resource shall order its Hyper-V and parent-feature dependencies before Sandbox.
 - REQ-015: When a Windows feature change requires restart, the feature resource shall leave the restart as an explicit operator action.
-- REQ-016: The security baseline shall keep hardening, Defender exclusions, SmartScreen, firewall, and debloat as separately selectable state boundaries.
+- REQ-016: The security baseline shall keep hardening, Exploit Protection, Defender exclusions, SmartScreen, firewall, and debloat as separately selectable state boundaries.
 - REQ-017: When the developer hardening profile is applied, the hardening resource shall leave User Account Control policy outside its managed scope.
 - REQ-018: Where the debloat profile is selected, the debloat resource shall protect declared development, runtime, security, and access packages from removal.
 - REQ-019: When debloat removal is confirmed, the debloat resource shall record its documented pre-removal inventory before changing applications or features.
@@ -196,8 +196,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 46 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 29 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 47 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 30 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -232,6 +232,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | WindowsTerminal | REQ-044, REQ-049, REQ-050, REQ-051 |
 | WindowsFeatures | REQ-014, REQ-015 |
 | Hardening | REQ-016, REQ-017 |
+| ExploitProtection | REQ-016 |
 | LinuxHomebrew | REQ-023 |
 | LinuxAutomation | REQ-023 |
 | NixOsWsl | REQ-023, REQ-034, REQ-035 |
@@ -294,6 +295,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | native-text-tools | REQ-022, REQ-026 |
 | contour-terminal | REQ-020, REQ-021, REQ-026 |
 | windows-hardening | REQ-016, REQ-017, REQ-026 |
+| windows-exploit-protection | REQ-016, REQ-026 |
 | windows-debloat | REQ-010, REQ-018, REQ-019, REQ-026 |
 | windows-virtualization | REQ-014, REQ-015, REQ-026 |
 | desktop-focus | REQ-026 |

@@ -80,6 +80,13 @@ Inspect with `pwsh -NoProfile -File .\scripts\Set-GoState.ps1 -Mode Test`.
 
 `config/hardening-profiles.psd1` declares the `DeveloperBaseline` security controls. Inspect its plan without elevation with `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-HardeningState.ps1 -Mode Plan`. Compare or repair the machine with the same script through `sudo` and `-Mode Test` or `-Mode Ensure`. An explicit `Reinitialize` first records the observed control state under `state/hardening-snapshots/`. The resource applies registry, SMB runtime, optional-feature, and per-adapter NetBIOS state, leaves UAC policy outside its scope, and never restarts Windows. Use `-SkipHardening` to omit it. The exact controls, rejected legacy settings, compatibility costs, and residual exposure are documented in [Windows hardening profile and attack surface](hardening.md).
 
+Exploit Protection remains a separate hardening DSL and module. `config/exploit-protection.psd1`
+pins the complete captured pre-change policy and declares `CapturedDefault` and `Recommended`
+profiles. Inspect it with `powershell -NoProfile -ExecutionPolicy Bypass -File
+.\scripts\Set-ExploitProtectionState.ps1 -Mode Plan`; use the focused `ExploitProtection` module to
+test or apply the recommendation. The direct `-Profile CapturedDefault` command restores the system
+controls changed by the recommendation. See [Windows Exploit Protection profiles](exploit-protection.md).
+
 `config/focus-follows-mouse.psd1` enables current-user active-window tracking with a 0 ms delay while explicitly disabling raise-on-focus. Windows therefore directs keyboard focus to the hovered window without bringing it to the top or changing its Z-order. In Windows API terminology that window becomes active/foreground because it owns keyboard input, while the separately managed Z-order remains unchanged. The resource uses Microsoft's documented [active-window tracking parameters](https://learn.microsoft.com/windows/win32/api/winuser/nf-winuser-systemparametersinfow). Inspect it with `pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test` or repair it by using `-Mode Ensure`. This resource does not require elevation. Use `-SkipFocusFollowsMouse` on `Apply-Workstation.ps1` to omit it.
 
 Defender exclusion paths are local state in ignored `.excluded`; `.excluded.sample` documents the portable format. Desired state refuses to guess paths when the local file is absent.

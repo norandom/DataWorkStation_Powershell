@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'SpecDrivenDevelopment',
         'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -16,6 +16,7 @@ param(
     [switch] $SkipPackages,
     [switch] $SkipWindowsFeatures,
     [switch] $SkipHardening,
+    [switch] $SkipExploitProtection,
     [switch] $SkipFocusFollowsMouse,
     [switch] $SkipDeveloperTools,
     [switch] $SkipNixOsWsl,
@@ -51,6 +52,7 @@ $terminalFontScript = Join-Path $PSScriptRoot 'scripts\Set-TerminalFontState.ps1
 $contourTerminalScript = Join-Path $PSScriptRoot 'scripts\Set-ContourTerminalState.ps1'
 $windowsFeaturesScript = Join-Path $PSScriptRoot 'scripts\Set-WindowsFeatureState.ps1'
 $hardeningScript = Join-Path $PSScriptRoot 'scripts\Set-HardeningState.ps1'
+$exploitProtectionScript = Join-Path $PSScriptRoot 'scripts\Set-ExploitProtectionState.ps1'
 $debloatScript = Join-Path $PSScriptRoot 'scripts\Set-DebloatState.ps1'
 $focusFollowsMouseScript = Join-Path $PSScriptRoot 'scripts\Set-FocusFollowsMouseState.ps1'
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
@@ -349,6 +351,11 @@ function Invoke-WorkstationModule {
                 & sudo.exe $windowsPowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $hardeningScript -Profile DeveloperBaseline -Mode $Mode
             }
         }
+        'ExploitProtection' {
+            Invoke-CheckedProcess 'Windows Exploit Protection profile' {
+                & sudo.exe $windowsPowerShell -NoLogo -NoProfile -ExecutionPolicy Bypass -File $exploitProtectionScript -Profile Recommended -Mode $Mode
+            }
+        }
         'LinuxHomebrew' {
             Invoke-CheckedProcess 'Linux Homebrew state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $linuxHomebrewScript -Mode $Mode
@@ -497,7 +504,7 @@ function Invoke-WorkstationModule {
     }
 }
 
-$skipSwitchUsed = $SkipPackages -or $SkipWindowsFeatures -or $SkipHardening -or
+$skipSwitchUsed = $SkipPackages -or $SkipWindowsFeatures -or $SkipHardening -or $SkipExploitProtection -or
     $SkipFocusFollowsMouse -or $SkipDeveloperTools -or $SkipNixOsWsl -or $SkipSpecDrivenDevelopment -or $SkipProfilingTools -or
     $SkipSkillOpt -or $SkipFirewall -or $SkipDefender -or $SkipSmartScreen -or
     $SkipMemoryPolicy -or $SkipEventLogs
@@ -510,6 +517,7 @@ $excludedModules = [Collections.Generic.List[string]]::new()
 if ($SkipPackages) { $excludedModules.Add('Packages') }
 if ($SkipWindowsFeatures) { $excludedModules.Add('WindowsFeatures') }
 if ($SkipHardening) { $excludedModules.Add('Hardening') }
+if ($SkipExploitProtection) { $excludedModules.Add('ExploitProtection') }
 if ($SkipFocusFollowsMouse) { $excludedModules.Add('FocusFollowsMouse') }
 if ($SkipDeveloperTools) { $excludedModules.Add('DeveloperTools') }
 if ($SkipNixOsWsl) {

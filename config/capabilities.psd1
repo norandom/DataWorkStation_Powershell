@@ -374,6 +374,27 @@
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
+            Id = 'windows-exploit-protection'
+            Title = 'Windows process and memory exploit mitigations'
+            Triggers = @('exploit protection', 'aslr', 'dep', 'sehop', 'cfg', 'control flow guard', 'shadow stack', 'process mitigation')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Plan'
+                'powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Plan -Json'
+                'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Test'
+                'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Test -Profile CapturedDefault'
+            )
+            ValidationCommands = @(
+                'powershell -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-ExploitProtectionState.ps1 -Section All'
+                'pwsh -NoProfile -File .\tests\Test-ExploitProtectionState.ps1 -Section All'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module ExploitProtection'
+                'sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Ensure -Profile CapturedDefault'
+            )
+            CaptureCommand = 'tricky add {case} <exported-exploit-protection-state.json>'
+        }
+        @{
             Id = 'windows-debloat'
             Title = 'Opt-in Windows application and legacy-component removal'
             Triggers = @('debloat', 'bloatware', 'appx removal', 'remove windows apps', 'consumer apps', 'quick assist', 'phone link')

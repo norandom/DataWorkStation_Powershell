@@ -187,6 +187,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Set-SudoState.ps1` | Maintains Windows sudo in inline (`normal`) mode. |
 | `scripts/Set-WindowsFeatureState.ps1` | Tests and enables declared Windows optional features without restarting Windows. |
 | `scripts/Set-HardeningState.ps1` | Plans, tests, and ensures the reviewed hardening profile without restarting Windows. |
+| `scripts/Set-ExploitProtectionState.ps1` | Plans, tests, applies, or rolls back the separate DEP/ASLR/SEHOP Exploit Protection profile. |
 | `scripts/Set-DebloatState.ps1` | Plans and tests opt-in removals; Ensure requires explicit confirmation and records a snapshot. |
 | `scripts/Set-FocusFollowsMouseState.ps1` | Gives hovered windows focus without changing their Z-order. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
@@ -254,6 +255,7 @@ Run one module and its dependencies with `-Module`:
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module Firewall
 .\Apply-Workstation.ps1 -Mode Ensure -Module Hardening
+.\Apply-Workstation.ps1 -Mode Ensure -Module ExploitProtection
 .\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module PowerShellTesting -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module Go -Plan

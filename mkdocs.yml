@@ -72,6 +72,7 @@ nav:
       - Autopsy Windows forensic workstation: autopsy.md
       - Verify NixOS integrity: nixos-integrity.md
       - Apply the hardening profile: hardening.md
+      - Manage Exploit Protection: exploit-protection.md
       - Run opt-in debloat: debloat.md
   - Extend:
       - Human and AI contract: architecture/humans-and-ai.md

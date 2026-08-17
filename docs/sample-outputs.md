@@ -145,6 +145,45 @@ PowerShell tests: passed; 27 passed, 0 failed, 0 skipped in 24110 ms
 Exact counts and timings vary with the selected files. A failure is named in the aggregate result
 and returns a nonzero process exit code.
 
+## Windows Exploit Protection plan
+
+Plan is non-elevated and does not read or modify the live mitigation policy:
+
+```text
+PS> powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Plan
+Exploit Protection Plan: Recommended workstation system mitigations
+Profile: Recommended
+Outcome: planned
+Administrator required for live Test or mutation: True
+Affected applications require restart after change: False
+Enable: DEP, EmulateAtlThunks, BottomUp, HighEntropy, SEHOP, TerminateOnError
+Disable: SEHOPTelemetry
+```
+
+The command then lists all seven managed controls and nine observation-only controls. Its JSON form
+is the same canonical result rather than a second evaluation path:
+
+```json
+{
+  "SchemaVersion": 1,
+  "Mode": "Plan",
+  "Profile": "Recommended",
+  "Compliant": null,
+  "DriftCount": 0,
+  "Outcome": "planned",
+  "Enable": ["DEP", "EmulateAtlThunks", "BottomUp", "HighEntropy", "SEHOP", "TerminateOnError"],
+  "Disable": ["SEHOPTelemetry"],
+  "Changes": [],
+  "SnapshotPath": null,
+  "ProcessRestartRequired": false
+}
+```
+
+The complete object also contains `DisplayName`, `Description`, `BasedOn`,
+`RequiresAdministrator`, captured-artifact provenance, and the `Controls` collection. Test returns
+exit code 1 for drift; successful Ensure or Reinitialize reports whether applications must be
+restarted, but never restarts them.
+
 These sanitized transcripts show the shape of successful human-facing and machine-facing commands. Versions, timings, paths, and the set of installed skills can change.
 
 ## Dependency plan

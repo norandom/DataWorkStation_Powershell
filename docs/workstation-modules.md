@@ -15,6 +15,7 @@ Show the dependencies pulled in for one module:
 
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module Hardening -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module ExploitProtection -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module PowerShellTesting -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module Go -Plan
@@ -96,6 +97,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `WindowsTerminal` | yes | `PowerShell7` stage gate | stable package, PowerShell Core default, retained Windows PowerShell profile, and shared Blue appearance |
 | `WindowsFeatures` | yes | `Sudo` | Hyper-V and Windows Sandbox |
 | `Hardening` | yes | `Sudo` | `DeveloperBaseline` security controls |
+| `ExploitProtection` | yes | `Sudo` | Captured and recommended DEP, ASLR, SEHOP, heap, and related process mitigations |
 | `LinuxHomebrew` | no | `Packages` | Homebrew inside Debian WSL; pulled in by the developer bundle |
 | `LinuxAutomation` | no | `LinuxHomebrew` | Homebrew `uv` and pinned pyinfra inside Debian WSL |
 | `NixOsWsl` | yes | `Packages` | locked NixOS-WSL generation with Helm, kubectl, Pulumi CLI, native OpenSSH, and integrity checks |

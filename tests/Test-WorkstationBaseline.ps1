@@ -297,6 +297,7 @@ function Test-StateSafety {
     $resourceModes = @{
         WindowsFeatures = @{ Path = 'scripts\Set-WindowsFeatureState.ps1'; Expected = @('Plan', 'Test', 'Ensure', 'Reinitialize') }
         Hardening = @{ Path = 'scripts\Set-HardeningState.ps1'; Expected = @('Plan', 'Test', 'Ensure', 'Reinitialize') }
+        ExploitProtection = @{ Path = 'scripts\Set-ExploitProtectionState.ps1'; Expected = @('Plan', 'Test', 'Ensure', 'Reinitialize') }
         Debloat = @{ Path = 'scripts\Set-DebloatState.ps1'; Expected = @('Plan', 'Test', 'Ensure') }
     }
     foreach ($name in $resourceModes.Keys) {
@@ -309,7 +310,7 @@ function Test-StateSafety {
         Assert-True (@(Compare-Object $expectedCatalogModes (@($catalogModule.SupportedModes) | Sort-Object)).Count -eq 0) "'$name' catalog modes match its resource"
     }
 
-    $windowsSudoModules = @('ContourTerminal', 'Autopsy', 'WindowsFeatures', 'Hardening', 'MsvcBuildTools', 'DefenderExclusions', 'SmartScreen', 'Pagefile', 'EventLogs', 'Firewall', 'Debloat')
+    $windowsSudoModules = @('ContourTerminal', 'Autopsy', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'MsvcBuildTools', 'DefenderExclusions', 'SmartScreen', 'Pagefile', 'EventLogs', 'Firewall', 'Debloat')
     foreach ($name in $windowsSudoModules) {
         $module = @($catalog.Modules | Where-Object Name -eq $name)[0]
         Assert-True ($module.DependsOn -contains 'Sudo') "Windows-elevated module '$name' has an explicit Sudo edge"
@@ -320,12 +321,16 @@ function Test-StateSafety {
 
     $featureSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-WindowsFeatureState.ps1') -Raw
     $hardeningSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-HardeningState.ps1') -Raw
+    $exploitProtectionSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-ExploitProtectionState.ps1') -Raw
+    $exploitProtectionTests = Get-Content -LiteralPath (Join-Path $repositoryRoot 'tests\Test-ExploitProtectionState.ps1') -Raw
     $debloatSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-DebloatState.ps1') -Raw
     Assert-True ($featureSource.IndexOf("if (`$Mode -eq 'Test')") -lt $featureSource.IndexOf('Enable-WindowsOptionalFeature')) 'Windows feature Test exits before mutation'
     Assert-True ($hardeningSource.IndexOf("if (`$Mode -eq 'Test')") -lt $hardeningSource.IndexOf('New-ItemProperty')) 'hardening Test exits before mutation'
+    Assert-True ($exploitProtectionSource -match 'ExploitProtectionState\.Core\.ps1' -and $exploitProtectionTests -match 'function Test-TestMode') 'Exploit Protection delegates Test non-mutation to its focused transition suite'
     Assert-True ($debloatSource.IndexOf("if (`$Mode -eq 'Test')") -lt $debloatSource.IndexOf('Remove-AppxPackage')) 'debloat Test exits before mutation'
     Assert-True ($featureSource.IndexOf('$snapshotPath = Save-WindowsFeatureSnapshot') -ge 0 -and $featureSource.IndexOf('$snapshotPath = Save-WindowsFeatureSnapshot') -lt $featureSource.IndexOf('Enable-WindowsOptionalFeature')) 'Windows feature Reinitialize saves recovery evidence before mutation'
     Assert-True ($hardeningSource.IndexOf('$snapshotPath = Save-HardeningSnapshot') -ge 0 -and $hardeningSource.IndexOf('$snapshotPath = Save-HardeningSnapshot') -lt $hardeningSource.IndexOf('New-ItemProperty')) 'hardening Reinitialize saves recovery evidence before mutation'
+    Assert-True ($exploitProtectionTests -match 'function Test-ReinitializeOrdering' -and $exploitProtectionTests -match 'function Test-SnapshotFailure') 'Exploit Protection delegates snapshot ordering and failure safety to its focused transition suite'
 
     $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('workstation-destructive-safety-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path (Join-Path $tempRoot 'config') -Force | Out-Null
@@ -364,6 +369,7 @@ function Test-WindowsSafety {
     $catalog = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\workstation-modules.psd1')
     $features = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\windows-features.psd1')
     $hardening = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\hardening-profiles.psd1')
+    $exploitProtection = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\exploit-protection.psd1')
     $featureById = @{}
     foreach ($feature in @($features.WindowsOptionalFeatures)) {
         Assert-True (-not $featureById.ContainsKey($feature.Id)) "Windows feature '$($feature.Id)' is unique"
@@ -379,7 +385,7 @@ function Test-WindowsSafety {
     Assert-True ($featureSource -match 'Enable-WindowsOptionalFeature\s+@enableParameters' -and $featureSource -match 'NoRestart\s*=\s*\$true') 'feature enablement explicitly suppresses automatic restart'
     Assert-True ($featureSource -notmatch 'Restart-Computer|shutdown\.exe|wpeutil\s+reboot') 'the feature resource has no restart command'
 
-    $securityModules = @('Hardening', 'DefenderExclusions', 'SmartScreen', 'Firewall', 'Debloat')
+    $securityModules = @('Hardening', 'ExploitProtection', 'DefenderExclusions', 'SmartScreen', 'Firewall', 'Debloat')
     foreach ($name in $securityModules) {
         Assert-True (@($catalog.Modules | Where-Object Name -eq $name).Count -eq 1) "security boundary '$name' is a separate module"
     }
@@ -388,6 +394,20 @@ function Test-WindowsSafety {
     Assert-True (@($hardeningControls | Where-Object { $_.Category -eq 'UAC' -or $_.Name -in $uacNames }).Count -eq 0) 'DeveloperBaseline leaves UAC outside managed scope'
     $hardeningSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-HardeningState.ps1') -Raw
     Assert-True ($hardeningSource -notmatch 'Set-MpPreference|Set-NetFirewallProfile|Remove-AppxPackage') 'hardening does not absorb Defender, Firewall, or Debloat mutation'
+    Assert-True ($exploitProtection.DefaultProfile -eq 'Recommended') 'Exploit Protection selects the reviewed recommendation by default'
+    Assert-True ($null -ne $exploitProtection.Profiles.CapturedDefault -and $null -ne $exploitProtection.Profiles.Recommended) 'Exploit Protection declares recommended and captured-default profiles'
+    $capturedById = @{}
+    foreach ($setting in $exploitProtection.Profiles.CapturedDefault.ManagedSettings) { $capturedById[$setting.Id] = $setting.Desired }
+    $recommendedById = @{}
+    foreach ($setting in $exploitProtection.Profiles.Recommended.ManagedSettings) { $recommendedById[$setting.Id] = $setting.Desired }
+    Assert-True (@(Compare-Object ($capturedById.Keys | Sort-Object) ($recommendedById.Keys | Sort-Object)).Count -eq 0) 'Exploit Protection rollback covers every managed recommended setting identity'
+    $profileDifferences = @($capturedById.Keys | Where-Object { $capturedById[$_] -ne $recommendedById[$_] })
+    Assert-True ($profileDifferences.Count -eq 1 -and $profileDifferences[0] -eq 'seh-overwrite-telemetry-only' -and $capturedById[$profileDifferences[0]] -eq 'ON' -and $recommendedById[$profileDifferences[0]] -eq 'OFF') 'the recommendation differs only in SEHOP telemetry-only enforcement state'
+    $capturedPolicyPath = Join-Path $repositoryRoot ('config\' + $exploitProtection.CapturedPolicy.Path)
+    Assert-True (Test-Path -LiteralPath $capturedPolicyPath -PathType Leaf) 'the complete captured Exploit Protection policy is versioned'
+    Assert-True ((Get-FileHash -LiteralPath $capturedPolicyPath -Algorithm SHA256).Hash -eq $exploitProtection.CapturedPolicy.Sha256) 'the captured Exploit Protection policy matches its pinned SHA-256'
+    $exploitProtectionSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-ExploitProtectionState.ps1') -Raw
+    Assert-True ($exploitProtectionSource -notmatch 'Set-MpPreference|Set-NetFirewallProfile|Remove-AppxPackage') 'Exploit Protection remains separate from antivirus, Firewall, and Debloat mutation'
     $firewallSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-FirewallState.ps1') -Raw
     Assert-True ($firewallSource -match '-DefaultInboundAction Block') 'firewall keeps the unmatched inbound default at Block'
     Assert-True ($firewallSource -match '-AllowInboundRules True' -and $firewallSource -match '-AllowLocalFirewallRules True') 'all profiles honor expert-approved local application rules'
@@ -398,6 +418,9 @@ function Test-WindowsSafety {
     Assert-True ($hardeningPlan.ExitCode -eq 0) "the human hardening plan succeeds: $($hardeningPlan.Output -join ' ')"
     Assert-True (($hardeningPlan.Output -join [Environment]::NewLine) -match 'disable-llmnr') 'the human hardening plan renders declared control IDs'
     Assert-True (($hardeningPlan.Output -join [Environment]::NewLine) -notmatch 'uac-enabled|uac-admin-consent|uac-secure-desktop') 'the human hardening plan does not advertise UAC controls'
+    $exploitProtectionPlan = Invoke-External -FilePath $windowsPowerShell -ArgumentList @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $repositoryRoot 'scripts\Set-ExploitProtectionState.ps1'), '-Mode', 'Plan')
+    Assert-True ($exploitProtectionPlan.ExitCode -eq 0) "the human Exploit Protection plan succeeds: $($exploitProtectionPlan.Output -join ' ')"
+    Assert-True (($exploitProtectionPlan.Output -join [Environment]::NewLine) -match 'seh-overwrite-telemetry-only') 'the Exploit Protection plan renders the recommended SEHOP change'
 }
 
 function Test-DebloatSafety {
@@ -665,10 +688,13 @@ function Test-Documentation {
 
     $sampleOutputs = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\sample-outputs.md') -Raw
     $hardening = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\hardening.md') -Raw
+    $exploitProtection = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\exploit-protection.md') -Raw
     $debloat = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\debloat.md') -Raw
     $malware = Get-Content -LiteralPath (Join-Path $repositoryRoot 'docs\malware-analysis.md') -Raw
     Assert-True ($sampleOutputs -match '(?m)^PS> ' -and $sampleOutputs -match '(?i)json') 'operator documentation contains representative human and structured output'
     Assert-True ($hardening -match '(?i)sudo|elevat|privileg') 'hardening documentation states its privilege boundary'
+    Assert-True ($exploitProtection -match '(?i)sudo|elevat|privileg') 'Exploit Protection documentation states its privilege boundary'
+    Assert-True ($exploitProtection -match 'CapturedDefault' -and $exploitProtection -match 'Recommended') 'Exploit Protection documentation provides forward and rollback profiles'
     Assert-True ($debloat -match '(?i)ConfirmRemoval' -and $debloat -match '(?im)^## Rollback limits') 'debloat documentation states confirmation and recovery limits'
     Assert-True ($hardening -match '(?im)^## Residual attack surface' -and $malware -match '(?im)^## Isolation and residual attack surface') 'security workflows document residual attack surface'
 

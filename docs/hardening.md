@@ -1,5 +1,8 @@
 # Windows hardening profile and attack surface
 
+Process and memory mitigations such as DEP, ASLR, CFG, SEHOP, and hardware shadow stacks are kept in
+the separate [Windows Exploit Protection profiles](exploit-protection.md) DSL and module.
+
 The `DeveloperBaseline` profile carries the applicable controls from the retired
 `WindowsHardeningScript\Harden_PS.ps1` into narrow, testable desired state. It targets a Windows 11
 Pro developer workstation. It is not a generic CIS or Microsoft Security Baseline implementation.

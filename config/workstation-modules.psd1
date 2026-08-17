@@ -191,6 +191,7 @@
         }
         @{
             Name = 'ExploitProtection'
+            FeatureSpec = 'specs/011-exploit-protection'
             Stage = 'Extended'
             Runtime = 'Inbox'
             Order = 41

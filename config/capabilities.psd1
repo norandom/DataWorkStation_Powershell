@@ -321,6 +321,8 @@
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-SpecDrivenDevelopmentState.ps1 -Mode Test'
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-SpecDrivenDevelopmentState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Test-SpecFeatureGovernance.ps1'
+                'pwsh -NoProfile -File .\scripts\Test-SpecFeatureGovernance.ps1 -Json'
                 '.\Apply-Workstation.ps1 -Mode Test -Module SpecDrivenDevelopment -Plan'
                 'ears-sdd status --phase final'
                 'ears-sdd status --phase final --json'
@@ -375,6 +377,8 @@
         }
         @{
             Id = 'windows-exploit-protection'
+            FeatureSpec = 'specs/011-exploit-protection'
+            Modules = @('ExploitProtection')
             Title = 'Windows process and memory exploit mitigations'
             Triggers = @('exploit protection', 'aslr', 'dep', 'sehop', 'cfg', 'control flow guard', 'shadow stack', 'process mitigation')
             EvidenceKinds = @('Snapshot')

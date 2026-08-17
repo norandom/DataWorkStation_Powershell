@@ -184,6 +184,25 @@ The complete object also contains `DisplayName`, `Description`, `BasedOn`,
 exit code 1 for drift; successful Ensure or Reinitialize reports whether applications must be
 restarted, but never restarts them.
 
+## Spec feature governance
+
+The publication guard is observational and validates only features referenced by non-grandfathered
+state declarations:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Test-SpecFeatureGovernance.ps1
+Spec feature governance: compliant
+Checked modules/state routes: 47/30
+Governed modules: ExploitProtection
+Governed state routes: windows-exploit-protection
+Legacy fingerprint: ffa053bc99617bcf72f825ac6ce6a972dc18f09b750bb668c567f85bc9b45fb3 (expected ffa053bc99617bcf72f825ac6ce6a972dc18f09b750bb668c567f85bc9b45fb3)
+Feature specs/011-exploit-protection: artifacts=True; final=True; errors=0; warnings=0; requirements=23
+```
+
+The `-Json` form reports schema version 1, the same counts, governed identities, referenced feature
+gate, legacy fingerprint, failures, and outcome. A missing feature reference, artifact, or failed
+EARS gate produces an attributed failure and nonzero exit.
+
 These sanitized transcripts show the shape of successful human-facing and machine-facing commands. Versions, timings, paths, and the set of installed skills can change.
 
 ## Dependency plan

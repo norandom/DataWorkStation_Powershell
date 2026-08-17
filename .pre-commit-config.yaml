@@ -19,6 +19,17 @@ repos:
         exclude: '^(?:\.agents/|\.specify/)'
   - repo: local
     hooks:
+      - id: spec-feature-governance
+        name: Spec feature governance
+        entry: pwsh
+        args:
+          - -NoLogo
+          - -NoProfile
+          - -File
+          - scripts/Test-SpecFeatureGovernance.ps1
+        language: system
+        files: '^(?:config/(?:capabilities|workstation-modules|spec-feature-governance)\.psd1|scripts/(?:FeatureGovernance\.Core|Test-SpecFeatureGovernance)\.ps1|specs/|tests/Test-SpecFeatureGovernance\.ps1|tests/pester/SpecFeatureGovernance\.Tests\.ps1|\.pre-commit-config\.yaml$)'
+        pass_filenames: false
       - id: powershell-lint
         name: PowerShell lint
         entry: pwsh

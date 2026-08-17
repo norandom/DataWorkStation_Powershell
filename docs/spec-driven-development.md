@@ -75,3 +75,23 @@ For agent consumption, add `--json`. The installed Codex command is
 
 The final gate verifies that a real test command is declared. Run that command separately so test
 execution remains visible and attributable.
+
+## Feature governance before publication
+
+New workstation modules and capability routes that expose state commands must reference their
+dedicated feature directory. Run the observational human command directly:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Test-SpecFeatureGovernance.ps1
+pwsh -NoProfile -File .\scripts\Test-SpecFeatureGovernance.ps1 -Json | ConvertFrom-Json
+```
+
+The guard verifies that each non-grandfathered declaration names a normalized child of `specs/`,
+that `spec.md`, `plan.md`, `tasks.md`, and `traceability.toml` exist, and that the referenced feature
+passes `ears-sdd validate --feature <directory> --phase final`. It never changes the active feature
+selection and ignores unrelated drafts until a catalog entry references them.
+
+Historical modules and state routes are listed explicitly in
+`config/spec-feature-governance.psd1`. Their deterministic fingerprint makes any exception-boundary
+change visible in both human and JSON output. The pre-commit hook invokes this same command; it does
+not use an automation-only policy path.

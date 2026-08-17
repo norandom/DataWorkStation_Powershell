@@ -12,7 +12,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\developer-editor.psd1')
 $packageFile = Join-Path $repositoryRoot $configuration.PackageConfiguration
 $settingsPath = [Environment]::ExpandEnvironmentVariables($configuration.SettingsPath)
-$bergDirectory = [Environment]::ExpandEnvironmentVariables($configuration.Berg.InstallDirectory)
+$extensionRoot = [Environment]::ExpandEnvironmentVariables($configuration.Berg.ExtensionRoot)
 
 function Get-CodePath {
     $stable = Join-Path $env:LOCALAPPDATA 'Programs\Microsoft VS Code\bin\code.cmd'
@@ -71,12 +71,11 @@ function Get-LiveState {
     $extensions = if ($codePath) { @(Get-CodeExtensionInventory $codePath) } else { @() }
     $font = Get-DeveloperEditorFont $repositoryRoot $configuration
     $settings = Get-DeveloperEditorSettings $settingsPath
-    $bergTheme = Join-Path $bergDirectory 'themes\Berg Theme-color-theme.json'
-    $bergHash = if (Test-Path -LiteralPath $bergTheme -PathType Leaf) { (Get-FileHash $bergTheme -Algorithm SHA256).Hash.ToLowerInvariant() } else { $null }
+    $berg = Get-BergExtensionState -Configuration $configuration.Berg -ExtensionInventory $extensions -ExtensionRoot $extensionRoot
     $checks = [ordered]@{
         StableCode = Test-StableCode $codePath
         Extensions = @($configuration.Extensions | Where-Object { $_ -notin $extensions }).Count -eq 0
-        Berg = $bergHash -eq $configuration.Berg.Sha256
+        Berg = $berg.Compliant
         Theme = $settings['workbench.colorTheme'] -eq $configuration.Berg.ThemeLabel
         FontInstalled = [bool] $font.InstalledFont
         EditorFont = $settings['editor.fontFamily'] -eq $font.Family
@@ -88,7 +87,7 @@ function Get-LiveState {
         Status = if (@($checks.GetEnumerator() | Where-Object { -not $_.Value }).Count -eq 0) { 'compliant' } else { 'drifted' }
         CodePath = $codePath
         Extensions = $extensions
-        Berg = [pscustomobject]@{ Commit = $configuration.Berg.Commit; ExpectedSha256 = $configuration.Berg.Sha256; ActualSha256 = $bergHash }
+        Berg = $berg
         Font = $font
         SettingsPath = $settingsPath
         Checks = [pscustomobject] $checks
@@ -117,23 +116,12 @@ foreach ($extension in @($configuration.Extensions)) {
     & $codePath --install-extension $extension
     if ($LASTEXITCODE -ne 0) { throw "VS Code failed to install extension '$extension'." }
 }
-
-$themeDirectory = Join-Path $bergDirectory 'themes'
-New-Item -ItemType Directory -Path $themeDirectory -Force | Out-Null
-$themePath = Join-Path $themeDirectory 'Berg Theme-color-theme.json'
-Invoke-WebRequest -UseBasicParsing -Uri $configuration.Berg.Uri -OutFile $themePath
-if ((Get-FileHash $themePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $configuration.Berg.Sha256) {
-    throw 'Berg theme SHA-256 mismatch.'
+$berg = Get-BergExtensionState -Configuration $configuration.Berg -ExtensionInventory $installedExtensions -ExtensionRoot $extensionRoot
+if (-not $berg.Compliant) {
+    $bergIdentity = "$($configuration.Berg.ExtensionId)@$($configuration.Berg.ExtensionVersion)"
+    & $codePath --install-extension $bergIdentity
+    if ($LASTEXITCODE -ne 0) { throw "VS Code failed to install the declared Berg extension '$bergIdentity'." }
 }
-$package = [ordered]@{
-    name = 'berg'
-    displayName = $configuration.Berg.DisplayName
-    version = $configuration.Berg.ExtensionVersion
-    publisher = 'dataworkstation'
-    engines = @{ vscode = '^1.80.0' }
-    contributes = @{ themes = @(@{ label = $configuration.Berg.ThemeLabel; uiTheme = 'vs-dark'; path = './themes/Berg Theme-color-theme.json' }) }
-}
-$package | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $bergDirectory 'package.json') -Encoding utf8
 
 $font = Get-DeveloperEditorFont $repositoryRoot $configuration
 if (-not $font.InstalledFont) { throw "Selected editor font '$($font.Family)' is not installed." }

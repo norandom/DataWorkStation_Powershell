@@ -216,3 +216,15 @@ boundary.
 - No task authorizes a live Ensure during implementation validation.
 - Production files do not need requirement IDs; tests, tasks, and traceability own that mapping.
 - Distribution unregister/removal is outside this feature.
+
+## Phase 9: Convergence
+
+- [X] T041 Add failing executable editor fixtures that prove VS Code inventory discovery of Berg,
+  reject an obsolete hash-only wrapper, and select an embedded Berkeley Mono family from the
+  per-user Windows font directory per Constitution III, REQ-010–REQ-011, and SC-009 (partial)
+- [X] T042 Reconcile and validate the declared `teehausamberg.berg` extension identity/version and
+  its `Berg Theme` contribution through the VS Code extension inventory instead of treating a
+  downloaded theme digest as installed state per REQ-010 and SC-009 (partial)
+- [X] T043 Extend installed-font validation to recognize the embedded family metadata of eligible
+  font files in the per-user Windows font directory while preserving the portable Fira fallback
+  per REQ-011–REQ-012 and SC-009 (partial)

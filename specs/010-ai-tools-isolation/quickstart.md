@@ -70,7 +70,12 @@ Validated on 2026-08-17:
 
 Initial implementation validation ran no Ensure or Reinitialize command, vendor installer, WSL
 installation, WSL start/termination/restart, OpenCode launch, nono execution, or malware case
-transfer. A later explicitly requested `DeveloperEditor` repair ran its focused Ensure: it
-reconciled stable VS Code and extensions, installed the hash-pinned Berg local extension, and set
-the three bounded editor keys including `workbench.colorTheme = Berg`. It made no WSL, AI-agent,
-or malware-case change.
+transfer. A later explicitly requested `DeveloperEditor` repair exposed two false-positive checks:
+the generated Berg directory was obsolete and therefore absent from VS Code inventory, and the
+per-user Berkeley Mono family was missed by a registry-name-only probe. Phase 9 adds executable
+regressions and requires the discovered `teehausamberg.berg@0.0.4` contribution plus embedded
+per-user font metadata. No WSL, AI-agent, or malware-case state was changed during that correction.
+After the dual-runtime focused regressions passed, the explicitly requested `DeveloperEditor`
+Ensure revalidated stable VS Code, accepted the already installed exact Berg contribution, backed
+up the settings file, and changed only the three managed settings to `Berg Theme` and
+`Berkeley Mono`. The final observational editor test reported every check compliant.

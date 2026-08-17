@@ -11,7 +11,8 @@
 
 - Stable VS Code WinGet identity.
 - Four exact Marketplace extension IDs.
-- Berg commit, raw source URI/digest, generated local extension identity.
+- Berg commit/raw-source digest, exact discovered extension identity/version, manifest theme label,
+  and installed contribution digest.
 - Managed setting keys and resolved local-or-portable font family.
 - Unrelated settings/extensions are outside ownership.
 

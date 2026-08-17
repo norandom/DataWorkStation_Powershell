@@ -128,11 +128,12 @@ declarations own immutable guest boundary files; PSD1 files own reviewed channel
    remains.
 3. OpenCode Desktop is a pinned official Windows release asset; OpenCode CLI is a root-owned pinned
    release asset inside the separate AI NixOS distribution.
-4. Berg is installed as a local VS Code theme wrapper around the hash-pinned `jx22/berg` theme JSON
-   because the repository lacks a package manifest and its old Marketplace listing is not a stable
-   source.
-5. The existing `.terminal-fonts` preference selects Berkeley Mono when valid; otherwise the
-   public `Fira Code` fallback is merged into `editor.fontFamily` and terminal font settings.
+4. Berg uses the exact `teehausamberg.berg@0.0.4` VS Code extension whose manifest identifies
+   `jx22/berg`; compliance also verifies its contributed `Berg Theme` JSON against the pinned
+   upstream digest, so a copied but undiscovered theme directory cannot pass.
+5. The existing `.terminal-fonts` preference selects Berkeley Mono when its family is registered
+   or present in the per-user Windows font directory with matching embedded metadata; otherwise
+   the public `Fira Code` fallback is merged into editor and terminal font settings.
 6. The AI daily user is non-root and has no sudo. A separate non-login Linux maintenance identity,
    invoked only from trusted Windows, owns the Homebrew prefix and runs `brew install nono`; the
    daily user cannot replace `nono`, OpenCode, the launcher, or its policy.

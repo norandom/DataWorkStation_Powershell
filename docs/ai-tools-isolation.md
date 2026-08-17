@@ -52,15 +52,18 @@ installs these exact extensions, and owns only the theme and two font keys in th
 - `ms-python.python`
 - `GitHub.copilot-chat` (the current stable VS Code bundled GitHub Copilot extension)
 
-The historical `jx22/berg` repository does not contain a package manifest. The resource therefore
-wraps its hash-pinned theme JSON from commit
-`32e03bf59ae9408edc2d0c382a7003a57f1d2bc0` as a local extension. It does not substitute an
-unrelated Marketplace package. The managed `workbench.colorTheme` value is `Berg`.
+The resource installs exact extension `teehausamberg.berg@0.0.4`, whose manifest identifies
+`https://github.com/jx22/berg`, and requires VS Code to report it. It also verifies the contributed
+theme JSON against pinned commit `32e03bf59ae9408edc2d0c382a7003a57f1d2bc0` and SHA-256
+`290433bf27cd893a3f13bd3c5e01238f0885d1dbbad7934bfc20f9f63b3873e1`. A downloaded file that VS
+Code has not discovered is drift, even when its digest matches. The managed
+`workbench.colorTheme` value is `Berg Theme`.
 
-The ignored `.terminal-fonts` file remains the local font choice. A valid registered Berkeley Mono
-family is selected when it is installed locally. Public configuration, and a machine with only an
-unregistered font file, falls back to the installed `Fira Code` family. Existing settings are
-backed up and unrelated settings, extensions, profiles, and workspace configuration are preserved.
+The ignored `.terminal-fonts` file remains the local font choice. Berkeley Mono is selected when
+Windows registers the family or when a font in the per-user Windows font directory exposes that
+exact embedded family name. Public configuration without that valid local family falls back to
+the installed `Fira Code` family. Existing settings are backed up and unrelated settings,
+extensions, profiles, and workspace configuration are preserved.
 
 ## WSL trust matrix
 

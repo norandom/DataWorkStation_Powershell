@@ -32,13 +32,15 @@ installer, guest mutation, termination, or evidence transfer.
 Versions above are research observations, not an instruction to auto-adopt new upstream versions.
 Updates must revise reviewed identities and re-run the feature gates.
 
-## Decision: package Berg from pinned source
+## Decision: validate the pinned Berg source through its discovered extension
 
-`jx22/berg` contains the theme JSON and MIT license but no VS Code `package.json` or release asset.
-Its README says a Marketplace package existed in 2020, but that channel could not be established as
-a reliable current identity. Pin commit `32e03bf59ae9408edc2d0c382a7003a57f1d2bc0` and the raw theme
-SHA-256 `290433bf27cd893a3f13bd3c5e01238f0885d1dbbad7934bfc20f9f63b3873e1`, then generate a minimal
-local theme extension owned by the desired-state resource. Source: <https://github.com/jx22/berg>.
+`teehausamberg.berg` version `0.0.4` declares `https://github.com/jx22/berg` as its homepage and
+repository and contributes the theme label `Berg Theme`. Its installed theme JSON matches commit
+`32e03bf59ae9408edc2d0c382a7003a57f1d2bc0` at SHA-256
+`290433bf27cd893a3f13bd3c5e01238f0885d1dbbad7934bfc20f9f63b3873e1`. Install that exact extension
+version and require all three signals: VS Code CLI discovery, the expected manifest contribution,
+and the pinned source digest. A copied theme file or directory alone is not installed state.
+Source: <https://github.com/jx22/berg>.
 
 ## Decision: separate mutable package ownership from the AI user
 

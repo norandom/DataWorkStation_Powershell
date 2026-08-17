@@ -38,7 +38,7 @@ tests = ["tests/Test-AiToolsIsolation.ps1#CopilotCli"]
 
 [requirements.REQ-010]
 verification = "automated"
-tests = ["tests/Test-AiToolsIsolation.ps1#EditorInventory"]
+tests = ["tests/Test-AiToolsIsolation.ps1#EditorInventory", "tests/Test-AiToolsIsolation.ps1#BergActivation"]
 
 [requirements.REQ-011]
 verification = "automated"

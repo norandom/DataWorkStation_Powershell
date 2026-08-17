@@ -119,8 +119,17 @@ function Test-EditorInventory {
 }
 
 function Test-LocalFontPreference {
-    $text = Get-RequiredText 'scripts/DeveloperEditor.Core.ps1'
-    Assert-True ($text -match '\.terminal-fonts' -and $text -match 'InstalledFont') 'local font preference is validated before selection'
+    . (Join-Path $repositoryRoot 'scripts\DeveloperEditor.Core.ps1')
+    $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) "developer-editor-font-$([guid]::NewGuid().ToString('N'))"
+    try {
+        New-Item -ItemType Directory -Path $fixtureRoot | Out-Null
+        Set-Content -LiteralPath (Join-Path $fixtureRoot 'BerkeleyMono-Regular.otf') -Value 'synthetic font fixture'
+        $reader = { param($Path) if ($Path) { @('Berkeley Mono') } }
+        Assert-True (Test-FontFamilyInDirectory -Family 'Berkeley Mono' -Directory $fixtureRoot -FamilyReader $reader) 'embedded per-user font family metadata is accepted'
+        Assert-True (-not (Test-FontFamilyInDirectory -Family 'Missing Mono' -Directory $fixtureRoot -FamilyReader $reader)) 'a different embedded family is rejected'
+    } finally {
+        if (Test-Path -LiteralPath $fixtureRoot) { Remove-Item -LiteralPath $fixtureRoot -Recurse -Force }
+    }
 }
 
 function Test-PortableFontFallback {
@@ -137,10 +146,34 @@ function Test-BergActivation {
     $config = Get-RequiredData 'config/developer-editor.psd1'
     $core = Get-RequiredText 'scripts/DeveloperEditor.Core.ps1'
     $state = Get-RequiredText 'scripts/Set-DeveloperEditorState.ps1'
-    Assert-True ($config.Berg.ThemeLabel -eq 'Berg') 'the active VS Code theme label is declared'
+    Assert-True ($config.Berg.ExtensionId -eq 'teehausamberg.berg' -and $config.Berg.ExtensionVersion -eq '0.0.4') 'the VS Code-discovered Berg identity is declared exactly'
+    Assert-True ($config.Berg.ThemeLabel -eq 'Berg Theme') 'the contributed Berg theme label is declared'
     Assert-True ($config.ManagedSettings -contains 'workbench.colorTheme') 'theme activation is a bounded managed setting'
     Assert-True ($core -match "workbench\.colorTheme.*ThemeLabel") 'the semantic merge activates the declared theme'
-    Assert-True ($state -match "Theme.*workbench\.colorTheme") 'live state reports theme activation drift'
+    . (Join-Path $repositoryRoot 'scripts\DeveloperEditor.Core.ps1')
+    $fixtureRoot = Join-Path ([IO.Path]::GetTempPath()) "developer-editor-berg-$([guid]::NewGuid().ToString('N'))"
+    try {
+        $extensionRoot = Join-Path $fixtureRoot 'teehausamberg.berg-0.0.4'
+        $themeDirectory = Join-Path $extensionRoot 'themes'
+        New-Item -ItemType Directory -Path $themeDirectory -Force | Out-Null
+        $themePath = Join-Path $themeDirectory 'Berg Theme-color-theme.json'
+        Set-Content -LiteralPath $themePath -Value '{"name":"fixture"}' -NoNewline
+        $fixtureHash = (Get-FileHash -LiteralPath $themePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $manifest = @{
+            publisher = 'teehausamberg'; name = 'berg'; version = '0.0.4'
+            contributes = @{ themes = @(@{ label = 'Berg Theme'; path = './themes/Berg Theme-color-theme.json' }) }
+        }
+        $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $extensionRoot 'package.json')
+        $fixtureConfig = @{} + $config.Berg
+        $fixtureConfig.Sha256 = $fixtureHash
+        $discovered = Get-BergExtensionState -Configuration $fixtureConfig -ExtensionInventory @('teehausamberg.berg') -ExtensionRoot $fixtureRoot
+        Assert-True $discovered.Compliant 'a CLI-discovered extension with the exact manifest, contribution, and digest is compliant'
+        $hashOnly = Get-BergExtensionState -Configuration $fixtureConfig -ExtensionInventory @() -ExtensionRoot $fixtureRoot
+        Assert-True (-not $hashOnly.Compliant) 'a theme file that VS Code does not report is rejected'
+    } finally {
+        if (Test-Path -LiteralPath $fixtureRoot) { Remove-Item -LiteralPath $fixtureRoot -Recurse -Force }
+    }
+    Assert-True ($state -match 'Get-BergExtensionState') 'live state validates the discovered Berg contribution'
     Assert-True ($state -notmatch '--install-extension[^\r\n]+--force') 'extension reconciliation does not force dependency downgrades'
 }
 

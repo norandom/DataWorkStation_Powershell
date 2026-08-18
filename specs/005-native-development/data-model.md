@@ -35,7 +35,7 @@ any                    --Test-------------------------> unchanged observation
 
 | Field | Scope | Rules |
 |---|---|---|
-| `CC`, `CXX` | User + current process | `cl.exe`. |
+| `CC`, `CXX` | Current process only after `msvc-activate` | `cl.exe`; legacy user-scoped values are removed. |
 | `CMAKE_GENERATOR` | User + current process | `Ninja`; explicit project `-G` can override. |
 | `CARGO_HOME`, `RUSTUP_HOME` | User + current process | Directories below the user's home. |
 | Cargo bin | User PATH + current process | Exactly one normalized entry. |

@@ -33,3 +33,12 @@ compile/run fixtures all returned exit code zero and their temporary workspaces 
 
 The first Windows PowerShell Java fixture exposed its UTF-8 BOM behavior; the known ASCII fixture
 was made explicitly ASCII and the complete compatibility smoke then passed.
+
+## Explicit activation amendment (2026-08-18)
+
+- Focused MSVC and profile Test modes passed after removing legacy user-scoped `CC` and `CXX`.
+- Clean simulated Windows PowerShell 5.1 and PowerShell Core sessions both loaded with
+  `VSCMD_VER`, `CC`, and `CXX` absent and exposed `msvc-activate`.
+- In both runtimes, activation selected the registered x64 Build Tools linker, set process-only
+  `CC=CXX=cl.exe`, and a second activation left exactly one selected MSVC path entry.
+- The compiler smoke fixture compiled, linked, and executed its temporary C and C++ programs.

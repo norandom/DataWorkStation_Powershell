@@ -1,0 +1,54 @@
+# EARS/TDD requirements gate.
+#
+# The validator version is pinned to the release this was generated from. A gate whose verdict can
+# change without a commit to this repository is not a gate: the same tree would pass today and fail
+# tomorrow, and the failure would look like the author's fault. Move the pin deliberately, and read
+# the release notes when you do.
+#
+# 0.3.0 is the floor, not a preference. Earlier releases reject the `tags` and `intent` fields in
+# traceability.toml outright, and 0.2.0 additionally decomposed constraint models in a way that hid
+# conflicts between requirements guarding on different conditions. Every conflict this repository's
+# model currently records is of exactly that shape, so 0.2.0 reports zero of them.
+
+name: EARS/TDD gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A superseded run cannot usefully fail a branch that has already moved past it.
+concurrency:
+  group: ears-sdd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: Requirements and traceability
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install ears-sdd 0.3.0
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            "https://github.com/norandom/spec-kit-ears-tdd/releases/download/v0.3.0/ears-sdd-installer.sh" | sh
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      # `--all` is the load-bearing flag. Without it the run evaluates a single feature and reports a
+      # pass that says nothing about the other eleven, which is the one way this gate can be green
+      # and meaningless. Spec Kit gitignores the file holding the current feature pointer, so a
+      # narrowed run here would not even be reproducible.
+      #
+      # `--phase final` is the complete check: EARS form, vocabulary grounding, verification
+      # traceability, task coverage, constraint satisfiability within and across specifications, and
+      # separation of requirement prose from production code. All four phases pass on this
+      # repository today, so there is no reason to enforce a weaker one.
+      - name: EARS/TDD gate
+        run: ears-sdd validate --project . --phase final --all

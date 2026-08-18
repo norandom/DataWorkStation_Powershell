@@ -50,7 +50,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `workstation-modules` | Select desired state or review the complete update workflow | `.\Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` or `update` |
 | `linux-developer-packages` | Inspect Homebrew, pyinfra, Dagger, or container engines in WSL | `pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test` |
 | `go-development` | Inspect Go, its workspace, and toolchain selection | `go version` |
-| `native-development` | Inspect MSVC, CMake, Rust, Java, and their environment | `.\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan` |
+| `native-development` | Inspect MSVC, CMake, Rust, Java, and explicitly activate MSVC | `msvc-activate; Get-Command cl.exe,link.exe,msbuild.exe` |
 | `spec-driven-development` | Check EARS requirements, tasks, tests, and final traceability | `ears-sdd status --phase final` |
 | `terminal-fonts` | Inspect the selected terminal font and pinned Fira Code fallback | `pwsh -NoProfile -File .\scripts\Set-TerminalFontState.ps1 -Mode Test` |
 | `native-text-tools` | Inspect native `awk` and `sed` for PowerShell | `pwsh -NoProfile -File .\scripts\Set-NativeTextToolsState.ps1 -Mode Test` |

@@ -6,6 +6,10 @@ $resolved = (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path
 $wpa = 'C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\wpa.exe'
 $speedscope = Join-Path $env:APPDATA 'npm\speedscope.cmd'
 $dotnetTrace = Join-Path $env:USERPROFILE '.dotnet\tools\dotnet-trace.exe'
+$qViewCandidates = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\qView\qView.exe'),
+    'C:\Program Files\qView\qView.exe'
+)
 
 if ($resolved -like '*.etl') {
     if (-not (Test-Path -LiteralPath $wpa -PathType Leaf)) { throw "WPA is missing: $wpa" }
@@ -27,7 +31,14 @@ if ($resolved -like '*.speedscope.json') {
     return
 }
 
-if ($resolved -like '*.svg' -or $resolved -like '*.html' -or $resolved -like '*.htm') {
+if ($resolved -like '*.svg') {
+    $qView = $qViewCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+    if (-not $qView) { throw 'qView is missing. Apply the base Packages desired state before opening SVG profiles.' }
+    Start-Process -FilePath $qView -ArgumentList @(('"{0}"' -f $resolved))
+    return
+}
+
+if ($resolved -like '*.html' -or $resolved -like '*.htm') {
     Start-Process -FilePath $resolved
     return
 }

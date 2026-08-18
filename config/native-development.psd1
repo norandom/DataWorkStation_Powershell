@@ -25,8 +25,6 @@
         Commands = @('java.exe', 'javac.exe', 'jar.exe', 'jshell.exe')
     }
     Environment = @{
-        CC = 'cl.exe'
-        CXX = 'cl.exe'
         CMakeGenerator = 'Ninja'
         CargoHome = '.cargo'
         RustupHome = '.rustup'

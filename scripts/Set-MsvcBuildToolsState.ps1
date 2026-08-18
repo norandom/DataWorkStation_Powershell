@@ -35,8 +35,8 @@ function Get-MsvcState {
         StandaloneBuildTools = [bool] $instance
         RequiredComponents = [bool] $instance
         X64DeveloperCommand = ($instance -and (Test-Path -LiteralPath (Join-Path $instance.installationPath 'Common7\Tools\VsDevCmd.bat') -PathType Leaf))
-        CC = [Environment]::GetEnvironmentVariable('CC', 'User') -eq $configuration.Environment.CC
-        CXX = [Environment]::GetEnvironmentVariable('CXX', 'User') -eq $configuration.Environment.CXX
+        LegacyUserCCAbsent = [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable('CC', 'User'))
+        LegacyUserCXXAbsent = [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable('CXX', 'User'))
     }
     [pscustomobject]@{
         SchemaVersion = 1; Resource = 'MsvcBuildTools'; State = if ($checks.Values -contains $false) { 'drift detected' } else { 'compliant' }
@@ -63,7 +63,10 @@ if ($Mode -eq 'Test') {
     if ($before.State -ne 'compliant') { exit 1 }
     exit 0
 }
-if ($before.State -ne 'compliant' -or $Mode -eq 'Reinitialize') {
+$packageDrift = -not $before.Checks.StandaloneBuildTools -or
+    -not $before.Checks.RequiredComponents -or
+    -not $before.Checks.X64DeveloperCommand
+if ($packageDrift -or $Mode -eq 'Reinitialize') {
     $override = @('--wait', '--quiet', '--norestart')
     foreach ($component in $configuration.Msvc.RequiredComponents) { $override += @('--add', $component) }
     $arguments = @('install', '--id', $configuration.Msvc.PackageId, '--exact', '--source', 'winget', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity', '--override', ($override -join ' '))
@@ -71,10 +74,8 @@ if ($before.State -ne 'compliant' -or $Mode -eq 'Reinitialize') {
     & winget.exe @arguments
     if ($LASTEXITCODE -ne 0) { throw "Build Tools installer failed with exit code $LASTEXITCODE." }
 }
-[Environment]::SetEnvironmentVariable('CC', $configuration.Environment.CC, 'User')
-[Environment]::SetEnvironmentVariable('CXX', $configuration.Environment.CXX, 'User')
-$env:CC = $configuration.Environment.CC
-$env:CXX = $configuration.Environment.CXX
+[Environment]::SetEnvironmentVariable('CC', $null, 'User')
+[Environment]::SetEnvironmentVariable('CXX', $null, 'User')
 $after = Get-MsvcState
 $after.Changed = ($before.State -ne 'compliant' -or $Mode -eq 'Reinitialize')
 Write-MsvcState $after -AsJson:$Json

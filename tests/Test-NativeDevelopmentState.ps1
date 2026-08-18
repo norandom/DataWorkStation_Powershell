@@ -103,10 +103,15 @@ function Test-SafetyContract {
 function Test-ProfileContract {
     $profileSource = Get-Source 'profile/NativeDevelopment.ps1'
     Assert-True ($profileSource -match 'function global:Import-MsvcBuildEnvironment') 'profile exposes explicit MSVC environment import'
+    Assert-True ($profileSource -match 'function global:Enable-MsvcBuildEnvironment') 'profile separates the human activation surface from silent automation'
+    Assert-True ($profileSource -match "Set-Alias -Name msvc-activate -Value Enable-MsvcBuildEnvironment -Scope Global") 'profile exposes the human msvc-activate command'
     Assert-True ($profileSource -match 'VsDevCmd\.bat') 'profile uses the vendor developer environment'
     Assert-True ($profileSource -match 'host_arch=amd64' -and $profileSource -match 'arch=amd64') 'profile selects x64 host and target'
     Assert-True ($profileSource -match 'VSCMD_VER') 'profile avoids repeated initialization'
     Assert-True ($profileSource -match "IndexOf\('='\)") 'profile preserves environment values containing equals signs'
+    Assert-True ($profileSource -notmatch '(?m)^\s*Import-MsvcBuildEnvironment\s*$') 'profile does not activate MSVC during shell startup'
+    Assert-True ($profileSource -match "SetEnvironmentVariable\('CC', 'cl\.exe', 'Process'\)" -and
+        $profileSource -match "SetEnvironmentVariable\('CXX', 'cl\.exe', 'Process'\)") 'explicit activation adds process-only compiler selectors'
     $deployer = Get-Source 'scripts/Set-PowerShellProfile.ps1'
     Assert-True ($deployer -match 'NativeDevelopment\.ps1') 'profile resource deploys the native development component'
 }
@@ -114,8 +119,8 @@ function Test-ProfileContract {
 function Test-EnvironmentContract {
     $configuration = Get-NativeConfiguration
     if (-not $configuration) { return }
-    Assert-True ($configuration.Environment.CC -eq 'cl.exe') 'CC selects cl.exe'
-    Assert-True ($configuration.Environment.CXX -eq 'cl.exe') 'CXX selects cl.exe'
+    Assert-True (-not $configuration.Environment.ContainsKey('CC')) 'CC is not persisted outside explicit MSVC activation'
+    Assert-True (-not $configuration.Environment.ContainsKey('CXX')) 'CXX is not persisted outside explicit MSVC activation'
     Assert-True ($configuration.Environment.CMakeGenerator -eq 'Ninja') 'Ninja is the CMake default'
     Assert-True ($configuration.Environment.CargoHome -eq '.cargo') 'Cargo home is user-relative'
     Assert-True ($configuration.Environment.RustupHome -eq '.rustup') 'Rustup home is user-relative'
@@ -123,6 +128,11 @@ function Test-EnvironmentContract {
     Assert-True (-not $configuration.Environment.ContainsKey('LD')) 'LD is not globally forced'
     Assert-True (-not $configuration.Environment.ContainsKey('RUSTUP_TOOLCHAIN')) 'Rust project toolchain is not globally overridden'
     Assert-True (-not $configuration.Environment.ContainsKey('CARGO_BUILD_TARGET')) 'Rust project target is not globally overridden'
+    $msvc = Get-Source 'scripts/Set-MsvcBuildToolsState.ps1'
+    Assert-True ($msvc -like '*SetEnvironmentVariable(''CC'', $null, ''User'')*' -and
+        $msvc -like '*SetEnvironmentVariable(''CXX'', $null, ''User'')*') 'MSVC Ensure removes legacy persistent compiler selectors'
+    Assert-True ($msvc -match '\$packageDrift\s*=' -and
+        $msvc -match 'if \(\$packageDrift -or \$Mode -eq ''Reinitialize''\)') 'compiler-variable-only drift does not invoke the Build Tools installer'
 }
 
 function Test-DualShellContract {
@@ -131,7 +141,7 @@ function Test-DualShellContract {
     if (-not (Test-Path -LiteralPath $profilePath -PathType Leaf)) { return }
     foreach ($runtime in @((Get-Command powershell.exe -ErrorAction Stop).Source, (Get-Command pwsh.exe -ErrorAction Stop).Source)) {
         $escaped = $profilePath.Replace("'", "''")
-        $command = ". '$escaped'; [pscustomobject]@{ ImportCommand=[bool](Get-Command Import-MsvcBuildEnvironment -ErrorAction Ignore); CC=`$env:CC; CXX=`$env:CXX; Generator=`$env:CMAKE_GENERATOR; JavaHome=`$env:JAVA_HOME } | ConvertTo-Json -Compress"
+        $command = "`$env:VSCMD_VER=`$null; `$env:CC=`$null; `$env:CXX=`$null; . '$escaped'; [pscustomobject]@{ ImportCommand=[bool](Get-Command Import-MsvcBuildEnvironment -ErrorAction Ignore); AliasTarget=(Get-Alias msvc-activate -ErrorAction Ignore).Definition; AutoActivated=[bool]`$env:VSCMD_VER; CC=`$env:CC; CXX=`$env:CXX } | ConvertTo-Json -Compress"
         $result = Invoke-External -FilePath $runtime -ArgumentList @('-NoLogo', '-NoProfile', '-Command', $command)
         Assert-True ($result.ExitCode -eq 0) "profile component parses and loads in '$runtime'"
         $jsonLine = @($result.Output | Where-Object { [string] $_ -match '^\s*\{' } | Select-Object -Last 1)
@@ -139,6 +149,8 @@ function Test-DualShellContract {
         if ($jsonLine.Count -eq 1) {
             $surface = $jsonLine[0] | ConvertFrom-Json
             Assert-True $surface.ImportCommand "'$runtime' exposes Import-MsvcBuildEnvironment"
+            Assert-True ($surface.AliasTarget -eq 'Enable-MsvcBuildEnvironment') "'$runtime' exposes msvc-activate"
+            Assert-True (-not $surface.AutoActivated -and -not $surface.CC -and -not $surface.CXX) "'$runtime' leaves MSVC environment state inactive at startup"
         }
     }
 }

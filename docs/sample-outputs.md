@@ -21,13 +21,15 @@ cmake version 4.4.2
 PS> javac -version
 javac 21.0.12
 
+PS> msvc-activate
 PS> cl
 Microsoft (R) C/C++ Optimizing Compiler Version 19.44.35228 for x64
 usage: cl [ option... ] filename... [ /link linkoption... ]
 ```
 
-The MSVC usage message confirms that the profile imported the compiler environment. It is expected
-when `cl` is called without a source file.
+The MSVC usage message confirms that explicit activation imported the compiler environment. It is
+expected when `cl` is called without a source file. A new shell leaves MSVC inactive until
+`msvc-activate` is run.
 
 ## Managed aliases
 

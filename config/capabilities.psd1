@@ -80,8 +80,8 @@
             Id = 'native-performance'
             Title = 'Native and system-wide performance'
             Triggers = @('slow', 'cpu', 'latency', 'native', 'compiled', 'system-wide')
-            EvidenceKinds = @('ETW trace')
-            InspectCommands = @('profile-status', 'profile-native-open {case}')
+            EvidenceKinds = @('ETW trace', 'collapsed CPU stacks', 'SVG flame graph')
+            InspectCommands = @('profile-status', 'profile-native-flamegraph {case}', 'profile-native-open {case}')
             CaptureCommand = 'profile-native-record {case} -Seconds 30'
         }
         @{
@@ -317,18 +317,20 @@
         @{
             Id = 'native-development'
             Title = 'Native Windows C/C++, CMake, Rust, and Java development'
-            Triggers = @('msvc', 'cl.exe', 'msbuild', 'cmake', 'ninja', 'rust', 'rustup', 'java', 'javac', 'jdk', 'JAVA_HOME', 'native development')
+            Triggers = @('msvc', 'msvc-activate', 'cl.exe', 'msbuild', 'cmake', 'ninja', 'rust', 'rustup', 'java', 'javac', 'jdk', 'JAVA_HOME', 'native development')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan'
                 'pwsh -NoProfile -File .\scripts\Set-NativeDevelopmentState.ps1 -Mode Test'
-                'Get-Command cl.exe,link.exe,msbuild.exe,cmake.exe,ninja.exe,rustc.exe,cargo.exe,java.exe,javac.exe'
-                'Get-ChildItem Env:CC,Env:CXX,Env:CMAKE_GENERATOR,Env:CARGO_HOME,Env:RUSTUP_HOME,Env:JAVA_HOME'
+                'Get-Command msvc-activate'
+                'msvc-activate; Get-Command cl.exe,link.exe,msbuild.exe,cmake.exe,ninja.exe,rustc.exe,cargo.exe,java.exe,javac.exe'
+                'Get-ChildItem Env:CMAKE_GENERATOR,Env:CARGO_HOME,Env:RUSTUP_HOME,Env:JAVA_HOME'
             )
             ValidationCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-NativeDevelopmentState.ps1 -Mode Smoke'
             )
             StateCommands = @(
+                'msvc-activate'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module MsvcBuildTools'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module CMake'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module RustToolchain'

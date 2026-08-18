@@ -51,13 +51,20 @@ The catalog also declares a runtime boundary for every module. `Inbox` is limite
 at a time. Test is observational; Ensure is explicit, and only standalone Build Tools crosses the
 privileged, multi-gigabyte installation boundary. No installer restarts Windows automatically.
 
-The managed profile imports the current x64 MSVC environment per process and keeps only stable user
-state: `CC`, `CXX`, `CMAKE_GENERATOR`, `CARGO_HOME`, `RUSTUP_HOME`, and `JAVA_HOME`. Versioned MSVC,
-SDK, and JDK paths are resolved dynamically. MinGW, MSYS/MSYS2, Cygwin, and Git Bash are excluded.
+The managed profile exposes `msvc-activate` in both PowerShell runtimes and leaves the MSVC
+environment inactive at shell startup. Invoking the command imports the current x64 MSVC environment
+into that process, selects `CC=CXX=cl.exe`, and puts Microsoft `link.exe` ahead of conflicting tools.
+The compiler selectors are not persisted. Independent CMake, Rust, and Java state retains its stable
+user variables and paths. Versioned MSVC, SDK, and JDK paths are resolved dynamically. MinGW,
+MSYS/MSYS2, Cygwin, and Git Bash are excluded.
 
 ## Automatically maintained
 
 The declared package set, official Scoop buckets, Windows Terminal, Contour Terminal and its BlueTerm theme, Windows optional features, developer hardening profile, current-user hover-focus behavior, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
+
+The base WinGet package DSL also installs IrfanView with its matching plug-in collection and qView.
+Completed SVG flame graphs open in the smaller native qView application after headless profiling
+work ends; IrfanView remains available for ordinary image viewing.
 
 The focused `Caffeine` module installs the real Zhorn Software tray utility and maintains an enabled per-user startup entry. It starts active at sign-in with no `-startoff` flag, so idle sleep is inhibited; use its tray icon to toggle or exit it. The local Contour configuration keeps touch scrollbars visible and uses accessible coral error colors; runtime terminal windows must be reopened to load those changes.
 

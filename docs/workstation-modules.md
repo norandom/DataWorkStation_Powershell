@@ -73,7 +73,7 @@ Dependencies and stage gates are included automatically and run first. For examp
 | `CMake` | Native CMake and Ninja | `PowerShell7` | No |
 | `RustToolchain` | Stable x64 MSVC Rust through rustup | `MsvcBuildTools`, `PowerShell7` | No |
 | `JavaToolchain` | Microsoft OpenJDK 21, `JAVA_HOME`, `java`, and `javac` | `PowerShell7` | No |
-| `NativeDevelopment` | Aggregate plus managed dual-shell profile | all above, `PowerShellProfile` | Yes |
+| `NativeDevelopment` | Aggregate plus explicit dual-shell `msvc-activate` command | all above, `PowerShellProfile` | Yes |
 
 Use `-Plan` to see the compatible dependency order before running a focused module.
 

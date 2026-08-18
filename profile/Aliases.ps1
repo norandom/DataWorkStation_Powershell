@@ -246,6 +246,23 @@ function global:profile-native-open {
     param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
     profile-native Open $Name -WorkingDirectory $Path
 }
+function global:profile-native-flamegraph {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Name,
+        [string] $Path = (Get-Location).Path,
+        [int[]] $ProcessId = @(),
+        [string[]] $ProcessName = @(),
+        [double] $StartSeconds,
+        [double] $EndSeconds,
+        [switch] $NoOpen,
+        [switch] $Json
+    )
+    $trace = Join-Path ([IO.Path]::GetFullPath((Join-Path $Path "profile-native-$Name"))) 'cpu.etl'
+    $parameters = @{ TracePath = $trace; ProcessId = $ProcessId; ProcessName = $ProcessName; NoOpen = $NoOpen; Json = $Json }
+    if ($PSBoundParameters.ContainsKey('StartSeconds')) { $parameters.StartSeconds = $StartSeconds }
+    if ($PSBoundParameters.ContainsKey('EndSeconds')) { $parameters.EndSeconds = $EndSeconds }
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Export-NativeCpuFlameGraph.ps1') @parameters
+}
 function global:profile-python {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PythonProfile.ps1') @args
 }

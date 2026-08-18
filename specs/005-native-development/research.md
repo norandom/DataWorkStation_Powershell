@@ -19,16 +19,17 @@ Sources: [MSVC Build Tools installation](https://learn.microsoft.com/en-us/cpp/o
 [Build Tools component IDs](https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=visualstudio),
 [installer component semantics](https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=vs-2022).
 
-## Decision 2: Import the developer environment per shell
+## Decision 2: Import the developer environment on explicit activation
 
 **Decision**: Resolve the latest compatible Build Tools instance with the bundled instance locator,
 then import the output of its developer-command initialization for `amd64` host and target once per
-managed shell.
+activated shell through the human `msvc-activate` command.
 
 **Rationale**: MSVC depends on `PATH`, `INCLUDE`, `LIB`, `LIBPATH`, SDK, and toolset variables. The
-versioned values must track side-by-side instance and SDK updates. Per-process import preserves user
-state and lets child processes inherit a complete environment. It also prepends Microsoft's
-`link.exe` ahead of the existing Coreutils command.
+versioned values must track side-by-side instance and SDK updates. Explicit per-process import keeps
+ordinary shells neutral, preserves user state, and lets child build processes inherit a complete
+environment. It also prepends Microsoft's `link.exe` ahead of the existing Coreutils command only
+when native compilation is requested.
 
 **Alternatives considered**: Persisting the full developer environment would overwrite unrelated
 user PATH state and become stale after updates; hard-coded installation paths break side-by-side

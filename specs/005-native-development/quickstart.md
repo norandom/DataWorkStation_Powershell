@@ -48,6 +48,7 @@ the non-IDE CMake/Ninja, Rust, and Microsoft OpenJDK 21 dependencies. It does no
 ## 5. Open a new shell and verify commands
 
 ```powershell
+msvc-activate
 Get-Command cl.exe,link.exe,lib.exe,nmake.exe,msbuild.exe,cmake.exe,ninja.exe,rustc.exe,cargo.exe,java.exe,javac.exe,jar.exe,jshell.exe
 Get-ChildItem Env:CC,Env:CXX,Env:CMAKE_GENERATOR,Env:CARGO_HOME,Env:RUSTUP_HOME,Env:JAVA_HOME
 rustup show active-toolchain
@@ -55,8 +56,9 @@ java -version
 javac -version
 ```
 
-Expected: native x64 Microsoft commands, `CC=CXX=cl.exe`, `CMAKE_GENERATOR=Ninja`, user Rust
-directories, stable x64 MSVC Rust, and matching OpenJDK 21 runtime/compiler commands.
+Expected: the new shell starts without an MSVC environment; `msvc-activate` then exposes native x64
+Microsoft commands and process-only `CC=CXX=cl.exe`. CMake, Rust, and Java retain their independent
+stable state.
 
 ## 6. Run explicit benign smoke fixtures
 

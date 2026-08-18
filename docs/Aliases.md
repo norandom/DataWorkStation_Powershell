@@ -4,9 +4,16 @@ The managed profile supports Windows PowerShell 5.1 and PowerShell 7. Some entri
 
 ## Native development commands
 
-The native development toolchain exposes vendor commands directly instead of hiding them behind
-aliases: `cl`, `link`, `msbuild`, `cmake`, `ninja`, `rustc`, `cargo`, `java`, and `javac`. A normal
-PowerShell 5.1 or Core session receives the same environment from the managed profile.
+The native development toolchain exposes vendor commands directly. CMake, Ninja, Rust, and Java use
+their persistent package paths. MSVC remains inactive until requested so Microsoft `link.exe` does
+not compete globally with other same-named tools.
+
+| Command | Purpose |
+|---|---|
+| `msvc-activate` | Import the current x64 MSVC/SDK environment into this PowerShell process and set process-only `CC=CXX=cl.exe`. Repeated activation is idempotent. |
+
+After activation, `cl`, `link`, `lib`, `nmake`, and `msbuild` resolve directly from the selected
+Build Tools instance in both Windows PowerShell 5.1 and PowerShell Core.
 
 ## Input and prompt
 
@@ -107,12 +114,13 @@ TTD has no first-class two-trace diff. For a before/after comparison, record the
 
 | Command | Purpose |
 |---|---|
-| `profile-status` | Report WPT/WPA, py-spy, dotnet-trace, Speedscope, and optional AMD uProf state as PowerShell objects. |
+| `profile-status` | Report WPT/WPA, qView, py-spy, dotnet-trace, Speedscope, and optional AMD uProf state as PowerShell objects. |
 | `profile-status -Json` | Emit the same inventory for scripts or AI tools. |
 | `profile-native-start NAME` | Start a system-wide sampled CPU trace with WPR's `CPU` profile and file-mode buffering. Elevation is inline. |
 | `profile-native-stop NAME` | Stop the named WPR instance and save `profile-native-NAME/cpu.etl`. |
 | `profile-native-cancel NAME` | Cancel a named capture without retaining an ETL. |
 | `profile-native-record NAME [-Seconds 15]` | Run a bounded native CPU capture and stop it automatically. This is the normal capture command. |
+| `profile-native-flamegraph NAME [-ProcessId PID] [-ProcessName NAME] [-StartSeconds S -EndSeconds S]` | Headlessly export collapsed stacks and an SVG from the retained ETL, then open the completed SVG in qView. Use `-NoOpen` only for automation. |
 | `profile-native-open NAME` | Open the retained ETL in Windows Performance Analyzer. |
 | `profile-native Status [NAME]` | List retained native sessions or inspect one session's JSON-backed state. |
 | `profile-python -ProcessId PID [-Seconds 30] [-Rate 100] [-Open]` | Attach py-spy and create a standalone interactive SVG flame graph. |
@@ -120,13 +128,18 @@ TTD has no first-class two-trace diff. For a before/after comparison, record the
 | `profile-dotnet-ps` | List traceable .NET processes. |
 | `profile-dotnet -ProcessId PID [-Seconds 30] [-Open]` | Record sampled managed stacks, retain the original `.nettrace`, and create Speedscope JSON. |
 | `profile-dotnet -Executable TOOL.exe -Argument ...` | Launch and trace a .NET workload from startup. |
-| `profile-view FILE` | Open ETL in WPA, SVG in the browser, Speedscope JSON in the local Speedscope viewer, or convert `.nettrace` before opening it. |
+| `profile-view FILE` | Open ETL in WPA, SVG explicitly in qView, Speedscope JSON in the local Speedscope viewer, or convert `.nettrace` before opening it. |
 | `wpa FILE.etl` | Open an ETL directly in WPA. |
 | `speedscope FILE.speedscope.json` | Open a profile in the locally installed Speedscope CLI/browser viewer. |
 | `uprof` / `uprof-cli` | Open AMD uProf after its explicit installation. |
 | `uprof-install` | Open AMD's official EULA-gated uProf download page. |
 
-Use WPR and WPA for compiled programs, drivers, kernel activity, cross-process CPU work, and system-wide investigation. In WPA, select the sampled CPU data and its flame visualization, then group or filter by process and stack. Keep the ETL because WPA can revisit it with different tables, symbols, and views.
+Use WPR for compiled programs, drivers, kernel activity, cross-process CPU work, and system-wide
+investigation. `profile-native-flamegraph` keeps the expensive ETL parsing headless and launches
+qView only after the SVG is complete. It uses Microsoft's typed ETL processor so samples retain the
+correct stack association. The SVG deliberately uses basic hex colors, contrast-aware labels, and
+numeric canvas geometry supported by qView. Keep the ETL because WPA can revisit it with different
+tables, symbols, timelines, and views.
 
 WPR CPU captures are system-wide and can produce roughly tens of MiB per second before compression on a busy machine. Prefer `profile-native-record` with a short interval. Stopping and compressing the ETL can take substantially longer than the recording interval.
 

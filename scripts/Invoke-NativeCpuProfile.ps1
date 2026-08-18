@@ -67,10 +67,19 @@ $state = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
 switch ($Action) {
     'Stop' {
         if (-not $state.Active) { throw "Native profile '$Name' is not active." }
-        & sudo.exe $wpr -stop $etlFile "Native CPU profile: $Name" -compress -instancename $state.Instance
+        $stagedEtl = Join-Path ([IO.Path]::GetTempPath()) ("profile-native-{0}-{1}.etl" -f $Name, [guid]::NewGuid().ToString('N'))
+        & sudo.exe $wpr -stop $stagedEtl "Native CPU profile: $Name" -compress -instancename $state.Instance
         if ($LASTEXITCODE -ne 0) { throw "WPR failed to stop and save the trace: $LASTEXITCODE" }
         $state.Active = $false
         $state.Stopped = (Get-Date).ToString('o')
+        try {
+            Move-Item -LiteralPath $stagedEtl -Destination $etlFile -Force
+        } catch {
+            $state | Add-Member -NotePropertyName StagedTrace -NotePropertyValue $stagedEtl -Force
+            $state | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
+            throw "WPR stopped, but the staged trace could not be moved to '$etlFile'. It remains at '$stagedEtl'. $($_.Exception.Message)"
+        }
+        $state | Add-Member -NotePropertyName StagedTrace -NotePropertyValue $null -Force
         $state | ConvertTo-Json | Set-Content -LiteralPath $stateFile -Encoding UTF8
         Write-Result $state
     }

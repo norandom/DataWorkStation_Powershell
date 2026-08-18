@@ -44,7 +44,8 @@ present and otherwise report that no data is available.
 The `NativeDevelopment` module installs standalone MSVC/MSBuild, CMake/Ninja, stable Rust MSVC, and
 Microsoft OpenJDK 21. It does not install the Visual Studio IDE or a Unix emulation shell. You can
 select `JavaToolchain` on its own when you only need `java` and `javac`. The optional Ghidra tools use
-that same JDK.
+that same JDK. Ordinary shells leave the MSVC environment inactive; run `msvc-activate` in the
+current shell before using `cl`, Microsoft `link`, `lib`, `nmake`, or `msbuild`.
 
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module NativeDevelopment -Plan
@@ -92,7 +93,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 
 | Path | Responsibility |
 |---|---|
-| `.config/configuration.winget` | Declarative WinGet package state, including `uv`. |
+| `.config/configuration.winget` | Declarative WinGet package state, including `uv`, IrfanView, and lightweight qView. |
 | `.config/git.winget` | Focused Git package state used by Scoop dependencies. |
 | `.config/powershell7.winget` | Focused PowerShell 7 package state used by Contour, package, and profile dependencies. |
 | `.config/go.winget` | Focused official Go MSI-backed package state for Windows development. |
@@ -160,7 +161,9 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Invoke-PowerShellTests.ps1` | Runs standard test files through one human/JSON Pester command with bounded parallel and compatibility lanes. |
 | `linux/developer_tools.py` | Human-runnable pyinfra desired state for Debian developer packages. |
 | `scripts/Set-ProfilingToolsState.ps1` | Maintains WPT/WPA, py-spy, dotnet-trace, and the local Speedscope viewer. |
-| `scripts/Invoke-NativeCpuProfile.ps1` | Records native/system CPU traces with WPR for WPA. |
+| `scripts/Invoke-NativeCpuProfile.ps1` | Records native/system CPU traces with WPR, staging elevated stop output before the user-context move. |
+| `scripts/Export-NativeCpuFlameGraph.ps1` | Headlessly converts sampled ETW stacks to collapsed stacks and a qView-compatible SVG. |
+| `tools/NativeCpuStacks` | Uses Microsoft's typed TraceProcessor API to preserve the sample-to-stack association while decoding ETL. |
 | `scripts/Invoke-PythonProfile.ps1` | Records Python sampled stacks as standalone SVG flame graphs. |
 | `scripts/Invoke-DotNetProfile.ps1` | Records .NET EventPipe traces and Speedscope data. |
 | `scripts/Invoke-HeadlessDumpAnalysis.ps1` | Analyzes existing dumps headlessly with cdbX64 and CLI symbol downloads. |
@@ -304,7 +307,8 @@ the exporter, and uses the SYSTEM account.
 
 The package set includes PowerShell 7, Windows Terminal, Go, Microsoft Coreutils, ripgrep, rclone,
 WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, Git, GitHub CLI
-(`gh`), Tailscale, WSL, and Debian. Node.js supplies npm and npx.
+(`gh`), Tailscale, WSL, Debian, IrfanView with its matching plug-ins, and lightweight qView for SVG
+profile viewing. Node.js supplies npm and npx.
 
 Windows PowerShell 5.1 and the newest installed PowerShell Core load the same prompt, aliases, tools,
 and readline settings. Windows Terminal starts PowerShell Core by default and keeps Windows

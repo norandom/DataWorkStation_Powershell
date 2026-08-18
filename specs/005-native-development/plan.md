@@ -8,10 +8,10 @@
 
 Add a compact, native Windows x64 development toolchain as five focused Extended-stage modules:
 standalone MSVC Build Tools, CMake plus Ninja, rustup plus the stable MSVC toolchain, Microsoft
-OpenJDK 21, and an aggregate integration gate. A managed profile component imports the current Microsoft developer
-environment into every PowerShell 5.1/Core session while stable user variables remain desired
-state. Test mode is observational; the privileged Build Tools install is explicit and never
-restarts Windows.
+OpenJDK 21, and an aggregate integration gate. A managed profile component exposes the human
+`msvc-activate` command in PowerShell 5.1/Core and imports the Microsoft developer environment only
+when requested. Test mode is observational; the privileged Build Tools install is explicit and
+never restarts Windows.
 
 ## Technical Context
 
@@ -27,7 +27,7 @@ restarts Windows.
 
 **Project Type**: PowerShell workstation desired-state and operator CLI
 
-**Performance Goals**: Profile initialization occurs once per shell and subsequent initialization is constant-time; smoke fixtures complete within two minutes each
+**Performance Goals**: Profile loading performs no MSVC initialization; repeated explicit activation is constant-time; smoke fixtures complete within two minutes each
 
 **Constraints**: No Visual Studio IDE, MinGW, MSYS/MSYS2, Cygwin, Git Bash, ARM toolsets, UWP, ATL/MFC, or C++/CLI; no automatic restart; preserve unrelated user environment and project overrides
 
@@ -90,8 +90,8 @@ Existing integration points change narrowly: `Apply-Workstation.ps1`,
 Pester adapter inventory.
 
 **Structure Decision**: Reuse the repository's focused PowerShell resource pattern. Package
-declarations remain separate from state logic, the profile owns process-scoped developer variables,
-and test fixtures are generated under temporary directories.
+declarations remain separate from state logic, the explicit profile command owns process-scoped
+developer variables, and test fixtures are generated under temporary directories.
 
 ## Requirement-to-design translation
 
@@ -100,9 +100,9 @@ and test fixtures are generated under temporary directories.
 | REQ-001, REQ-002 | Five Extended-stage catalog entries; aggregate dependencies pull focused modules and the managed profile | `ModuleContract` |
 | REQ-003, REQ-023, REQ-026 | Test-only observation, bounded JSON, explicit privilege/restart fields, and no restart command | `StateContract`, `SafetyContract` |
 | REQ-004, REQ-005, REQ-006 | Build Tools product with only VC x64/x86 and Windows SDK component IDs; required dependencies implicit; explicit excluded-component audit | `MsvcContract` |
-| REQ-007, REQ-008, REQ-009, REQ-011, REQ-025 | Idempotent profile component locates the latest compatible instance and imports `VsDevCmd` x64 environment once per shell | `ProfileContract`, `DualShellContract` |
-| REQ-010 | User-scoped `CC=cl.exe` and `CXX=cl.exe`, refreshed into the current process | `EnvironmentContract` |
-| REQ-012 | Same component is deployed and launched under both PowerShell runtimes | `DualShellContract` |
+| REQ-007, REQ-008, REQ-009, REQ-011, REQ-025 | Idempotent `msvc-activate` locates the latest compatible instance and imports the `VsDevCmd` x64 environment only when requested | `ProfileContract`, `DualShellContract` |
+| REQ-010 | Legacy user `CC`/`CXX` values are absent; activation sets process-only `CC=CXX=cl.exe` | `EnvironmentContract` |
+| REQ-012 | The same inactive-at-startup activation command is deployed under both PowerShell runtimes | `DualShellContract` |
 | REQ-013, REQ-014 | Separate CMake and Ninja package declarations; user `CMAKE_GENERATOR=Ninja`; explicit `-G` remains authoritative | `CMakeContract`, `CMakeSmoke` |
 | REQ-015, REQ-016, REQ-017 | Official rustup package, stable x64 MSVC default, user Rust directories and cargo path, absent forced target variables | `RustContract`, `RustSmoke` |
 | REQ-018 | Package/component exclusion allowlist and negative command/source assertions | `SafetyContract` |

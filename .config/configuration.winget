@@ -94,3 +94,21 @@ resources:
       id: Debian.Debian
       source: winget
       useLatest: true
+  - name: IrfanView
+    type: Microsoft.WinGet/Package
+    properties:
+      id: IrfanSkiljan.IrfanView
+      source: winget
+      useLatest: true
+  - name: IrfanView PlugIns
+    type: Microsoft.WinGet/Package
+    properties:
+      id: IrfanSkiljan.IrfanView.PlugIns
+      source: winget
+      useLatest: true
+  - name: qView
+    type: Microsoft.WinGet/Package
+    properties:
+      id: jurplel.qView
+      source: winget
+      useLatest: true

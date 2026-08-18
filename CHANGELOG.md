@@ -2,9 +2,16 @@
 
 ## Unreleased
 
+## 2.4.0 - 2026-08-18
+
 - Add an opt-in uv/OpenBB quantitative research environment with an installable shared base, independently locked project overlays, project-local JupyterLab, observational drift reporting, bounded generated-environment recovery, and a strictly non-mutating future Source-relocation plan.
 - Extend the quant environment with exact PyXLL/Plotly/Kaleido state, a locally licensed Excel add-in using the OpenBB venv, redacted configuration reconciliation, WebView2-backed interactive plots, and a locked PyXLL-Jupyter/JupyterLab integration with one deterministic, non-duplicated PyXLL ribbon.
 - Cache managed native-command availability during explicit profile reconciliation, while retaining path validation and live fallback for missing or stale entries at shell startup.
+- Add isolated AI-tool and editor state with restricted NixOS WSL execution, explicit import/export boundaries, verified VS Code theme and font selection, and no credential sharing with developer or malware-analysis environments.
+- Add separately selectable Windows Exploit Protection profiles with captured-policy integrity checks, plan/test/apply/reinitialize boundaries, rollback state, constraint modelling, intention precedence, shared vocabulary, complete traceability, and a pinned all-feature EARS/TDD GitHub gate.
+- Add headless native CPU flame-graph export from retained ETL through Microsoft's typed TraceProcessor API, with process/time filtering, deterministic collapsed stacks and SVG output, qView integration, and safer elevated trace staging.
+- Make MSVC activation explicit through `msvc-activate`, keep ordinary PowerShell sessions neutral, remove persistent `CC`/`CXX`, and select Microsoft's linker only inside the activated process without exposing Git Bash utilities.
+- Add an explicitly confirmed, handle-checked, fingerprint-gated Source relocation cutover utility with same-volume backup rename, verified junction creation, and automatic rollback on failure.
 
 ## 2.3.0 - 2026-08-16
 

@@ -29,10 +29,10 @@ in PowerShell 5.1 and Core.
 
 - [x] T004 [US1] Add and observe failing module/stage/dependency assertions for REQ-001 and REQ-002 in `tests/Test-NativeDevelopmentState.ps1#ModuleContract`
 - [x] T005 [US1] Add and observe failing standalone product, component allowlist, exclusion, Test/JSON, privilege, and no-restart assertions for REQ-003 through REQ-006, REQ-023, and REQ-026 in `tests/Test-NativeDevelopmentState.ps1#MsvcContract`, `#StateContract`, and `#SafetyContract`
-- [x] T006 [US1] Add and observe failing dynamic x64 import, command precedence, stable/persistent variable, versioned/process variable, idempotence, and dual-shell assertions for REQ-007 through REQ-012 and REQ-025 in `tests/Test-NativeDevelopmentState.ps1#ProfileContract`, `#EnvironmentContract`, and `#DualShellContract`
+- [x] T006 [US1] Add and observe failing explicit x64 activation, command precedence, non-persistent compiler selector, versioned/process variable, idempotence, and dual-shell assertions for REQ-007 through REQ-012 and REQ-025 in `tests/Test-NativeDevelopmentState.ps1#ProfileContract`, `#EnvironmentContract`, and `#DualShellContract`
 - [x] T007 [US1] Implement compiler/component declarations for REQ-004 through REQ-006 in `config/native-development.psd1` using selectors `#MsvcContract` and `#SafetyContract`
 - [x] T008 [US1] Implement observational and explicit standalone Build Tools state for REQ-003 through REQ-006, REQ-023, and REQ-026 in `scripts/Set-MsvcBuildToolsState.ps1` using selectors `#MsvcContract`, `#StateContract`, and `#SafetyContract`
-- [x] T009 [US1] Implement dynamic idempotent x64 developer-environment import for REQ-007 through REQ-012 and REQ-025 in `profile/NativeDevelopment.ps1` and `scripts/Set-PowerShellProfile.ps1` using selectors `#ProfileContract`, `#EnvironmentContract`, and `#DualShellContract`
+- [x] T009 [US1] Implement dynamic idempotent x64 developer-environment import through explicit `msvc-activate`, with no profile-startup import or persistent compiler selectors, for REQ-007 through REQ-012 and REQ-025 in `profile/NativeDevelopment.ps1` and `scripts/Set-PowerShellProfile.ps1` using selectors `#ProfileContract`, `#EnvironmentContract`, and `#DualShellContract`
 - [x] T010 [US1] Add `MsvcBuildTools` catalog/orchestrator integration for REQ-001 and REQ-002 in `config/workstation-modules.psd1` and `Apply-Workstation.ps1`, then run all US1 selectors to green
 
 ---

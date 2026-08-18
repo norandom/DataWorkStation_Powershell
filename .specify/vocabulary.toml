@@ -1,0 +1,76 @@
+# Project vocabulary for the EARS/TDD grounding layer.
+#
+# Terms are the join key. Two specifications that mean the same condition must name it the same
+# way, or nothing can compare their requirements. An undeclared tag fails the gate, which is what
+# keeps this file current rather than aspirational.
+#
+# Scope note: this currently covers the Exploit Protection mitigation lifecycle only. The layer is
+# opt-in per requirement, so features and requirements with no entry here are unaffected. Adding a
+# feature means adding its terms, not backfilling everything at once.
+
+schema_version = "1.0"
+
+# ---------------------------------------------------------------------------
+# Entities
+# ---------------------------------------------------------------------------
+
+[terms.workstation-hardening]
+label = "Workstation hardening"
+definition = "The set of configuration subsystems that reduce attack surface on the workstation."
+domain = { kind = "entity" }
+
+[terms.exploit-protection]
+label = "Windows Exploit Protection"
+definition = "The Windows mitigation subsystem configured per-system and per-program, maintained as a separately selectable DSL and module."
+domain = { kind = "entity" }
+broader = ["workstation-hardening"]
+
+[terms.captured-policy]
+label = "Captured policy export"
+definition = "The complete pre-change system and per-program policy export pinned in the DSL together with its cryptographic digest, capture time, Windows build, and declared scope."
+domain = { kind = "entity" }
+broader = ["exploit-protection"]
+
+# ---------------------------------------------------------------------------
+# Conditions
+# ---------------------------------------------------------------------------
+
+[terms.captured-policy-verified]
+label = "Captured policy verified"
+definition = "Whether the captured policy export is present and its digest matches the digest pinned in the DSL."
+domain = { kind = "bool" }
+
+[terms.profile-ensured]
+label = "Profile explicitly ensured"
+definition = "Whether the operator has explicitly requested that a selected profile be applied, as opposed to planned or tested."
+domain = { kind = "bool" }
+
+[terms.drift-present]
+label = "Drift present"
+definition = "Whether any managed control's actual value differs from the selected profile's desired value."
+domain = { kind = "bool" }
+
+[terms.administrator-rights]
+label = "Administrator rights"
+definition = "Whether the invoking session holds the administrator privilege that mitigation writes require."
+domain = { kind = "bool" }
+
+[terms.action-supported]
+label = "Action supported by host"
+definition = "Whether every declared enable or disable action is supported by the host command on this Windows build."
+domain = { kind = "bool" }
+
+[terms.reinitialize-requested]
+label = "Reinitialize requested"
+definition = "Whether the operator explicitly requested reinitialization, which re-exports current policy before the first mitigation write."
+domain = { kind = "bool" }
+
+[terms.pre-reinitialize-export-succeeded]
+label = "Pre-reinitialization export succeeded"
+definition = "Whether the export of current system and per-program policy taken before the first mitigation write completed successfully."
+domain = { kind = "bool" }
+
+[terms.selected-profile]
+label = "Selected profile"
+definition = "Which mitigation profile the operator selected: the recorded pre-change values, or the recommended hardened set."
+domain = { kind = "enum", values = ["captured-default", "recommended"] }

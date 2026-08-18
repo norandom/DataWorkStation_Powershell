@@ -291,6 +291,10 @@ function Test-PlanSafety {
 function Test-StateSafety {
     $applyPath = Join-Path $repositoryRoot 'Apply-Workstation.ps1'
     $catalog = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\workstation-modules.psd1')
+    $basePackages = Get-Content -LiteralPath (Join-Path $repositoryRoot '.config\configuration.winget') -Raw
+    Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+IrfanSkiljan\.IrfanView\s*$')).Count -eq 1) 'the base package DSL declares IrfanView once'
+    Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+IrfanSkiljan\.IrfanView\.PlugIns\s*$')).Count -eq 1) 'the base package DSL declares the matching IrfanView plug-ins once'
+    Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+jurplel\.qView\s*$')).Count -eq 1) 'the base package DSL declares the lightweight qView SVG viewer once'
     $modeValues = @(Get-ScriptValidateSet -Path $applyPath -ParameterName 'Mode')
     Assert-True (@(Compare-Object @('Ensure', 'Reinitialize', 'Test') ($modeValues | Sort-Object)).Count -eq 0) 'the orchestrator declares Test, Ensure, and Reinitialize'
 
@@ -556,6 +560,31 @@ function Test-DiagnosticSkills {
     Assert-True ($null -ne $rows -and @($rows).Count -gt 0) 'profiler status is machine-readable'
     foreach ($tool in @('WPR', 'WPA', 'PySpy', 'DotNetTrace')) {
         Assert-True (@($rows | Where-Object { $_.Tool -eq $tool }).Count -eq 1) "profiler status exposes '$tool'"
+    }
+
+    $exporter = Join-Path $repositoryRoot 'scripts\Export-NativeCpuFlameGraph.ps1'
+    $nativeStackProject = Join-Path $repositoryRoot 'tools\NativeCpuStacks\NativeCpuStacks.csproj'
+    $openProfile = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Open-Profile.ps1') -Raw
+    $nativeProfile = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Invoke-NativeCpuProfile.ps1') -Raw
+    Assert-True (Test-Path -LiteralPath $exporter -PathType Leaf) 'native profiling has a headless ETL-to-SVG exporter'
+    Assert-True ((Test-Path -LiteralPath $nativeStackProject -PathType Leaf) -and (Get-Content -LiteralPath $nativeStackProject -Raw) -match 'Microsoft\.Windows\.EventTracing\.Processing\.All') 'native profiling uses the typed ETL stack processor'
+    Assert-True ($openProfile -match "Programs\\qView\\qView\.exe" -and $openProfile -match "resolved -like '\*\.svg'") 'SVG profile viewing explicitly uses the lightweight qView application'
+    Assert-True ($nativeProfile -match 'GetTempPath' -and $nativeProfile -match 'StagedTrace') 'elevated WPR stop stages the ETL before the user-context move'
+
+    $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('native-flamegraph-test-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $tempRoot | Out-Null
+    try {
+        $svgPath = Join-Path $tempRoot 'fixture.svg'
+        $fixture = Join-Path $repositoryRoot 'tests\fixtures\native-cpu-stacks.folded'
+        $export = Invoke-External -FilePath $runtime -ArgumentList @('-NoLogo', '-NoProfile', '-File', $exporter, '-InputFoldedPath', $fixture, '-OutputPath', $svgPath, '-NoOpen', '-Json')
+        Assert-True ($export.ExitCode -eq 0) "headless native flamegraph export succeeds: $($export.Output -join ' ')"
+        $exportResult = if ($export.ExitCode -eq 0) { ($export.Output -join [Environment]::NewLine) | ConvertFrom-Json } else { $null }
+        Assert-True ($exportResult.Samples -eq 3 -and $exportResult.Opened -eq $false) 'native flamegraph export counts folded samples and reports that viewing was suppressed'
+        Assert-True ($exportResult.Folded -eq $fixture) 'native flamegraph export reports the retained collapsed stacks'
+        $svg = Get-Content -LiteralPath $svgPath -Raw
+        Assert-True ($svg -match '<rect x="0" y="0" width="1600" height="\d+" fill="#[0-9A-F]{6}"/>' -and $svg -notmatch 'hsl\(|width="100%"' -and $svg -match 'fill="#FFFFFF">Native CPU flame graph</text>') 'native SVG uses qView-compatible geometry, colors, and contrast'
+    } finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction Ignore
     }
 }
 

@@ -58,10 +58,14 @@ results, and removes the directory. It never scans or builds repository source.
 After either managed profile loads:
 
 ```powershell
+Get-Command msvc-activate
+msvc-activate
 Get-Command cl.exe,link.exe,lib.exe,nmake.exe,msbuild.exe,cmake.exe,ninja.exe,rustc.exe,cargo.exe,java.exe,javac.exe,jar.exe,jshell.exe
 Get-ChildItem Env:CC,Env:CXX,Env:CMAKE_GENERATOR,Env:CARGO_HOME,Env:RUSTUP_HOME,Env:JAVA_HOME
 ```
 
-The x64 Microsoft tools precede inherited conflicting commands. Re-import is idempotent. Projects
-may still select another CMake generator or Rust toolchain/target explicitly.
+Profile loading alone does not import MSVC or persist `CC`/`CXX`. Explicit activation imports the
+x64 environment into the current process, places Microsoft tools ahead of inherited conflicting
+commands, and sets process-only `CC=CXX=cl.exe`. Re-import is idempotent. Projects may still select
+another CMake generator or Rust toolchain/target explicitly.
 Ghidra resolves the same OpenJDK 21 package and does not require a second Java distribution.

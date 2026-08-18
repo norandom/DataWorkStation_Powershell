@@ -1,0 +1,43 @@
+# Why requirements exist, and which goal wins when two of them pull against each other.
+#
+# A requirement references at most one intention. That restriction is what makes adjudication mean
+# something: when two requirements contradict, the gate asks whether the goals involved have a
+# unique winner, and that question stops meaning anything if one requirement serves several goals.
+
+schema_version = "1.0"
+
+[intentions.fail-closed-on-unverified-state]
+statement = "No mitigation write proceeds from state the resource has not verified."
+rationale = """
+Exploit Protection policy is security configuration, and a write derived from a stale or corrupted
+capture produces the wrong mitigations silently. There is no error at the time and no symptom
+afterwards: the machine simply has protections nobody chose. Refusing costs the operator one
+command and a re-capture. Proceeding costs a wrong machine state that looks correct in every
+report.
+"""
+
+[intentions.apply-declared-state]
+statement = "An explicitly ensured profile reaches the machine."
+rationale = """
+A declarative resource that reports drift and then does not correct it is a monitoring tool wearing
+a DSL's interface. When an operator ensures a profile and drift exists, the drift is closed.
+"""
+
+[intentions.preserve-operator-configuration]
+statement = "Configuration the operator made by hand survives reconciliation."
+rationale = """
+Per-program mitigation entries are usually the record of a painful compatibility investigation.
+Losing them to a profile reconciliation is worse than leaving a system control drifted, because the
+knowledge that produced them is not written down anywhere else.
+"""
+
+# Declared pairwise and locally, never as a global ranking. `over` wins against `under`.
+#
+# This pair is the design already stated in the specification's own ordering language: REQ-006 fails
+# "before planning, testing, snapshotting, or changing mitigations", and REQ-019 fails "before
+# snapshot or mitigation writes". Both put verification ahead of application. Recording it here
+# turns that ordering from prose a reader has to notice into a decision the gate can check.
+[[precedence]]
+over = "fail-closed-on-unverified-state"
+under = "apply-declared-state"
+reason = "REQ-006 and REQ-019 both fail before any write. Verification gates application; a write from unverified state is the outcome the feature exists to prevent."

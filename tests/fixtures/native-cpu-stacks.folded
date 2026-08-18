@@ -1,0 +1,2 @@
+pwsh.exe (42);ntdll.dll;kernel32.dll;pwsh.exe 2
+WindowsTerminal.exe (84);ntdll.dll;kernel32.dll;WindowsTerminal.exe 1

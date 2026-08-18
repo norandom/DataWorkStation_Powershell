@@ -60,7 +60,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `windows-debloat` | Review opt-in application and legacy-component removal | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Plan` |
 | `windows-virtualization` | Inspect Hyper-V and Windows Sandbox dependency order | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` |
 | `desktop-focus` | Inspect focus-follows-mouse without raising windows | `pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test` |
-| `quant-research-environment` | Inspect the OpenBB base, licensed PyXLL Excel integration, independently locked uv overlays, notebook entry point, or deferred Source relocation plan | `quant-status` or `source-relocation-plan -Target D:\Source` |
+| `quant-research-environment` | Inspect Positron, Quarto/Pandoc/private TinyTeX, the OpenBB base, PyXLL, independently locked uv overlays, notebooks, or deferred Source relocation | `Set-QuartoState.ps1 -Mode Test`, `quant-status`, or `source-relocation-plan -Target D:\Source` |
 | `ai-tools-isolation` | Inspect opt-in native AI tools, the developer editor, AI NixOS, and all WSL trust roles | `pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test` or `pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1` |
 
 ## Routing contract

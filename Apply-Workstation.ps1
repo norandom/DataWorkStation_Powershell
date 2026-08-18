@@ -13,6 +13,7 @@ param(
     [switch] $Json,
     [switch] $ConfirmRemoval,
     [switch] $ConfirmDestructive,
+    [switch] $AcceptPositronLicense,
     [switch] $SkipPackages,
     [switch] $SkipWindowsFeatures,
     [switch] $SkipHardening,
@@ -31,6 +32,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$acceptPositronLicenseRequested = [bool] $AcceptPositronLicense
 $configurationFile = Join-Path $PSScriptRoot '.config\configuration.winget'
 $gitConfigurationFile = Join-Path $PSScriptRoot '.config\git.winget'
 $powerShell7ConfigurationFile = Join-Path $PSScriptRoot '.config\powershell7.winget'
@@ -60,6 +62,8 @@ $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState
 $aiToolsScript = Join-Path $PSScriptRoot 'scripts\Set-AiToolsState.ps1'
 $developerEditorScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperEditorState.ps1'
 $specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
+$positronScript = Join-Path $PSScriptRoot 'scripts\Set-PositronState.ps1'
+$quartoScript = Join-Path $PSScriptRoot 'scripts\Set-QuartoState.ps1'
 $quantResearchEnvironmentScript = Join-Path $PSScriptRoot 'scripts\Set-QuantResearchEnvironmentState.ps1'
 $malwareAnalysisToolsScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareAnalysisToolsState.ps1'
 $nativeForensicToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeForensicToolsState.ps1'
@@ -415,6 +419,20 @@ function Invoke-WorkstationModule {
             }
         }
         'QuantResearchEnvironment' {
+            $failureCountBeforePositron = $failures.Count
+            Invoke-CheckedProcess 'Positron quantitative IDE state' {
+                if ($acceptPositronLicenseRequested) {
+                    & (Get-PowerShell7Path) -NoLogo -NoProfile -File $positronScript -Mode $Mode -AcceptLicense
+                } else {
+                    & (Get-PowerShell7Path) -NoLogo -NoProfile -File $positronScript -Mode $Mode
+                }
+            }
+            if ($Mode -ne 'Test' -and $failures.Count -gt $failureCountBeforePositron) { return }
+            $failureCountBeforeQuarto = $failures.Count
+            Invoke-CheckedProcess 'Quarto quantitative publishing state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $quartoScript -Mode $Mode
+            }
+            if ($Mode -ne 'Test' -and $failures.Count -gt $failureCountBeforeQuarto) { return }
             Invoke-CheckedProcess 'Quantitative research environment state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $quantResearchEnvironmentScript -Mode $Mode
             }

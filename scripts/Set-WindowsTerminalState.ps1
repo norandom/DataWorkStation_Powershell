@@ -3,6 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [string] $SettingsPath,
+    [string] $WslFragmentRoot,
     [switch] $Json
 )
 
@@ -11,6 +12,8 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\windows-terminal.psd1')
 if (-not $SettingsPath) { $SettingsPath = Join-Path $env:LOCALAPPDATA $configuration.SettingsRelativePath }
 $SettingsPath = [IO.Path]::GetFullPath($SettingsPath)
+if (-not $WslFragmentRoot) { $WslFragmentRoot = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows Terminal\Fragments\Microsoft.WSL' }
+$WslFragmentRoot = [IO.Path]::GetFullPath($WslFragmentRoot)
 
 function Set-ObjectProperty {
     param([object] $InputObject, [string] $Name, [object] $Value)
@@ -40,6 +43,21 @@ function Get-ProfileByGuid {
     @($Profiles | Where-Object { [string]::Equals([string] $_.guid, $Guid, [StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1)
 }
 
+function Get-WslFragmentProfile {
+    param([string] $Distribution)
+    if (-not (Test-Path -LiteralPath $WslFragmentRoot -PathType Container)) { return $null }
+    foreach ($fragment in Get-ChildItem -LiteralPath $WslFragmentRoot -Filter '*.json' -File -ErrorAction Ignore) {
+        try {
+            $document = Get-Content -LiteralPath $fragment.FullName -Raw | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+        } catch {
+            throw "Invalid Windows Terminal WSL fragment '$($fragment.FullName)': $($_.Exception.Message)"
+        }
+        $fragmentProfileCandidate = @($document.profiles | Where-Object { [string] $_.name -eq $Distribution -and [string] $_.guid } | Select-Object -First 1)
+        if ($fragmentProfileCandidate.Count -eq 1) { return $fragmentProfileCandidate[0] }
+    }
+    return $null
+}
+
 function Get-DriftReasons {
     param([object] $Settings)
     $reasons = [Collections.Generic.List[string]]::new()
@@ -54,6 +72,16 @@ function Get-DriftReasons {
     $desktop = @(Get-ProfileByGuid -Profiles $profileList -Guid $configuration.WindowsPowerShell.Guid)
     if ($core.Count -ne 1 -or [bool] $core[0].hidden) { $reasons.Add('profiles.list.PowerShellCore') }
     if ($desktop.Count -ne 1 -or [bool] $desktop[0].hidden) { $reasons.Add('profiles.list.WindowsPowerShell') }
+    foreach ($wslProfile in @($configuration.WslProfiles)) {
+        $fragmentProfile = Get-WslFragmentProfile -Distribution $wslProfile.Distribution
+        if (-not $fragmentProfile) { continue }
+        $managedProfile = @(Get-ProfileByGuid -Profiles $profileList -Guid $fragmentProfile.guid)
+        if ($managedProfile.Count -ne 1 -or [bool] $managedProfile[0].hidden -or
+            [string] $managedProfile[0].name -ne [string] $wslProfile.Name -or
+            [string] $managedProfile[0].source -ne [string] $wslProfile.Source) {
+            $reasons.Add("profiles.list.$($wslProfile.Name -replace '\s+', '')")
+        }
+    }
 
     $blue = @(@((Get-PropertyValue $Settings 'schemes')) | Where-Object { [string] $_.name -eq [string] $configuration.ColorScheme.Name })
     if ($blue.Count -ne 1) {
@@ -108,6 +136,23 @@ function Set-ManagedTerminalSettings {
         }
     } else {
         Set-ObjectProperty $desktop[0] 'hidden' $false
+    }
+    foreach ($wslProfile in @($configuration.WslProfiles)) {
+        $fragmentProfile = Get-WslFragmentProfile -Distribution $wslProfile.Distribution
+        if (-not $fragmentProfile) { continue }
+        $managedProfile = @(Get-ProfileByGuid -Profiles $profileList -Guid $fragmentProfile.guid)
+        if ($managedProfile.Count -eq 0) {
+            $profileList += [pscustomobject]@{
+                guid = [string] $fragmentProfile.guid
+                hidden = $false
+                name = [string] $wslProfile.Name
+                source = [string] $wslProfile.Source
+            }
+        } else {
+            Set-ObjectProperty $managedProfile[0] 'hidden' $false
+            Set-ObjectProperty $managedProfile[0] 'name' ([string] $wslProfile.Name)
+            Set-ObjectProperty $managedProfile[0] 'source' ([string] $wslProfile.Source)
+        }
     }
     Set-ObjectProperty $profiles 'list' @($profileList)
 

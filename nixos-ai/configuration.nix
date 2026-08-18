@@ -34,7 +34,7 @@ let
       project="$(readlink -f -- "$project")"
       case "$project" in
         "$HOME/projects/"*) ;;
-        *) printf 'Project must resolve beneath $HOME/projects.\n' >&2; exit 2 ;;
+        *) printf 'Project must resolve beneath %s/projects.\n' "$HOME" >&2; exit 2 ;;
       esac
       [ -d "$project" ] || { printf 'Project does not exist: %s\n' "$project" >&2; exit 2; }
 
@@ -42,7 +42,7 @@ let
       profile=/etc/nono/opencode-profile.json
       [ -x "$nono" ] || { printf 'nono is missing from the maintenance-owned Homebrew prefix.\n' >&2; exit 2; }
       [ "$(stat -c %U "$nono")" != "$(id -un)" ] || { printf 'The daily AI user must not own nono.\n' >&2; exit 2; }
-      [ "$(sha256sum "$profile" | cut -d' ' -f1)" = "92c45dc500d8b30cb8e8b2372677697b0b94b6835fd68765d268b37769d3bbe9" ] || {
+      [ "$(sha256sum "$profile" | cut -d' ' -f1)" = "0112cf5b52dfbf954f1dd84856852043919d9466ca108afe5bfb0735f5402495" ] || {
         printf 'The reviewed nono profile changed.\n' >&2; exit 2;
       }
       "$nono" profile validate "$profile" >/dev/null
@@ -69,6 +69,27 @@ let
       exec "$nono" run --profile "$profile" -- opencode "$@"
     '';
   };
+
+  homebrewFhs = pkgs.buildFHSEnv {
+    name = "homebrew-fhs";
+    targetPkgs = pkgs: with pkgs; [
+      bash
+      binutils
+      coreutils
+      curl
+      file
+      gawk
+      gcc
+      git
+      gnumake
+      gnugrep
+      gnused
+      gnutar
+      gzip
+      xz
+    ];
+    runScript = "bash";
+  };
 in
 {
   imports = [ ./self-check.nix ];
@@ -91,13 +112,42 @@ in
     auto-optimise-store = true;
   };
 
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [ stdenv.cc.cc.lib ];
+  };
+
   users.groups.ai-maint = { };
   users.users.ai-maint = {
     isSystemUser = true;
     group = "ai-maint";
     home = "/home/linuxbrew";
+    homeMode = "0711";
     createHome = true;
     shell = "${pkgs.shadow}/bin/nologin";
+  };
+
+  security.sudo.enable = false;
+
+  systemd.services.hide-wsl-shared-mount = {
+    description = "Remove the WSL cross-distribution shared mount";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "local-fs.target" ];
+    before = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      resolver_copy=/run/dataworkstation-resolv.conf
+      cp --dereference /etc/resolv.conf "$resolver_copy"
+      rm -f /etc/resolv.conf
+      install -m 0644 "$resolver_copy" /etc/resolv.conf
+      rm -f "$resolver_copy"
+      if ${pkgs.util-linux}/bin/mountpoint -q /mnt/wsl; then
+        ${pkgs.util-linux}/bin/umount -l /mnt/wsl
+      fi
+    '';
   };
 
   environment.systemPackages = with pkgs; [
@@ -107,7 +157,9 @@ in
     file
     gcc
     git
+    gnugrep
     gnumake
+    homebrewFhs
     jq
     opencode
     opencodeSandbox

@@ -187,15 +187,21 @@ function Test-AiDistributionIdentity {
 function Test-AiNixIntegrity {
     $config = Get-RequiredData 'config/ai-nixos-wsl.psd1'
     $selfCheck = Get-RequiredText 'nixos-ai/self-check.nix'
+    $state = Get-RequiredText 'scripts/Set-AiNixOsWslState.ps1'
     foreach ($check in @('StoreIntegrity', 'SourceIntegrity', 'CommandIntegrity', 'BoundaryIntegrity')) {
         Assert-True ($selfCheck -match $check) "AI self-check includes $check"
     }
     Assert-True ($config.SourceFiles -contains 'self-check.nix') 'AI sources are manifest-verified'
+    Assert-True ($state -match 'RedirectStandardInput' -and $state -match 'BaseStream\.Write') 'AI source deployment streams exact bytes without a Windows mount or text re-encoding'
 }
 
 function Test-NonoInstallChannel {
     $config = Get-RequiredData 'config/ai-nixos-wsl.psd1'
+    $nix = Get-RequiredText 'nixos-ai/configuration.nix'
+    $state = Get-RequiredText 'scripts/Set-AiNixOsWslState.ps1'
     Assert-True ($config.Nono.InstallCommand -eq 'brew install nono' -and $config.Nono.OwnerUser -ne $config.DailyUserVariable) 'nono uses Brew under a separate owner'
+    Assert-True ($config.Nono.ExpectedVersion -eq '0.73.0' -and $state -match 'brew pin nono') 'the reviewed nono version is observed and pinned'
+    Assert-True ($nix -match 'buildFHSEnv' -and $nix -match 'programs\.nix-ld' -and $state -match 'runuser') 'Homebrew compatibility is isolated from the direct nono runtime'
 }
 
 function Test-NonoLaunchContract {
@@ -212,6 +218,7 @@ function Test-NonoFailClosed {
 function Test-NonoFilesystemPolicy {
     $profileText = Get-RequiredText 'nixos-ai/opencode-profile.json'
     Assert-True ($profileText -match 'workdir' -and $profileText -match 'readwrite' -and $profileText -match 'deny') 'profile grants the project and contains explicit denials'
+    Assert-True ($profileText -match '"extends"\s*:\s*"default"' -and $profileText -notmatch 'add_deny_access|"upstream"\s*:') 'profile uses the nono 0.73 schema and conservative base'
 }
 
 function Test-NonoCredentialPolicy {
@@ -222,7 +229,7 @@ function Test-NonoCredentialPolicy {
 function Test-NonoNetworkPolicy {
     $profileText = Get-RequiredText 'nixos-ai/opencode-profile.json'
     $launcher = Get-RequiredText 'scripts/Invoke-OpenCodeSandbox.ps1'
-    Assert-True ($profileText -match 'network_profile|allow_domain' -and $launcher -match 'NetworkEnforcement') 'network policy is declared and gated'
+    Assert-True ($profileText -match '"network_profile"\s*:\s*"developer"' -and $profileText -match 'allow_domain' -and $launcher -match 'NetworkEnforcement') 'installed proxy policy and reviewed domains are declared and gated'
 }
 
 function Test-NonoProfileDrift {
@@ -233,8 +240,9 @@ function Test-NonoProfileDrift {
 
 function Test-AiDailyPrivilege {
     $config = (Get-RequiredText 'nixos-ai/configuration.nix') + "`n" + (Get-RequiredText 'nixos-ai/local.nix.in')
-    Assert-True ($config -match 'isNormalUser\s*=\s*true' -and $config -match 'wheel.*false|extraGroups\s*=\s*\[\s*\]') 'AI daily user has no admin group'
-    Assert-True ($config -match 'ai-maint' -and $config -match 'isSystemUser|isNormalUser\s*=\s*false') 'maintenance identity is non-login/non-daily'
+    Assert-True ($config -match 'isNormalUser\s*=\s*true' -and $config -match 'extraGroups\s*=\s*lib\.mkForce\s*\[\s*\]') 'AI daily user has no admin group'
+    Assert-True ($config -match 'security\.sudo\.enable\s*=\s*false') 'AI NixOS disables sudo'
+    Assert-True ($config -match 'ai-maint' -and $config -match 'isSystemUser|isNormalUser\s*=\s*false' -and $config -match 'homeMode\s*=\s*"0711"') 'maintenance identity is non-login and exposes only traversal to managed binaries'
 }
 
 function Test-AiInteropBoundary {
@@ -245,6 +253,7 @@ function Test-AiInteropBoundary {
 function Test-AiMountBoundary {
     $config = Get-RequiredText 'nixos-ai/configuration.nix'
     Assert-True ($config -match 'automount[\s\S]*enabled\s*=\s*false') 'AI Windows-drive automount is disabled'
+    Assert-True ($config -match 'hide-wsl-shared-mount' -and $config -match 'umount -l /mnt/wsl' -and $config -match 'resolv\.conf') 'AI boot copies resolver state before removing the WSL shared mount'
 }
 
 function Test-DevOpsInteropBoundary {

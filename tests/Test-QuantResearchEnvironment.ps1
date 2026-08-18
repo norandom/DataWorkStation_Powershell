@@ -7,6 +7,8 @@ param(
         'ReconciliationScope', 'UserContentPreservation', 'CredentialBoundary',
         'CapabilityRouting', 'RelocationNonMutation', 'RelocationPlanContract',
         'RelocationGuard', 'MovedRootRebuild', 'FocusedBoundary', 'PyXllDeclaration',
+        'PositronDeclaration', 'PositronStatus', 'PositronLicenseBoundary',
+        'QuartoDeclaration', 'QuartoStatus', 'QuartoToolchainBoundary',
         'PyXllStatus', 'PyXllActivation', 'PyXllLicenseBoundary',
         'PyXllInteractivePlots', 'PyXllFailureAtomicity', 'PyXllJupyterRibbon')]
     [string] $Section = 'All'
@@ -328,6 +330,105 @@ function Test-FocusedBoundary {
     Assert-True ($entry -match 'Privileged\s*=\s*\$false' -and $entry -match 'Destructive\s*=\s*\$false') 'module is non-privileged and non-destructive'
 }
 
+function Test-PositronDeclaration {
+    $path = Join-Path $repositoryRoot 'config\positron.psd1'
+    Assert-True (Test-Path -LiteralPath $path -PathType Leaf) 'Positron has a focused public declaration'
+    $config = Import-PowerShellDataFile -LiteralPath $path
+    Assert-Equal 1 $config.SchemaVersion 'Positron configuration schema is version 1'
+    Assert-Equal '2026.08.1-2' $config.Product.Release 'reviewed Positron release is exact'
+    Assert-Equal 'x64' $config.Product.Architecture 'Positron architecture matches the Windows workstation'
+    Assert-Equal 'https://positron.posit.co/download.html' $config.Product.DownloadPage 'Positron source is the requested official page'
+    Assert-True ($config.Product.InstallerUri -match '^https://cdn\.posit\.co/positron/releases/win/x86_64/') 'installer comes from the official Posit CDN'
+    Assert-True ($config.Product.InstallerSha256 -match '^[0-9a-f]{64}$') 'installer has a complete pinned SHA-256'
+    Assert-True ($config.Product.LicenseUri -match '^https://positron\.posit\.co/licensing\.html$') 'official Positron license is declared'
+
+    $module = @(Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\workstation-modules.psd1')).Modules |
+        Where-Object Name -EQ 'QuantResearchEnvironment' | Select-Object -First 1
+    Assert-True ($module.Description -match 'Positron') 'quantitative module describes the Positron tool boundary'
+}
+
+function Test-PositronStatus {
+    $commandPath = Join-Path $repositoryRoot 'scripts\Set-PositronState.ps1'
+    Assert-True (Test-Path -LiteralPath $commandPath -PathType Leaf) 'Positron has a direct human command'
+    $result = Invoke-TestPowerShellScript -Path $commandPath -ArgumentList @('-Mode', 'Test', '-Json')
+    Assert-True ($result.ExitCode -in @(0, 1)) 'Positron Test uses compliance exit semantics'
+    $state = $result.Text | ConvertFrom-Json
+    foreach ($field in @('Resource', 'Status', 'Release', 'MinimumVersion', 'Executable', 'Command', 'Source', 'License', 'Checks')) {
+        Assert-True ($null -ne $state.PSObject.Properties[$field]) "Positron JSON exposes $field"
+    }
+    Assert-Equal 'Positron' $state.Resource 'Positron JSON identifies the resource'
+    Assert-True ([bool] $state.LicenseAcceptanceRequired) 'status keeps the license boundary visible'
+}
+
+function Test-PositronLicenseBoundary {
+    $source = Get-Source 'scripts/Set-PositronState.ps1'
+    $licenseGate = $source.IndexOf('if (-not $AcceptLicense)', [StringComparison]::Ordinal)
+    $download = $source.IndexOf('Invoke-WebRequest -Uri $product.InstallerUri', [StringComparison]::Ordinal)
+    $hash = $source.IndexOf('Get-FileHash -LiteralPath $Path -Algorithm SHA256', [StringComparison]::Ordinal)
+    $signature = $source.IndexOf('Get-AuthenticodeSignature -LiteralPath $Path', [StringComparison]::Ordinal)
+    $install = $source.IndexOf('Start-Process -FilePath $installerPath', [StringComparison]::Ordinal)
+    Assert-True ($licenseGate -ge 0 -and $licenseGate -lt $download) 'explicit license acceptance gates the first network request'
+    Assert-True ($download -ge 0 -and $hash -ge 0 -and $hash -lt $install) 'downloaded installer is hash-verified before execution'
+    Assert-True ($signature -ge 0 -and $signature -lt $install) 'downloaded installer is Authenticode-verified before execution'
+    Assert-True ($source -match "ValidateSet\('Test', 'Ensure', 'Reinitialize'\)" -and $source -match '\[switch\] \$Json') 'Positron exposes standard human/JSON modes'
+    Assert-True ($source -match '/VERYSILENT|InstallerArguments' -and $source -match '/NORESTART|InstallerArguments') 'installation is noninteractive and never restarts Windows'
+
+    $apply = Get-Source 'Apply-Workstation.ps1'
+    Assert-True ($apply -match '\[switch\] \$AcceptPositronLicense') 'aggregate state exposes a dedicated acceptance switch'
+    Assert-True ($apply -match 'Set-PositronState\.ps1' -and $apply -match '-AcceptLicense') 'quantitative reconciliation routes acceptance only to Positron'
+    $capabilities = Get-Source 'config/capabilities.psd1'
+    Assert-True ($capabilities -match 'Set-PositronState\.ps1 -Mode Test -Json') 'capability route exposes machine-readable Positron inspection'
+    Assert-True ($capabilities -match 'Set-PositronState\.ps1 -Mode Ensure -AcceptLicense') 'capability route exposes the explicit human install command'
+}
+
+function Test-QuartoDeclaration {
+    $path = Join-Path $repositoryRoot 'config\quarto.psd1'
+    Assert-True (Test-Path -LiteralPath $path -PathType Leaf) 'Quarto has a focused public declaration'
+    $config = Import-PowerShellDataFile -LiteralPath $path
+    Assert-Equal 1 $config.SchemaVersion 'Quarto configuration schema is version 1'
+    Assert-Equal '1.10.18' $config.Package.Version 'reviewed stable Quarto release is exact'
+    Assert-Equal 'quarto-dev/quarto-cli' $config.Package.Repository 'Quarto source repository is official'
+    Assert-True ($config.Package.Uri -match '^https://github\.com/quarto-dev/quarto-cli/releases/download/v1\.10\.18/quarto-1\.10\.18-win\.zip$') 'Quarto uses the official Windows release archive'
+    Assert-True ($config.Package.Sha256 -match '^[0-9a-f]{64}$') 'Quarto archive has a complete pinned SHA-256'
+    Assert-Equal '%APPDATA%\TinyTeX' $config.TinyTeX.InstallRoot 'TinyTeX uses Quarto user-private location'
+    Assert-True (-not [bool] $config.TinyTeX.UpdatePath) 'TinyTeX is excluded from the ordinary PATH'
+}
+
+function Test-QuartoStatus {
+    $commandPath = Join-Path $repositoryRoot 'scripts\Set-QuartoState.ps1'
+    Assert-True (Test-Path -LiteralPath $commandPath -PathType Leaf) 'Quarto has a direct human command'
+    $result = Invoke-TestPowerShellScript -Path $commandPath -ArgumentList @('-Mode', 'Test', '-Json')
+    Assert-True ($result.ExitCode -in @(0, 1)) 'Quarto Test uses compliance exit semantics'
+    $state = $result.Text | ConvertFrom-Json
+    foreach ($field in @('Resource', 'Status', 'QuartoVersion', 'ExpectedQuartoVersion', 'Command',
+        'PandocVersion', 'PandocCommand', 'TinyTeXRoot', 'QuartoPython', 'ExpectedQuartoPython', 'Checks')) {
+        Assert-True ($null -ne $state.PSObject.Properties[$field]) "Quarto JSON exposes $field"
+    }
+    Assert-Equal 'QuartoQuantPublishing' $state.Resource 'Quarto JSON identifies the resource'
+    Assert-Equal 'quarto pandoc' $state.PandocCommand 'embedded Pandoc has a stable human command'
+}
+
+function Test-QuartoToolchainBoundary {
+    $source = Get-Source 'scripts/Set-QuartoState.ps1'
+    $download = $source.IndexOf('Invoke-WebRequest -Uri $package.Uri', [StringComparison]::Ordinal)
+    $hash = $source.IndexOf('Get-FileHash -LiteralPath $archive -Algorithm SHA256', [StringComparison]::Ordinal)
+    $expand = $source.IndexOf('Expand-Archive -LiteralPath $archive', [StringComparison]::Ordinal)
+    Assert-True ($download -ge 0 -and $hash -gt $download -and $expand -gt $hash) 'Quarto verifies the official archive before extraction'
+    Assert-True ($source -match "'pandoc', '--version'" -and $source -match 'BundledPandoc') 'state verifies the Pandoc embedded in Quarto'
+    Assert-True ($source -match "'install', 'tinytex', '--no-prompt'" -and $source -notmatch "'install', 'tinytex'.*--update-path") 'TinyTeX installs noninteractively without global PATH exposure'
+    Assert-True ($source -match 'SetEnvironmentVariable\(''QUARTO_PYTHON'', \$quantPython, ''User''\)') 'Quarto is persistently bound to quant-base Python'
+    Assert-True ($source -match 'QuantJupyter' -and $source -match 'quantJupyter') 'Quarto requires Jupyter in the quant uv environment'
+
+    $apply = Get-Source 'Apply-Workstation.ps1'
+    Assert-True ($apply -match 'Set-QuartoState\.ps1' -and $apply -match 'Quarto quantitative publishing state') 'aggregate quantitative state invokes Quarto directly'
+    $capabilities = Get-Source 'config/capabilities.psd1'
+    foreach ($command in @('Set-QuartoState.ps1 -Mode Test -Json', 'quarto pandoc --version', 'quarto check jupyter')) {
+        Assert-True ($capabilities -match [regex]::Escape($command)) "capability route exposes $command"
+    }
+    $documentation = Get-Source 'docs/quant-research-environment.md'
+    Assert-True ($documentation -match 'columnflow' -and $documentation -match 'not\s+installed') 'experimental DOCX columns extension remains an explicit documented choice'
+}
+
 function Test-PyXllDeclaration {
     $config = Get-PublicConfig
     foreach ($dependency in @('pyxll', 'plotly', 'kaleido')) {
@@ -476,6 +577,12 @@ $sections = [ordered]@{
     RelocationGuard = ${function:Test-RelocationGuard}
     MovedRootRebuild = ${function:Test-MovedRootRebuild}
     FocusedBoundary = ${function:Test-FocusedBoundary}
+    PositronDeclaration = ${function:Test-PositronDeclaration}
+    PositronStatus = ${function:Test-PositronStatus}
+    PositronLicenseBoundary = ${function:Test-PositronLicenseBoundary}
+    QuartoDeclaration = ${function:Test-QuartoDeclaration}
+    QuartoStatus = ${function:Test-QuartoStatus}
+    QuartoToolchainBoundary = ${function:Test-QuartoToolchainBoundary}
     PyXllDeclaration = ${function:Test-PyXllDeclaration}
     PyXllStatus = ${function:Test-PyXllStatus}
     PyXllActivation = ${function:Test-PyXllActivation}

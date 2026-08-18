@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All', 'HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'DeveloperEnvironment', 'Documentation', 'PublicationGates', 'SpecificationWorkflow', 'SkillOptSafety', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal')]
+    [ValidateSet('All', 'HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'DeveloperEnvironment', 'Documentation', 'PublicationGates', 'SpecificationWorkflow', 'SkillOptSafety', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal', 'FocusFollowsMouse')]
     [string] $Section = 'All'
 )
 
@@ -901,7 +901,7 @@ function Get-ProfileSurface {
     param([string] $Runtime)
     $loader = Join-Path $repositoryRoot 'profile\Shell.ps1'
     $escapedLoader = $loader.Replace("'", "''")
-    $command = ". '$escapedLoader'; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore); QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore) } | ConvertTo-Json -Compress"
+    $command = ". '$escapedLoader'; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore); QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore); FocusMouseOn = [bool](Get-Command focus-mouse-on -ErrorAction Ignore); FocusMouseOff = [bool](Get-Command focus-mouse-off -ErrorAction Ignore) } | ConvertTo-Json -Compress"
     $result = Invoke-External -FilePath $Runtime -ArgumentList @('-NoLogo', '-NoProfile', '-Command', $command)
     Assert-True ($result.ExitCode -eq 0) "profile loads in '$Runtime': $($result.Output -join ' ')"
     $jsonLine = @($result.Output | Where-Object { [string] $_ -match '^\s*\{' } | Select-Object -Last 1)
@@ -933,7 +933,22 @@ function Test-PowerShellRuntimes {
         Assert-True $surface.Help 'workstation-help is available'
         Assert-True $surface.TestCommand 'test-powershell is available'
         Assert-True $surface.QuantStatus 'quant-status is available'
+        Assert-True ($surface.FocusMouseOn -and $surface.FocusMouseOff) 'focus-mouse-on and focus-mouse-off are available'
     }
+}
+
+function Test-FocusFollowsMouse {
+    $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\focus-follows-mouse.psd1')
+    $stateSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-FocusFollowsMouseState.ps1') -Raw
+    $profileSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Aliases.ps1') -Raw
+    $capabilities = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\capabilities.psd1')
+    $route = @($capabilities.Capabilities | Where-Object Id -eq 'desktop-focus')[0]
+
+    Assert-True ($configuration.Enabled -and -not $configuration.RaiseOnFocus) 'hover focus remains enabled without automatic raising'
+    Assert-True ($configuration.DelayMilliseconds -eq 500) 'hover focus uses the X-Mouse Controls default delay instead of instant activation'
+    Assert-True ($stateSource -match "ValidateSet\('Declared', 'On', 'Off'\)" -and $stateSource -match 'SPI_SETACTIVEWNDTRKTIMEOUT|\$setDelay') 'focused state supports explicit toggles and applies the declared delay'
+    Assert-True ($profileSource -match 'Set-Alias -Name focus-mouse-on' -and $profileSource -match 'Set-Alias -Name focus-mouse-off') 'managed profile exposes both focus toggle aliases'
+    Assert-True (@($route.StateCommands) -contains 'focus-mouse-on' -and @($route.StateCommands) -contains 'focus-mouse-off') 'focus toggle commands are in the routing catalog'
 }
 
 function Test-WindowsTerminal {
@@ -945,6 +960,15 @@ function Test-WindowsTerminal {
     New-Item -ItemType Directory -Path $tempRoot | Out-Null
     try {
         $settingsPath = Join-Path $tempRoot 'settings.json'
+        $fragmentRoot = Join-Path $tempRoot 'Microsoft.WSL'
+        New-Item -ItemType Directory -Path $fragmentRoot | Out-Null
+        $fragment = @{
+            profiles = @(
+                @{ guid = '{ea21533a-d427-52e5-92a1-00ffd802e2cb}'; name = 'NixOS' },
+                @{ guid = '{e5162147-1674-58e8-a61b-16515af632d8}'; name = 'NixOS-AI' }
+            )
+        } | ConvertTo-Json -Depth 5
+        [IO.File]::WriteAllText((Join-Path $fragmentRoot 'nixos.json'), $fragment, [Text.UTF8Encoding]::new($false))
         $fixture = @'
 {
   "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
@@ -952,6 +976,7 @@ function Test-WindowsTerminal {
   "actions": [ { "command": "copy", "keys": "ctrl+c" } ],
   "profiles": { "defaults": { "font": { "face": "Berkeley Mono" } }, "list": [
     { "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}", "name": "Windows PowerShell", "hidden": false },
+    { "guid": "{ea21533a-d427-52e5-92a1-00ffd802e2cb}", "name": "NixOS", "source": "Microsoft.WSL", "hidden": false },
     { "guid": "{aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa}", "name": "Keep Me", "commandline": "keep.exe" }
   ] },
   "schemes": [ { "name": "Keep Scheme", "background": "#101010" } ],
@@ -960,11 +985,11 @@ function Test-WindowsTerminal {
 '@
         [IO.File]::WriteAllText($settingsPath, $fixture, [Text.UTF8Encoding]::new($false))
         $beforeHash = (Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash
-        $testResult = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Test', '-SettingsPath', $settingsPath, '-Json')
+        $testResult = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Test', '-SettingsPath', $settingsPath, '-WslFragmentRoot', $fragmentRoot, '-Json')
         Assert-True ($testResult.ExitCode -eq 1) 'Terminal Test reports drift without mutation'
         Assert-True ((Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash -eq $beforeHash) 'Terminal Test leaves settings byte-for-byte unchanged'
 
-        $ensure = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Ensure', '-SettingsPath', $settingsPath, '-Json')
+        $ensure = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Ensure', '-SettingsPath', $settingsPath, '-WslFragmentRoot', $fragmentRoot, '-Json')
         Assert-True ($ensure.ExitCode -eq 0) "Terminal Ensure succeeds: $($ensure.Output -join ' ')"
         $updated = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
         Assert-True ($updated.defaultProfile -eq '{574e775e-4f2a-5b96-ac1e-a2962a402336}') 'PowerShell Core is the Terminal default'
@@ -973,6 +998,8 @@ function Test-WindowsTerminal {
         Assert-True (@($updated.themes).Count -eq 1) 'unrelated themes are preserved'
         Assert-True (@($updated.profiles.list | Where-Object name -eq 'Keep Me').Count -eq 1) 'unrelated profiles are preserved'
         Assert-True (@($updated.profiles.list | Where-Object guid -eq '{61c54bbd-c2c6-5271-96e7-009a87ff44bf}').Count -eq 1) 'Windows PowerShell remains selectable'
+        Assert-True (@($updated.profiles.list | Where-Object { $_.guid -eq '{ea21533a-d427-52e5-92a1-00ffd802e2cb}' -and $_.name -eq 'NixOS DevOps' -and -not $_.hidden }).Count -eq 1) 'the generated DevOps NixOS profile has a distinct visible name'
+        Assert-True (@($updated.profiles.list | Where-Object { $_.guid -eq '{e5162147-1674-58e8-a61b-16515af632d8}' -and $_.name -eq 'NixOS AI' -and -not $_.hidden }).Count -eq 1) 'the generated AI NixOS profile has a distinct visible name'
         Assert-True ($updated.profiles.defaults.colorScheme -eq 'Blue') 'all profiles inherit the Blue theme'
         Assert-True ($updated.profiles.defaults.scrollbarState -eq 'visible') 'all profiles inherit the visible scrollbar'
         Assert-True (@($updated.schemes | Where-Object name -eq 'Keep Scheme').Count -eq 1) 'unrelated color schemes are preserved'
@@ -981,18 +1008,18 @@ function Test-WindowsTerminal {
         Assert-True ($backups.Count -eq 1) 'a backup is created before the changed write'
 
         $updatedHash = (Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash
-        $secondEnsure = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Ensure', '-SettingsPath', $settingsPath, '-Json')
+        $secondEnsure = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Ensure', '-SettingsPath', $settingsPath, '-WslFragmentRoot', $fragmentRoot, '-Json')
         Assert-True ($secondEnsure.ExitCode -eq 0) 'a second Terminal Ensure succeeds'
         Assert-True ((Get-FileHash -LiteralPath $settingsPath -Algorithm SHA256).Hash -eq $updatedHash) 'a second Terminal Ensure is byte-idempotent'
         Assert-True (@(Get-ChildItem -LiteralPath $tempRoot -Filter 'settings.json.*.bak').Count -eq 1) 'an idempotent Ensure creates no extra backup'
-        $finalTest = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Test', '-SettingsPath', $settingsPath, '-Json')
+        $finalTest = Invoke-External -FilePath (Get-Command pwsh.exe -ErrorAction Stop).Source -ArgumentList @('-NoLogo', '-NoProfile', '-File', $stateScript, '-Mode', 'Test', '-SettingsPath', $settingsPath, '-WslFragmentRoot', $fragmentRoot, '-Json')
         Assert-True ($finalTest.ExitCode -eq 0) 'Terminal Test reports compliance after Ensure'
     } finally {
         Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction Ignore
     }
 }
 
-$sections = if ($Section -eq 'All') { @('HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal') } else { @($Section) }
+$sections = if ($Section -eq 'All') { @('HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal', 'FocusFollowsMouse') } else { @($Section) }
 foreach ($name in $sections) {
     & (Get-Command "Test-$name" -CommandType Function)
     Write-Host "PASS $name"

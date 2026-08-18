@@ -130,6 +130,15 @@ function global:docs-build {
     try { & uv.exe run --group docs mkdocs build --strict @args } finally { Pop-Location }
 }
 
+function global:Enable-FocusFollowsMouse {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-FocusFollowsMouseState.ps1') -Mode Ensure -Target On
+}
+function global:Disable-FocusFollowsMouse {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-FocusFollowsMouseState.ps1') -Mode Ensure -Target Off
+}
+Set-Alias -Name focus-mouse-on -Value Enable-FocusFollowsMouse -Scope Global
+Set-Alias -Name focus-mouse-off -Value Disable-FocusFollowsMouse -Scope Global
+
 function global:aria2c {
     $executable = Find-NativeTool -Name aria2c.exe -WinGetId 'aria2.aria2'
     if (-not $executable) { throw 'aria2c.exe is not installed.' }

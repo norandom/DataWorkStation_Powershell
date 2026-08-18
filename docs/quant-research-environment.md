@@ -1,8 +1,72 @@
 # Quantitative research environment
 
-The optional `QuantResearchEnvironment` module manages the runtime boundary around the portable
+The optional `QuantResearchEnvironment` module manages the Positron quantitative IDE and the
+runtime boundary around the portable
 `%USERPROFILE%\Source\quant-research` repository. It does not own doctoral source, notebooks,
 datasets, exports, credentials, or provider keys.
+
+## Positron IDE
+
+Positron is the managed Windows quantitative IDE. It is installed per user from Posit's official,
+hash-pinned x64 installer; its executable must retain a valid Posit Authenticode signature. Because
+the user installation updates itself, desired state accepts the reviewed release or a newer signed
+release. The installer exposes `positron` on the user PATH.
+
+Inspection is read-only:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Test -Json
+```
+
+Posit requires license acceptance before download or use. Review the linked license, then make that
+acceptance explicit for the first installation or a forced reinstallation:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Ensure -AcceptLicense
+```
+
+The equivalent aggregate command is
+`.\Apply-Workstation.ps1 -Mode Ensure -Module QuantResearchEnvironment -AcceptPositronLicense`.
+Ordinary Test mode never downloads or installs Positron. Reconciliation is non-elevated and does
+not configure Positron accounts, credentials, extensions, or project content.
+
+Open a new terminal after first installation, then start the quantitative tree with:
+
+```powershell
+positron "$env:USERPROFILE\Source\quant-research"
+```
+
+## Quarto scientific publishing
+
+Quarto is installed from the hash-pinned official Windows archive. The distribution's embedded
+Pandoc is the only managed Pandoc and is available as `quarto pandoc`; no unrelated system Pandoc
+is added. `QUARTO_PYTHON` points to `quant-base\.venv\Scripts\python.exe`, so executable papers use
+the same locked Python/OpenBB/Jupyter environment as quantitative research.
+
+The state command installs TinyTeX with `quarto install tinytex --no-prompt` and deliberately omits
+`--update-path`. TinyTeX therefore remains Quarto-private under `%APPDATA%\TinyTeX` and does not
+compete with another TeX command on the ordinary shell PATH.
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-QuartoState.ps1 -Mode Test
+quarto check jupyter
+quarto pandoc --version
+quarto render paper.qmd
+```
+
+### DOCX and columns
+
+For journal DOCX output, prefer the journal's Word file as Quarto's `reference-doc`; this reliably
+controls styles, margins, headers, and a whole-document column section. Quarto's general
+`layout-ncol` and `.columns` abstractions are not equivalent to Word section columns and remain
+limited for DOCX, especially for independently assigned blocks, images, and nested content.
+
+The community [`columnflow`](https://github.com/jimjam-slam/columnflow) filter can emit flowing Word
+columns, but upstream labels it work-in-progress/proof-of-concept, notes problems with images and
+nested input, and has not received source changes since 2022. It is therefore documented but not
+installed. For robust submissions use a reference DOCX for document-wide columns; for isolated
+side-by-side content use a Word table or format-conditional source until a maintained filter exists.
 
 ## Project layout
 

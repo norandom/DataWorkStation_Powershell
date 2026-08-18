@@ -451,6 +451,10 @@
             Title = 'Mouse-driven window focus without raising'
             Triggers = @('focus follows mouse', 'xmouse', 'active window tracking', 'raise window', 'hover focus')
             EvidenceKinds = @('Snapshot')
+            StateCommands = @(
+                'focus-mouse-on'
+                'focus-mouse-off'
+            )
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test'
             )
@@ -458,18 +462,26 @@
         }
         @{
             Id = 'quant-research-environment'
-            Title = 'Independent uv/OpenBB quantitative research overlays'
-            Triggers = @('quant research', 'openbb', 'pyxll', 'excel plots', 'jupyter', 'notebook', 'uv overlay', 'thesis environment', 'source relocation plan')
+            Title = 'Positron, Quarto publishing, and independent uv/OpenBB quantitative research overlays'
+            Triggers = @('quant research', 'positron', 'quarto', 'pandoc', 'tinytex', 'scientific paper', 'docx', 'openbb', 'pyxll', 'excel plots', 'jupyter', 'notebook', 'uv overlay', 'thesis environment', 'source relocation plan')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'quant-status'
                 'quant-status -Json'
+                'pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Test -Json'
+                'pwsh -NoProfile -File .\scripts\Set-QuartoState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-QuartoState.ps1 -Mode Test -Json'
+                'quarto pandoc --version'
+                'quarto check jupyter'
                 'pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Test -Project All'
                 'pwsh -NoProfile -File .\scripts\Set-QuantResearchEnvironmentState.ps1 -Mode Test -Project Base'
                 'source-relocation-plan -Target D:\Source'
                 'source-relocation-plan -Target D:\Source -Json'
             )
             StateCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Ensure -AcceptLicense'
+                'pwsh -NoProfile -File .\scripts\Set-QuartoState.ps1 -Mode Ensure'
                 'quant-sync -Project thesis'
                 'quant-sync -Project Base -ConfirmPyXllInstall'
                 'quant-rebuild -Project thesis'

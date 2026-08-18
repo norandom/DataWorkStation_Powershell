@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
-    [string] $Mode = 'Ensure'
+    [string] $Mode = 'Ensure',
+    [ValidateSet('Declared', 'On', 'Off')]
+    [string] $Target = 'Declared'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -17,6 +19,11 @@ if ($configuration.Enabled -isnot [bool] -or $configuration.RaiseOnFocus -isnot 
 }
 if ($configuration.DelayMilliseconds -isnot [int] -or $configuration.DelayMilliseconds -lt 0) {
     throw 'DelayMilliseconds must be a non-negative integer.'
+}
+$desiredEnabled = switch ($Target) {
+    'On' { $true }
+    'Off' { $false }
+    default { [bool] $configuration.Enabled }
 }
 
 if (-not ('DataWorkStation.NativeActiveWindowTracking' -as [type])) {
@@ -80,17 +87,25 @@ function Get-FocusFollowsMouseState {
     $raiseOnFocus = [bool][DataWorkStation.NativeActiveWindowTracking]::Get($getRaiseOnFocus)
     $delayMilliseconds = [uint32][DataWorkStation.NativeActiveWindowTracking]::Get($getDelay)
     $compliant = (
-        $trackingEnabled -eq $configuration.Enabled -and
+        $trackingEnabled -eq $desiredEnabled -and
         $raiseOnFocus -eq $configuration.RaiseOnFocus -and
         $delayMilliseconds -eq $configuration.DelayMilliseconds
     )
 
     [pscustomobject]@{
         TrackingEnabled = $trackingEnabled
+        DesiredTrackingEnabled = $desiredEnabled
         RaiseOnFocus = $raiseOnFocus
         DelayMilliseconds = $delayMilliseconds
         Compliant = $compliant
     }
+}
+
+function Get-FocusFollowsMouseHumanText {
+    if ($desiredEnabled) {
+        return "Focus follows the mouse after $($configuration.DelayMilliseconds) ms without raising windows."
+    }
+    return 'Focus follows mouse is disabled; click-to-focus is active.'
 }
 
 $state = Get-FocusFollowsMouseState
@@ -100,17 +115,17 @@ if ($Mode -eq 'Test') {
         Write-Warning 'Focus-follows-mouse desired-state drift detected.'
         exit 1
     }
-    Write-Host 'Focus follows the mouse without raising windows.'
+    Write-Host (Get-FocusFollowsMouseHumanText)
     exit 0
 }
 
 if ($Mode -eq 'Ensure' -and $state.Compliant) {
     $state
-    Write-Host 'Focus already follows the mouse without raising windows; no changes were made.'
+    Write-Host "$(Get-FocusFollowsMouseHumanText) No changes were made."
     exit 0
 }
 
-if (-not $configuration.Enabled) {
+if (-not $desiredEnabled) {
     [DataWorkStation.NativeActiveWindowTracking]::Set($setTracking, 0)
 }
 [DataWorkStation.NativeActiveWindowTracking]::Set(
@@ -121,7 +136,7 @@ if (-not $configuration.Enabled) {
     $setDelay,
     [uint32]$configuration.DelayMilliseconds
 )
-if ($configuration.Enabled) {
+if ($desiredEnabled) {
     [DataWorkStation.NativeActiveWindowTracking]::Set($setTracking, 1)
 }
 
@@ -132,4 +147,4 @@ if (-not $result.Compliant) {
     exit 1
 }
 
-Write-Host 'Focus follows the mouse without raising windows.'
+Write-Host (Get-FocusFollowsMouseHumanText)

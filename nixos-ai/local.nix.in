@@ -1,10 +1,10 @@
-{ ... }:
+{ lib, ... }:
 
 {
   wsl.defaultUser = "@WSL_AI_USER@";
   users.users."@WSL_AI_USER@" = {
     isNormalUser = true;
     createHome = true;
-    extraGroups = [ ];
+    extraGroups = lib.mkForce [ ];
   };
 }

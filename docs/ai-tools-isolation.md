@@ -30,6 +30,11 @@ stopped distribution is reported as not inspected and returns drift instead.
 | GitHub Copilot CLI | Windows | `npm i -g @github/copilot` |
 | nono | `NixOS-AI` | `brew install nono`, pinned after review |
 
+Homebrew bootstrap and package maintenance run as the non-login `ai-maint` identity through the
+locked `homebrew-fhs` compatibility wrapper. The daily `ai` user cannot write that prefix. The
+installed `nono` bottle runs directly through the narrow NixOS `nix-ld` bridge rather than inside
+the maintenance FHS environment.
+
 Claude Code is not declared through WinGet. If the state command observes the former
 `Anthropic.ClaudeCode` WinGet path, an explicit `AiTools` Ensure removes it before running the
 official installer. A failed installer stops the module; no alternate package source is used.
@@ -74,6 +79,9 @@ extensions, profiles, and workspace configuration are preserved.
 | Debian-MW | off | off | off | off | hostile static inputs and rootless parser containers |
 | AI NixOS | off | off | off | off | private agent projects and OpenCode runtime state |
 
+Windows Terminal labels the two restricted NixOS profiles `NixOS DevOps` and `NixOS AI`; their
+underlying WSL distribution identities remain `NixOS` and `NixOS-AI`.
+
 Ordinary Debian is trusted. Do not run autonomous AI agents or hostile parsers there, and do not
 store DevOps private keys there. The three restricted distributions receive tracked configuration
 through `wsl.exe` standard input rather than `/mnt/c` or `/mnt/d`.
@@ -103,7 +111,10 @@ maintenance-owned `nono` binary, exact root-owned profile hash, `nono setup --ch
 Landlock TCP rule support, representative credential/host/socket denials, and a dry-run. It then
 runs `opencode` through `nono`; it never falls back to a direct launch.
 
-The tracked policy records the official `nolabs-ai/opencode` lineage. The WSL2
+The AI generation copies WSL resolver data into an independent `/etc/resolv.conf` and removes the
+cross-distribution `/mnt/wsl` mount during boot. The tracked policy records the official
+`nolabs-ai/opencode` lineage, extends nono's conservative `default` profile, and selects the
+installed `developer` proxy policy plus the reviewed provider/domain allowlist. The WSL2
 `insecure_proxy` fallback is not enabled. If secure network enforcement is unavailable, the
 managed launch is blocked before OpenCode starts.
 

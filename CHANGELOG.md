@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 3.0.0 - 2026-08-18
+
+- Add hash-pinned Quarto with embedded Pandoc, a Quarto-private TinyTeX installation, and `QUARTO_PYTHON` bound to the reproducible quant-base uv environment for scientific publishing and DOCX output.
+- Add signed, hash-pinned Positron as the opt-in quantitative IDE with read-only human/JSON status, explicit license acceptance before first download, and tolerance for newer signed user updates.
+- Distinguish the generated Windows Terminal profiles as `NixOS DevOps` and `NixOS AI` while preserving their separate WSL distribution identities.
+- Complete `NixOS-AI` provisioning with byte-exact source deployment, maintenance-only Homebrew compatibility, pinned nono 0.73, a current fail-closed OpenCode profile, direct bottle loading through `nix-ld`, and removal of the WSL shared mount without losing guest DNS.
+- Replace instant focus-follows-mouse activation with the source-equivalent X-Mouse Controls 500 ms default and add explicit `focus-mouse-on` / `focus-mouse-off` commands.
+
 ## 2.4.0 - 2026-08-18
 
 - Add an opt-in uv/OpenBB quantitative research environment with an installable shared base, independently locked project overlays, project-local JupyterLab, observational drift reporting, bounded generated-environment recovery, and a strictly non-mutating future Source-relocation plan.

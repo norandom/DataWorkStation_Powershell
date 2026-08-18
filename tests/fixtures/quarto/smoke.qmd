@@ -1,0 +1,17 @@
+---
+title: "Quarto quantitative publishing smoke"
+format:
+  docx: default
+  pdf: default
+jupyter: python3
+execute:
+  enabled: true
+---
+
+This document verifies the managed Quarto, Pandoc, TinyTeX, and quant-base Python boundary.
+
+```{python}
+import sys
+
+print(sys.executable)
+```

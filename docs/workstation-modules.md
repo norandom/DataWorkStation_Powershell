@@ -110,7 +110,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
-| `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | independently locked uv/OpenBB projects, project-local notebooks, and licensed PyXLL Excel integration |
+| `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | Positron, Quarto/Pandoc/private TinyTeX, independently locked uv/OpenBB projects, notebooks, and PyXLL Excel integration |
 | `SleuthKitCli` | **no** | `PowerShell7` | matching official native Windows TSK command suite on the user PATH |
 | `Autopsy` | **no** | `Sudo`, `PowerShell7`, `PowerShellProfile`, `SleuthKitCli` | signed Windows GUI MSI, private CLI bindings, case root, and Defender exclusions |
 | `MalwareAnalysisTools` | **no** | `Packages`, `WindowsFeatures`, `ProfilingTools`, `MalwareHashes` | opt-in isolated parsers and telemetry tools |
@@ -136,7 +136,13 @@ research state is user-owned. `Test` is observational. `Ensure` exact-syncs gene
 from existing locks, and `Reinitialize` replaces only `.venv` with rollback. The module never owns
 notebooks, research source, datasets, exports, credentials, or the deferred Source junction. PyXLL
 uses the base environment; its ignored license, payload, Excel registration, and active config stay
-local, and first installation requires a dedicated explicit switch.
+local, and first installation requires a dedicated explicit switch. Positron is inspected through
+its direct human/JSON state command; its first download requires explicit `-AcceptLicense` (or
+`-AcceptPositronLicense` on the aggregate command), and subsequent signed user updates are accepted
+when they remain at or above the reviewed bootstrap release.
+Quarto is a hash-pinned portable installation and exposes its embedded Pandoc through
+`quarto pandoc`. TinyTeX stays private to Quarto rather than entering the global TeX PATH, while
+the persistent `QUARTO_PYTHON` value selects the quant-base uv environment for Jupyter execution.
 
 ## Explicit debloat module
 

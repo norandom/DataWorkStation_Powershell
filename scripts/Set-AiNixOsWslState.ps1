@@ -20,6 +20,8 @@ if ($Mode -eq 'Plan') {
     $dailyUser = [string] $selection[$configuration.DailyUserVariable]
 }
 $maintenanceUser = [string] $configuration.MaintenanceUser
+$maintenanceHome = '/home/linuxbrew'
+$maintenancePath = "$($configuration.Nono.BrewPrefix)/bin:/run/current-system/sw/bin:/bin:/usr/bin"
 $sourceDirectory = Join-Path $repositoryRoot 'nixos-ai'
 $stateDirectory = Join-Path $repositoryRoot 'state\ai-nixos-wsl'
 $assetPath = Join-Path $stateDirectory "$($configuration.ReleaseTag)\nixos.wsl"
@@ -42,7 +44,11 @@ function Get-StringSha256 {
 
 function Invoke-AiGuestRead {
     param([string] $User, [string[]] $Arguments)
-    $output = @(& wsl.exe -d $distribution -u $User -- @Arguments 2>$null)
+    if ($User -eq $maintenanceUser) {
+        $output = @(& wsl.exe -d $distribution -u root --cd $maintenanceHome -- runuser -u $maintenanceUser -- env "HOME=$maintenanceHome" "PATH=$maintenancePath" @Arguments 2>$null)
+    } else {
+        $output = @(& wsl.exe -d $distribution -u $User -- @Arguments 2>$null)
+    }
     [pscustomobject]@{ ExitCode = $LASTEXITCODE; Text = ($output -join "`n").Trim() }
 }
 
@@ -143,9 +149,30 @@ function Write-State {
 
 function Send-BytesToGuest {
     param([byte[]] $Bytes, [string] $Destination, [string] $Mode = '0644')
-    $base64 = [Convert]::ToBase64String($Bytes)
-    $base64 | & wsl.exe -d $distribution -u root -- sh -c "umask 022; base64 --decode > '$Destination' && chmod '$Mode' '$Destination'"
-    if ($LASTEXITCODE -ne 0) { throw "Failed to stream '$Destination' into '$distribution'." }
+    $arguments = @('-d', $distribution, '-u', 'root', '--', 'sh', '-c', "umask 022; cat > '$Destination' && chmod '$Mode' '$Destination'")
+    $startInfo = [Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = (Get-Command wsl.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardInput = $true
+    if ($null -ne $startInfo.PSObject.Properties['ArgumentList']) {
+        foreach ($argument in $arguments) { [void] $startInfo.ArgumentList.Add($argument) }
+    } else {
+        $escaped = foreach ($argument in $arguments) {
+            if ($argument -notmatch '[\s"]') { $argument; continue }
+            '"' + ($argument -replace '(\\*)"', '$1$1\"' -replace '(\\+)$', '$1$1') + '"'
+        }
+        $startInfo.Arguments = $escaped -join ' '
+    }
+    $process = [Diagnostics.Process]::Start($startInfo)
+    try {
+        $process.StandardInput.BaseStream.Write($Bytes, 0, $Bytes.Length)
+        $process.StandardInput.BaseStream.Close()
+        $process.WaitForExit()
+        $exitCode = $process.ExitCode
+    } finally {
+        $process.Dispose()
+    }
+    if ($exitCode -ne 0) { throw "Failed to stream '$Destination' into '$distribution'." }
 }
 
 $before = Get-LiveState
@@ -196,16 +223,25 @@ Write-Host "Restarting only '$distribution' to activate its restricted boundary.
 if ($LASTEXITCODE -ne 0) { throw 'AI NixOS did not start after rebuild.' }
 
 $brew = $configuration.Nono.BrewPrefix + '/bin/brew'
+$homebrewFhs = '/run/current-system/sw/bin/homebrew-fhs'
 $brewCheck = Invoke-AiGuestRead $maintenanceUser @($brew, '--version')
 if ($brewCheck.ExitCode -ne 0) {
     Write-Host 'Installing Homebrew under the non-login AI maintenance identity.'
-    & wsl.exe -d $distribution -u $maintenanceUser -- env HOME=/home/linuxbrew NONINTERACTIVE=1 /bin/bash -c '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
-    if ($LASTEXITCODE -ne 0) { throw 'Homebrew bootstrap failed inside AI NixOS.' }
+    $homebrewInstaller = '/tmp/dataworkstation-homebrew-install.sh'
+    try {
+        & wsl.exe -d $distribution -u root -- runuser -u $maintenanceUser -- curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o $homebrewInstaller
+        if ($LASTEXITCODE -ne 0) { throw 'Homebrew bootstrap download failed inside AI NixOS.' }
+        & wsl.exe -d $distribution -u root --cd $maintenanceHome -- runuser -u $maintenanceUser -- env "HOME=$maintenanceHome" "PATH=$maintenancePath" NONINTERACTIVE=1 $homebrewFhs $homebrewInstaller
+        $homebrewExitCode = $LASTEXITCODE
+    } finally {
+        & wsl.exe -d $distribution -u root -- rm -f $homebrewInstaller
+    }
+    if ($homebrewExitCode -ne 0) { throw 'Homebrew bootstrap failed inside AI NixOS.' }
 }
 Write-Host 'Running the declared AI sandbox package command: brew install nono'
-& wsl.exe -d $distribution -u $maintenanceUser -- env HOME=/home/linuxbrew $brew install nono
+& wsl.exe -d $distribution -u root --cd $maintenanceHome -- runuser -u $maintenanceUser -- env "HOME=$maintenanceHome" "PATH=$maintenancePath" $homebrewFhs $brew install nono
 if ($LASTEXITCODE -ne 0) { throw 'brew install nono failed inside AI NixOS.' }
-& wsl.exe -d $distribution -u $maintenanceUser -- env HOME=/home/linuxbrew $brew pin nono
+& wsl.exe -d $distribution -u root --cd $maintenanceHome -- runuser -u $maintenanceUser -- env "HOME=$maintenanceHome" "PATH=$maintenancePath" $homebrewFhs $brew pin nono
 if ($LASTEXITCODE -ne 0) { throw 'Failed to pin the reviewed nono formula version.' }
 
 $after = Get-LiveState

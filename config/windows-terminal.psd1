@@ -12,6 +12,18 @@
         Name = 'Windows PowerShell'
         Commandline = '%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe'
     }
+    WslProfiles = @(
+        @{
+            Distribution = 'NixOS'
+            Name = 'NixOS DevOps'
+            Source = 'Microsoft.WSL'
+        }
+        @{
+            Distribution = 'NixOS-AI'
+            Name = 'NixOS AI'
+            Source = 'Microsoft.WSL'
+        }
+    )
     ProfileDefaults = @{
         ColorScheme = 'Blue'
         ScrollbarState = 'visible'

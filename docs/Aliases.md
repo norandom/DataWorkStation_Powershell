@@ -27,6 +27,8 @@ Build Tools instance in both Windows PowerShell 5.1 and PowerShell Core.
 | `terminal-link URI [TEXT]` | Emit an OSC 8 hyperlink in Contour, falling back to plain text elsewhere or when output is redirected. |
 | `workstation-help` / `wshelp` | List managed commands, loaded aliases, and repository skills together. Filter with `-Type Commands|Aliases|Skills`, `-Name PATTERN`, or emit stable data with `-Json`. |
 | `caffeine` | Start the real Zhorn Software Caffeine tray utility installed by the focused `Caffeine` WinGet module. It starts active at sign-in; double-click its tray icon to toggle inhibition. |
+| `focus-mouse-on` | Persistently enable focus-follows-mouse with the declared 500 ms delay and without raising windows. |
+| `focus-mouse-off` | Persistently disable focus-follows-mouse and restore click-to-focus. A later default workstation Ensure restores the declared enabled state. |
 
 Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
 
@@ -442,8 +444,8 @@ These community tools are not installed automatically because they do not curren
 | `pwsh -NoProfile -File .\scripts\Set-ScoopState.ps1 -Mode Test` | Verify Scoop prerequisites and official Main/Extras bucket sources. |
 | `pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test` | Verify the official Contour MSI, absence of the legacy Scoop package, native Desktop shortcut, managed BlueTerm config, and bounded graphics gate. |
 | `.\Apply-Workstation.ps1 -Mode Ensure -Module ContourTerminal` | Ensure Sudo, the hash-pinned machine-wide Contour MSI, and the translated theme in dependency order. |
-| `pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test` | Inspect the PowerShell Core default, retained Windows PowerShell profile, and shared Terminal appearance without changing settings or installing a package. |
-| `.\Apply-Workstation.ps1 -Mode Ensure -Module WindowsTerminal` | Ensure the stable Terminal package, back up drifted settings, and merge only the declared PowerShell defaults. |
+| `pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test` | Inspect the PowerShell Core default, retained Windows PowerShell profile, distinct DevOps/AI NixOS names, and shared Terminal appearance without changing settings or installing a package. |
+| `.\Apply-Workstation.ps1 -Mode Ensure -Module WindowsTerminal` | Ensure the stable Terminal package, back up drifted settings, and merge the declared PowerShell and generated NixOS profile names. |
 | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes` | Smoke-test the managed profile in both Windows PowerShell 5.1 and the newest installed PowerShell Core. |
 | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` | Validate dependencies and show the Windows feature installation order without elevation. |
 | `sudo powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Test` | Report Hyper-V and Windows Sandbox state without changing it. |
@@ -592,6 +594,11 @@ arguments they open the selected distribution; with arguments they execute that 
 
 | Command | Behavior |
 |---|---|
+| `pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Test [-Json]` | observational signed Positron/version/PATH status |
+| `pwsh -NoProfile -File .\scripts\Set-PositronState.ps1 -Mode Ensure -AcceptLicense` | install the reviewed official Positron user release after explicit license acceptance |
+| `pwsh -NoProfile -File .\scripts\Set-QuartoState.ps1 -Mode Test [-Json]` | inspect Quarto, bundled Pandoc, private TinyTeX, and the quant Python binding |
+| `pwsh -NoProfile -File .\scripts\Set-QuartoState.ps1 -Mode Ensure` | install the hash-pinned Quarto release and missing private TinyTeX state |
+| `quarto pandoc ...` | invoke Quarto's embedded, version-matched Pandoc |
 | `quant-status [-Project name] [-Json]` | observational uv/OpenBB/base/overlay status; returns nonzero on drift |
 | `quant-sync [-Project name] [-ConfirmPyXllInstall] [-Json]` | exact synchronization; the switch explicitly starts PyXLL's first-install workflow for the base |
 | `quant-rebuild [-Project name] [-ConfirmPyXllInstall] [-Json]` | generated `.venv` replacement with rollback; the switch is the same first-install boundary |
@@ -599,5 +606,5 @@ arguments they open the selected distribution; with arguments they execute that 
 | `quant-notebook [-Project name] [-JupyterArguments args]` | run locked project-local JupyterLab without global kernel registration |
 | `source-relocation-plan [-Source path] [-Target D:\Source] [-Json]` | inspect future relocation readiness without copying, renaming, deleting, or linking anything |
 
-See [Quantitative research environment](quant-research-environment.md) for ownership, credentials,
-OpenBB extension refresh, and the deferred junction boundary.
+See [Quantitative research environment](quant-research-environment.md) for the Positron license
+boundary, ownership, credentials, OpenBB extension refresh, and the deferred junction boundary.

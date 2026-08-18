@@ -359,7 +359,7 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'Opt-in uv/OpenBB base, licensed PyXLL Excel integration, and independently locked quantitative research overlays.'
+            Description = 'Opt-in signed Positron IDE, Quarto/Pandoc with private TinyTeX and quant Python, uv/OpenBB base, PyXLL, and independently locked overlays.'
         }
         @{
             Name = 'MalwareAnalysisTools'

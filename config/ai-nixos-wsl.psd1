@@ -23,9 +23,9 @@
         InstallCommand = 'brew install nono'
         OwnerUser = 'ai-maint'
         MinimumVersion = '0.55.0'
-        ExpectedVersion = '0.71.0'
+        ExpectedVersion = '0.73.0'
         Profile = '/etc/nono/opencode-profile.json'
-        ProfileSha256 = '92c45dc500d8b30cb8e8b2372677697b0b94b6835fd68765d268b37769d3bbe9'
+        ProfileSha256 = '0112cf5b52dfbf954f1dd84856852043919d9466ca108afe5bfb0735f5402495'
         UpstreamProfile = 'nolabs-ai/opencode'
         BrewPrefix = '/home/linuxbrew/.linuxbrew'
     }

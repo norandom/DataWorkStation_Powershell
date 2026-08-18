@@ -80,7 +80,7 @@ Read [Reproducible NixOS WSL tools](docs/nixos-wsl.md) for operation and [NixOS 
 | Triage a suspicious file | bounded host inspection, isolated document/reverse-engineering jobs, and explicitly confirmed Windows Sandbox detonation |
 | Verify an EWF image | `ewf-verify` with held read-only segment handles, pre/post hashes, pinned native tooling, and durable human/JSON reports |
 | Examine media in a forensic GUI | optional Autopsy Windows GUI, matching native Sleuth Kit CLI, Recent Activity helpers, and explicit Defender boundaries |
-| Run doctoral quantitative research | an OpenBB base with licensed PyXLL, interactive Excel plots, an embedded JupyterLab ribbon action, independently locked uv overlays, and project-local notebooks |
+| Run doctoral quantitative research | Positron; Quarto/Pandoc with private TinyTeX and quant Python; OpenBB with licensed PyXLL; independently locked uv overlays; and project-local notebooks |
 
 Start with [Getting started](docs/getting-started.md) and the [capability overview](docs/capabilities/index.md).
 
@@ -126,6 +126,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/pester.psd1` | Pinned Pester release, shared module path, test discovery, output bounds, and parallel throttle. |
 | `config/native-text-tools.psd1` | Declares the native BusyBox applet host and the two exposed PowerShell commands. |
 | `config/caffeine.psd1` | Declares the real Caffeine package and installed executable names. |
+| `config/positron.psd1` | Pins the official Positron x64 user installer, hash, signer, license boundary, and command paths. |
+| `config/quarto.psd1` | Pins portable Quarto/Pandoc and declares private TinyTeX plus the quant-base Python binding. |
 | `config/malware-analysis.psd1` | Bounded host-inspection rules, indicators, supported files, and case defaults. |
 | `config/malware-analysis-tools.psd1` | Pinned capa/Ghidra archives and optional WinGet analysis tools. |
 | `config/linux-homebrew.psd1` | Homebrew location and prerequisites inside the managed Debian WSL distribution. |
@@ -158,6 +160,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Test-ForensicReleaseCandidate.ps1` | Validates package structure, native imports, provenance, and the two-lane benign certification corpus. |
 | `scripts/Set-SpecDrivenDevelopmentState.ps1` | Maintains the release-pinned EARS/TDD Spec Kit tool in an isolated `uv tool` environment. |
 | `scripts/Set-PesterState.ps1` | Observes or explicitly installs the exact per-user Pester release for both PowerShell runtimes. |
+| `scripts/Set-PositronState.ps1` | Observes or explicitly installs signed Positron after dedicated license acceptance. |
+| `scripts/Set-QuartoState.ps1` | Maintains portable Quarto, embedded Pandoc, private TinyTeX, and `QUARTO_PYTHON`. |
 | `scripts/Invoke-PowerShellTests.ps1` | Runs standard test files through one human/JSON Pester command with bounded parallel and compatibility lanes. |
 | `linux/developer_tools.py` | Human-runnable pyinfra desired state for Debian developer packages. |
 | `scripts/Set-ProfilingToolsState.ps1` | Maintains WPT/WPA, py-spy, dotnet-trace, and the local Speedscope viewer. |

@@ -6,13 +6,15 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\contour-terminal.psd1')
+$localConfiguration = Import-WorkstationConfiguration -RepositoryRoot $repositoryRoot
 $package = $configuration.Package
+$packageRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'Contour' -Version $package.Version
 $scoopRoot = [Environment]::ExpandEnvironmentVariables($configuration.ScoopRoot)
 $desiredConfigPath = Join-Path $repositoryRoot $configuration.DesiredConfig
 $userConfigPath = [Environment]::ExpandEnvironmentVariables($configuration.UserConfig)
-$fontPreferencePath = Join-Path $repositoryRoot $configuration.FontPreferenceFile
-$fontPreferenceSamplePath = Join-Path $repositoryRoot $configuration.FontPreferenceSample
 $backupDirectory = Join-Path $repositoryRoot $configuration.BackupDirectory
 $binaryPath = Join-Path ([Environment]::ExpandEnvironmentVariables($package.InstallRoot)) $package.Binary
 $scoopAppDirectory = Join-Path $scoopRoot "apps\$($configuration.LegacyScoopAppName)"
@@ -65,12 +67,9 @@ function Get-ContourMsiEntries {
 }
 
 function Get-TerminalFontFamily {
-    if (-not (Test-Path -LiteralPath $fontPreferencePath -PathType Leaf)) {
-        throw "Local terminal font preference is missing. Create it with: Copy-Item '$fontPreferenceSamplePath' '$fontPreferencePath'"
-    }
-    $family = (Get-Content -LiteralPath $fontPreferencePath -Raw).Trim()
+    $family = [string] $localConfiguration.Fonts.TerminalFamily
     if (-not $family -or $family -match '[\r\n\x00]') {
-        throw "Terminal font preference must contain exactly one non-empty family name: $fontPreferencePath"
+        throw "Terminal font preference must contain exactly one non-empty family name in $($localConfiguration.ConfigurationPath)."
     }
     $family
 }
@@ -214,6 +213,7 @@ function Get-ContourTerminalState {
             $_.DisplayVersion -eq $package.Version
         }
     ) | Select-Object -First 1
+    $observedMsi = if ($desiredMsi) { $desiredMsi } else { $msiEntries | Select-Object -First 1 }
     $scoopVersion = Get-ScoopManifestVersion
     $scoopInstalled = [bool](
         $scoopVersion -or
@@ -236,8 +236,8 @@ function Get-ContourTerminalState {
 
     [pscustomobject]@{
         MsiEntries = $msiEntries
-        ProductCode = if ($desiredMsi) { $desiredMsi.ProductCode } else { '' }
-        InstalledVersion = if ($desiredMsi) { $desiredMsi.DisplayVersion } else { '' }
+        ProductCode = if ($observedMsi) { $observedMsi.ProductCode } else { '' }
+        InstalledVersion = if ($observedMsi) { $observedMsi.DisplayVersion } else { '' }
         DesiredVersion = $package.Version
         Binary = $binaryPath
         BinaryExists = $binaryExists
@@ -247,7 +247,7 @@ function Get-ContourTerminalState {
         ScoopVersion = $scoopVersion
         DesiredConfig = $desiredConfigPath
         UserConfig = $userConfigPath
-        FontPreference = $fontPreferencePath
+        FontPreference = $localConfiguration.ConfigurationPath
         FontFamily = $script:terminalFontFamily
         ConfigCompliant = $configCompliant
         DesktopShortcut = $desktopShortcutPath
@@ -366,7 +366,7 @@ if ($Mode -eq 'Reinitialize' -and $state.ProductCode -eq $package.ProductCode) {
 if (-not $state.PackageCompliant) {
     $installerPath = Join-Path ([IO.Path]::GetTempPath()) "contour-$($package.Version)-$([guid]::NewGuid().ToString('N')).msi"
     try {
-        Invoke-WebRequest -Uri $package.Uri -OutFile $installerPath -UseBasicParsing
+        Invoke-WebRequest -Uri $packageRelease.Uri -OutFile $installerPath -UseBasicParsing
         $actualHash = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actualHash -ne $package.Sha256.ToLowerInvariant()) {
             throw "Contour MSI SHA-256 mismatch. Expected $($package.Sha256), got $actualHash."

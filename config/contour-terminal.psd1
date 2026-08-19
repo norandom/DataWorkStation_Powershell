@@ -1,10 +1,9 @@
 @{
     SchemaVersion = 1
     Package = @{
-        Version = '0.6.3.8249'
-        Uri = 'https://github.com/contour-terminal/contour/releases/download/v0.6.3.8249/contour-0.6.3.8249-win64.msi'
-        Sha256 = '5c8b55c5580a3e263c971c6a9a3ced35014d94b210305a8cb5099177fb89e6a0'
-        ProductCode = '{0E736497-2B72-4117-95E9-54EC6D000603}'
+        Version = '0.7.0.8982'
+        Sha256 = '29bed53dd40ae8625a0489deaea6a7303e18678869116622cad69f687440042e'
+        ProductCode = '{0E736497-2B72-4117-95E9-54EC6D000700}'
         UpgradeCode = '{0E736497-2B72-4117-95E9-54EC6D000000}'
         DisplayName = 'Contour'
         InstallRoot = '%ProgramFiles%\Contour Terminal Emulator 0.6'
@@ -14,8 +13,6 @@
     ScoopRoot = '%USERPROFILE%\scoop'
     DesiredConfig = 'config\contour.yml'
     UserConfig = '%LOCALAPPDATA%\contour\contour.yml'
-    FontPreferenceFile = '.terminal-fonts'
-    FontPreferenceSample = '.terminal-fonts-sample'
     FontFamilyPlaceholder = '__TERMINAL_FONT_FAMILY__'
     BackupDirectory = 'state\contour-backups'
     DesktopShortcutName = 'Contour Terminal Emulator.lnk'

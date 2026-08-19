@@ -1,7 +1,6 @@
 @{
     RetentionDays     = 14
     ExportWindowHours = 48
-    ArchiveRoot       = 'E:\Logs'
     MaxArchiveMiB     = 768
     MinimumFreeMiB    = 128
 

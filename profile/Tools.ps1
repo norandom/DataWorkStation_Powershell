@@ -1,5 +1,15 @@
 # Shared implementations for diagnostic and workstation commands.
 
+function global:Get-WorkstationConfiguration {
+    $repositoryRoot = Join-Path $env:USERPROFILE 'Source\PowerShell'
+    . (Join-Path $repositoryRoot 'scripts\Import-WorkstationConfiguration.ps1')
+    Import-WorkstationConfiguration -RepositoryRoot $repositoryRoot
+}
+
+function global:Get-WorkstationTraceRoot {
+    [string] (Get-WorkstationConfiguration).Paths.Traces
+}
+
 function global:Find-NativeTool {
     param([Parameter(Mandatory = $true)][string] $Name, [string] $WinGetId)
     $command = Get-Command $Name -CommandType Application -ErrorAction Ignore
@@ -85,7 +95,7 @@ function global:Invoke-CrashDumpCapture {
         [Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'Launch')][string] $Executable,
         [Parameter(ParameterSetName = 'Launch')][string[]] $Argument,
         [Parameter(Mandatory = $true, ParameterSetName = 'Attach')][int] $ProcessId,
-        [string] $OutputDirectory = (Join-Path (Get-Location).Path 'dumps')
+        [string] $OutputDirectory = (Join-Path (Get-WorkstationTraceRoot) 'dumps')
     )
     $procdump = (Get-Command procdump.exe -CommandType Application -ErrorAction Stop).Source
     New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
@@ -117,7 +127,7 @@ function global:Invoke-TtdRecord {
         [Parameter(Mandatory = $true, Position = 0, ParameterSetName = 'Launch')][string] $Executable,
         [Parameter(ParameterSetName = 'Launch')][string[]] $Argument,
         [Parameter(Mandatory = $true, ParameterSetName = 'Attach')][int] $ProcessId,
-        [string] $OutputDirectory = (Join-Path (Get-Location).Path 'ttd'),
+        [string] $OutputDirectory = (Join-Path (Get-WorkstationTraceRoot) 'ttd'),
         [ValidateRange(64, 32768)][int] $MaxFileMiB = 2048
     )
     $ttd = (Get-Command TTD.exe -CommandType Application -ErrorAction Stop).Source
@@ -307,7 +317,7 @@ function global:Invoke-DevEventLogSession {
         [Parameter(Mandatory = $true)][ValidateSet('Start', 'Check', 'Stop')][string] $Action,
         [Parameter(Mandatory = $true)][string] $Name,
         [string] $Executable,
-        [string] $WorkingDirectory = (Get-Location).Path,
+        [string] $WorkingDirectory = (Get-WorkstationTraceRoot),
         [int] $MaxEvents = 100
     )
 
@@ -322,7 +332,7 @@ function global:Invoke-ManagedPacketCapture {
         [Parameter(Mandatory = $true)][ValidateSet('Start', 'Stop', 'Status', 'Counters')][string] $Action,
         [string] $Name,
         [int[]] $Port,
-        [string] $WorkingDirectory = (Get-Location).Path,
+        [string] $WorkingDirectory = (Get-WorkstationTraceRoot),
         [switch] $AllComponents
     )
 
@@ -342,7 +352,7 @@ function global:Invoke-PcapTriage {
         [string] $Protocol,
         [switch] $Failures,
         [ValidateRange(1, 10000)][int] $Count = 100,
-        [string] $WorkingDirectory = (Get-Location).Path
+        [string] $WorkingDirectory = (Get-WorkstationTraceRoot)
     )
 
     $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Get-PcapTriage.ps1'

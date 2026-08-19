@@ -1,0 +1,39 @@
+{
+  "$schema": "config/local-config.schema.json",
+  "schemaVersion": 1,
+  "fonts": {
+    "terminalFamily": "Fira Code"
+  },
+  "wsl": {
+    "developer": {
+      "distribution": "Debian",
+      "user": "user"
+    },
+    "malware": {
+      "distribution": "Debian-MW",
+      "user": "user"
+    },
+    "nixos": {
+      "distribution": "NixOS",
+      "user": "user"
+    },
+    "ai": {
+      "distribution": "NixOS-AI",
+      "user": "ai"
+    }
+  },
+  "paths": {
+    "traces": "%USERPROFILE%\\Traces",
+    "eventLogs": "%USERPROFILE%\\Logs"
+  },
+  "defender": {
+    "exclusions": [
+      "%USERPROFILE%\\Source"
+    ]
+  },
+  "cleanup": {
+    "traces": {
+      "retentionDays": 14
+    }
+  }
+}

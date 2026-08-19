@@ -64,7 +64,7 @@ theme JSON against pinned commit `32e03bf59ae9408edc2d0c382a7003a57f1d2bc0` and 
 Code has not discovered is drift, even when its digest matches. The managed
 `workbench.colorTheme` value is `Berg Theme`.
 
-The ignored `.terminal-fonts` file remains the local font choice. Berkeley Mono is selected when
+The `fonts.terminalFamily` value in ignored `config.json` remains the local font choice. Berkeley Mono is selected when
 Windows registers the family or when a font in the per-user Windows font directory exposes that
 exact embedded family name. Public configuration without that valid local family falls back to
 the installed `Fira Code` family. Existing settings are backed up and unrelated settings,

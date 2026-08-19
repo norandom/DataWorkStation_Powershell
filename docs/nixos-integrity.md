@@ -84,7 +84,7 @@ Then use the failure class:
 
 ### Drifted
 
-1. Review `git diff -- nixos config/nixos-wsl.psd1 .wsl-env`.
+1. Review `git diff -- nixos config/nixos-wsl.psd1` and inspect local `config.json` separately.
 2. Compare the active and target system paths from JSON.
 3. If the repository change is intended, inspect the module plan.
 4. Reconcile only the focused module:

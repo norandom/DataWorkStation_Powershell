@@ -13,11 +13,13 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 $configurationPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\config\eventlogs.psd1'))
 $exportScriptPath = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'Export-EventLogs.ps1'))
 $configuration = Import-PowerShellDataFile -LiteralPath $configurationPath
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+$localConfiguration = Import-WorkstationConfiguration -RepositoryRoot ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')))
 $managedRoot = Join-Path $env:ProgramData 'LinuxShell\EventLogs'
 $managedBin = Join-Path $managedRoot 'bin'
 $managedExporter = Join-Path $managedBin 'Export-EventLogs.ps1'
 $managedConfiguration = Join-Path $managedBin 'eventlogs.psd1'
-$archiveRoot = [Environment]::ExpandEnvironmentVariables($configuration.ArchiveRoot)
+$archiveRoot = [string] $localConfiguration.Paths.EventLogs
 $taskPath = '\LinuxShell\'
 $taskName = 'EventLogArchive'
 
@@ -51,7 +53,11 @@ function Get-StateDrift {
     if ((Get-ItemPropertyValue -LiteralPath 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging' -Name EnableScriptBlockLogging -ErrorAction Ignore) -ne 1) {
         $issues.Add('PowerShell script-block logging is disabled.')
     }
-    if (-not (Get-ScheduledTask -TaskPath $taskPath -TaskName $taskName -ErrorAction Ignore)) { $issues.Add('Event-log archive task is missing.') }
+    $archiveTask = Get-ScheduledTask -TaskPath $taskPath -TaskName $taskName -ErrorAction Ignore
+    if (-not $archiveTask) { $issues.Add('Event-log archive task is missing.') }
+    elseif (@($archiveTask.Actions | Where-Object { [string] $_.Arguments -match [regex]::Escape($archiveRoot) }).Count -eq 0) {
+        $issues.Add("Event-log archive task does not target the configured root: $archiveRoot")
+    }
     return $issues
 }
 
@@ -110,7 +116,7 @@ $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.
 Set-Acl -LiteralPath $managedRoot -AclObject $acl
 Set-Acl -LiteralPath $archiveRoot -AclObject $acl
 
-$action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$managedExporter`""
+$action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument "-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$managedExporter`" -ArchiveRoot `"$archiveRoot`""
 $trigger = New-ScheduledTaskTrigger -Daily -At '03:00'
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest

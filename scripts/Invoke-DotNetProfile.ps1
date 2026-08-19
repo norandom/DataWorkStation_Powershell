@@ -12,12 +12,18 @@ param(
     [ValidateRange(1, 86400)]
     [int] $Seconds = 30,
 
-    [string] $OutputBase = (Join-Path (Get-Location).Path ("dotnet-{0}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))),
+    [string] $OutputBase,
+    [string] $ConfigurationPath,
     [switch] $Open,
     [switch] $Json
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+if ([string]::IsNullOrWhiteSpace($OutputBase)) {
+    $traceRoot = (Import-WorkstationConfiguration -ConfigurationPath $ConfigurationPath).Paths.Traces
+    $OutputBase = Join-Path $traceRoot ("dotnet-{0}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+}
 $dotnetTrace = Join-Path $env:USERPROFILE '.dotnet\tools\dotnet-trace.exe'
 if (-not (Test-Path -LiteralPath $dotnetTrace -PathType Leaf)) { throw "dotnet-trace is missing: $dotnetTrace" }
 $basePath = [IO.Path]::GetFullPath($OutputBase)

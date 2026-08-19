@@ -114,10 +114,37 @@ function global:update {
         [ValidateSet('All', 'Windows', 'WinGet', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
         [string[]] $Target = @('All'),
         [switch] $Run,
+        [switch] $Check,
         [switch] $Json
     )
     $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-WorkstationUpdate.ps1'
-    & $script -Target $Target -Run:$Run -Json:$Json
+    & $script -Target $Target -Run:$Run -Check:$Check -Json:$Json
+}
+
+function global:workstation-config {
+    param([switch] $Json)
+    $configuration = Get-WorkstationConfiguration
+    if ($Json) { $configuration | ConvertTo-Json -Depth 7 } else { $configuration }
+}
+
+function global:cleanup-windows {
+    [CmdletBinding()]
+    param([switch] $Run, [switch] $ConfirmRestorePoints, [switch] $Json)
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-WindowsCleanup.ps1'
+    $arguments = @('pwsh.exe', '-NoLogo', '-NoProfile', '-File', $script)
+    if ($Run) { $arguments += '-Run' }
+    if ($ConfirmRestorePoints) { $arguments += '-ConfirmRestorePoints' }
+    if ($Json) { $arguments += '-Json' }
+    & sudo.exe @arguments
+}
+
+function global:cleanup-traces {
+    [CmdletBinding()]
+    param([switch] $Run, [switch] $ConfirmCleanup, [int] $RetentionDays, [switch] $Json)
+    $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-TraceCleanup.ps1'
+    $parameters = @{ Run = $Run; ConfirmCleanup = $ConfirmCleanup; Json = $Json }
+    if ($PSBoundParameters.ContainsKey('RetentionDays')) { $parameters.RetentionDays = $RetentionDays }
+    & $script @parameters
 }
 
 function global:docs-serve {
@@ -227,22 +254,22 @@ function global:profile-native {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-NativeCpuProfile.ps1') @args
 }
 function global:profile-native-start {
-    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-WorkstationTraceRoot))
     profile-native Start $Name -WorkingDirectory $Path
 }
 function global:profile-native-stop {
-    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-WorkstationTraceRoot))
     profile-native Stop $Name -WorkingDirectory $Path
 }
 function global:profile-native-cancel {
-    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-WorkstationTraceRoot))
     profile-native Cancel $Name -WorkingDirectory $Path
 }
 function global:profile-native-record {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [ValidateRange(1, 3600)][int] $Seconds = 15,
-        [string] $Path = (Get-Location).Path
+        [string] $Path = (Get-WorkstationTraceRoot)
     )
     profile-native Start $Name -WorkingDirectory $Path
     try { Start-Sleep -Seconds $Seconds }
@@ -252,13 +279,13 @@ function global:profile-native-record {
     }
 }
 function global:profile-native-open {
-    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-Location).Path)
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $Path = (Get-WorkstationTraceRoot))
     profile-native Open $Name -WorkingDirectory $Path
 }
 function global:profile-native-flamegraph {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
-        [string] $Path = (Get-Location).Path,
+        [string] $Path = (Get-WorkstationTraceRoot),
         [int[]] $ProcessId = @(),
         [string[]] $ProcessName = @(),
         [double] $StartSeconds,
@@ -479,21 +506,22 @@ function global:audit-events { & (Join-Path $env:USERPROFILE 'Source\PowerShell\
 function global:eventlog-status {
     $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-EventLogState.ps1'
     & sudo.exe pwsh.exe -NoLogo -NoProfile -File $script -Mode Test
-    Get-ChildItem -LiteralPath 'E:\Logs' -File -Filter 'eventlogs-*.zip' -ErrorAction Ignore |
+    Get-ChildItem -LiteralPath (Get-WorkstationConfiguration).Paths.EventLogs -File -Filter 'eventlogs-*.zip' -ErrorAction Ignore |
         Sort-Object LastWriteTime -Descending | Select-Object -First 14 Name, Length, LastWriteTime
 }
 
 function global:eventlog-export {
     $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Export-EventLogs.ps1'
     $configuration = Join-Path $env:USERPROFILE 'Source\PowerShell\config\eventlogs.psd1'
-    & sudo.exe pwsh.exe -NoLogo -NoProfile -File $script -ConfigurationPath $configuration
+    $archiveRoot = (Get-WorkstationConfiguration).Paths.EventLogs
+    & sudo.exe pwsh.exe -NoLogo -NoProfile -File $script -ConfigurationPath $configuration -ArchiveRoot $archiveRoot
 }
 
 function global:eventlog-start {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [Parameter(Mandatory = $true)][string] $Executable,
-        [string] $Path = (Get-Location).Path
+        [string] $Path = (Get-WorkstationTraceRoot)
     )
     Invoke-DevEventLogSession -Action Start -Name $Name -Executable $Executable -WorkingDirectory $Path
 }
@@ -501,7 +529,7 @@ function global:eventlog-start {
 function global:eventlog-check {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
-        [string] $Path = (Get-Location).Path,
+        [string] $Path = (Get-WorkstationTraceRoot),
         [int] $MaxEvents = 100
     )
     Invoke-DevEventLogSession -Action Check -Name $Name -WorkingDirectory $Path -MaxEvents $MaxEvents
@@ -510,7 +538,7 @@ function global:eventlog-check {
 function global:eventlog-stop {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
-        [string] $Path = (Get-Location).Path
+        [string] $Path = (Get-WorkstationTraceRoot)
     )
     Invoke-DevEventLogSession -Action Stop -Name $Name -WorkingDirectory $Path
 }
@@ -519,7 +547,7 @@ function global:pcap-start {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [ValidateRange(1, 65535)][int[]] $Port,
-        [string] $Path = (Get-Location).Path,
+        [string] $Path = (Get-WorkstationTraceRoot),
         [switch] $AllComponents
     )
     Invoke-ManagedPacketCapture -Action Start -Name $Name -Port $Port -WorkingDirectory $Path -AllComponents:$AllComponents
@@ -528,7 +556,7 @@ function global:pcap-start {
 function global:pcap-stop {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
-        [string] $Path = (Get-Location).Path
+        [string] $Path = (Get-WorkstationTraceRoot)
     )
     Invoke-ManagedPacketCapture -Action Stop -Name $Name -WorkingDirectory $Path
 }
@@ -537,7 +565,7 @@ function global:pcap-debug-start {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [ValidateRange(1, 65535)][int[]] $Port,
-        [string] $Path = (Get-Location).Path
+        [string] $Path = (Get-WorkstationTraceRoot)
     )
     Invoke-ManagedPacketCapture -Action Start -Name $Name -Port $Port -WorkingDirectory $Path -AllComponents
 }

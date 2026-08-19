@@ -236,15 +236,21 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'windows update', 'update wsl', 'update homebrew', 'update docker')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
                 '.\Apply-Workstation.ps1 -Mode Test -Module <name> -Plan'
                 'update'
+                'update -Check'
                 'update -Json'
+                'cleanup-windows'
+                'cleanup-windows -Json'
+                'cleanup-traces'
+                'cleanup-traces -Json'
+                'workstation-config'
             )
-            StateCommands = @('update -Run', 'update -Target <name> -Run')
+            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{

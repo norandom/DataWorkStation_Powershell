@@ -11,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'Import-WslEnvironment.ps1')
 $selection = Import-WslEnvironment $repositoryRoot
-if (-not $selection.ContainsKey('WSL_AI_DISTRIBUTION') -or -not $selection.ContainsKey('WSL_AI_USER')) { throw 'AI WSL selectors are missing from .wsl-env.' }
+if (-not $selection.ContainsKey('WSL_AI_DISTRIBUTION') -or -not $selection.ContainsKey('WSL_AI_USER')) { throw 'AI WSL selectors are missing from config.json.' }
 $distribution = [string] $selection.WSL_AI_DISTRIBUTION
 $user = [string] $selection.WSL_AI_USER
 $projectPrefix = "/home/$user/projects/"

@@ -44,7 +44,7 @@ if (-not (Test-LinuxHomebrew)) {
     $linuxUser = $wslEnvironment.WSL_USER
     $activeUser = (& wsl.exe -d $distribution -- id -un).Trim()
     if ($activeUser -ne $linuxUser) {
-        throw ".wsl-env selects user '$linuxUser', but $distribution starts as '$activeUser'."
+        throw "config.json selects user '$linuxUser', but $distribution starts as '$activeUser'."
     }
     $linuxGroup = (& wsl.exe -d $distribution -- id -gn).Trim()
     if (-not $linuxUser -or -not $linuxGroup) { throw "Failed to resolve the default $distribution user." }

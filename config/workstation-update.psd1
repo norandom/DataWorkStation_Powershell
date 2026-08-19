@@ -1,5 +1,6 @@
 @{
     SchemaVersion = 1
+    PinnedSoftwareCatalog = 'config\software-updates.psd1'
     Targets = @(
         @{
             Name = 'Windows'; Title = 'Windows software updates'; Order = 10; DependsOn = @()

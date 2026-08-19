@@ -388,7 +388,9 @@ function Test-QuartoDeclaration {
     Assert-Equal 1 $config.SchemaVersion 'Quarto configuration schema is version 1'
     Assert-Equal '1.10.18' $config.Package.Version 'reviewed stable Quarto release is exact'
     Assert-Equal 'quarto-dev/quarto-cli' $config.Package.Repository 'Quarto source repository is official'
-    Assert-True ($config.Package.Uri -match '^https://github\.com/quarto-dev/quarto-cli/releases/download/v1\.10\.18/quarto-1\.10\.18-win\.zip$') 'Quarto uses the official Windows release archive'
+    . (Join-Path $repositoryRoot 'scripts\SoftwareRelease.Core.ps1')
+    $release = Resolve-PinnedSoftwareReleaseAsset -Name 'Quarto' -Version $config.Package.Version
+    Assert-True ($release.Uri -match '^https://github\.com/quarto-dev/quarto-cli/releases/download/v1\.10\.18/quarto-1\.10\.18-win\.zip$') 'Quarto derives the official Windows release archive from its version declaration'
     Assert-True ($config.Package.Sha256 -match '^[0-9a-f]{64}$') 'Quarto archive has a complete pinned SHA-256'
     Assert-Equal '%APPDATA%\TinyTeX' $config.TinyTeX.InstallRoot 'TinyTeX uses Quarto user-private location'
     Assert-True (-not [bool] $config.TinyTeX.UpdatePath) 'TinyTeX is excluded from the ordinary PATH'
@@ -410,7 +412,7 @@ function Test-QuartoStatus {
 
 function Test-QuartoToolchainBoundary {
     $source = Get-Source 'scripts/Set-QuartoState.ps1'
-    $download = $source.IndexOf('Invoke-WebRequest -Uri $package.Uri', [StringComparison]::Ordinal)
+    $download = $source.IndexOf('Invoke-WebRequest -Uri $packageRelease.Uri', [StringComparison]::Ordinal)
     $hash = $source.IndexOf('Get-FileHash -LiteralPath $archive -Algorithm SHA256', [StringComparison]::Ordinal)
     $expand = $source.IndexOf('Expand-Archive -LiteralPath $archive', [StringComparison]::Ordinal)
     Assert-True ($download -ge 0 -and $hash -gt $download -and $expand -gt $hash) 'Quarto verifies the official archive before extraction'

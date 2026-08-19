@@ -591,21 +591,26 @@ function Test-DiagnosticSkills {
 function Test-Contour {
     $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\contour-terminal.psd1')
     $source = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-ContourTerminalState.ps1') -Raw
+    . (Join-Path $repositoryRoot 'scripts\SoftwareRelease.Core.ps1')
+    $release = Resolve-PinnedSoftwareReleaseAsset -Name 'Contour' -Version $configuration.Package.Version
+    $contourConfig = Get-Content -LiteralPath (Join-Path $repositoryRoot 'config\contour.yml') -Raw
     Assert-True ($configuration.Package.Version -match '^\d+\.\d+\.\d+\.\d+$') 'Contour declares a four-part release version'
-    Assert-True ($configuration.Package.Uri -match '/releases/download/v' + [regex]::Escape($configuration.Package.Version) + '/.+\.msi$') 'Contour uses the declared official release MSI'
+    Assert-True ($release.Uri -match '/releases/download/v' + [regex]::Escape($configuration.Package.Version) + '/contour-' + [regex]::Escape($configuration.Package.Version) + '-win64\.msi$') 'Contour derives the official Windows release MSI from its version declaration'
     Assert-True ($configuration.Package.Sha256 -match '^[a-f0-9]{64}$') 'Contour pins the MSI SHA-256'
     Assert-True ($configuration.Package.ProductCode -match '^\{[0-9A-Fa-f-]{36}\}$') 'Contour declares the MSI product code'
+    Assert-True ($configuration.Package.UpgradeCode -match '^\{[0-9A-Fa-f-]{36}\}$') 'Contour declares the stable MSI upgrade code'
     Assert-True ($configuration.LegacyScoopAppName -eq 'contour') 'Contour identifies the legacy Scoop package explicitly'
 
     $scoopGuard = $source.IndexOf('if ($state.ScoopInstalled)', [StringComparison]::Ordinal)
     $scoopUninstall = $source.IndexOf('& $state.ScoopCommand uninstall $configuration.LegacyScoopAppName', [StringComparison]::Ordinal)
     $scoopVerification = $source.IndexOf("throw 'The legacy Scoop Contour package still exists after uninstall; the MSI was not installed.'", [StringComparison]::Ordinal)
-    $msiDownload = $source.IndexOf('Invoke-WebRequest -Uri $package.Uri', [StringComparison]::Ordinal)
+    $msiDownload = $source.IndexOf('Invoke-WebRequest -Uri $packageRelease.Uri', [StringComparison]::Ordinal)
     $msiInstall = $source.IndexOf('Invoke-MsiOperation -Operation Install', [StringComparison]::Ordinal)
     Assert-True ($scoopGuard -ge 0 -and $scoopUninstall -gt $scoopGuard) 'Contour checks for the legacy Scoop package before removing it'
     Assert-True ($scoopVerification -gt $scoopUninstall -and $msiDownload -gt $scoopVerification -and $msiInstall -gt $msiDownload) 'Contour verifies Scoop removal before downloading or installing the MSI'
     Assert-True ($source.IndexOf('Get-FileHash -LiteralPath $installerPath -Algorithm SHA256', [StringComparison]::Ordinal) -lt $msiInstall) 'Contour hashes the downloaded MSI before installation'
-
+    Assert-True ($source -match '\$observedMsi = if \(\$desiredMsi\)' -and $source -match 'InstalledVersion = if \(\$observedMsi\)') 'Contour reports an installed older MSI while the declared release is drifted'
+    Assert-True ($contourConfig -match '(?ms)shell: "pwsh\.exe"\s+arguments:\s+- "-WorkingDirectory"\s+- "~"\s+initial_working_directory: "~"') 'Contour starts every PowerShell tab in the user home directory'
     $gate = $configuration.GraphicsCompatibilityGate
     Assert-True ([bool] $gate.Enabled) 'the Contour graphics compatibility gate is enabled'
     Assert-True ([int] $gate.MinimumRuntimeSeconds -gt 0) 'the Contour gate requires a positive renderer lifetime'
@@ -629,9 +634,10 @@ function Test-DeveloperTools {
         Assert-True ($nativeSource -notmatch [regex]::Escape($prohibited) -and $nativeWinget -notmatch [regex]::Escape($prohibited)) "native text-tool installation does not invoke '$prohibited'"
     }
 
-    $sample = Get-Content -LiteralPath (Join-Path $repositoryRoot '.wsl-env.sample') -Raw
-    $importSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Import-WslEnvironment.ps1') -Raw
-    Assert-True ($sample -match '(?m)^WSL_DISTRIBUTION=Debian$' -and $sample -match '(?m)^WSL_MALWARE_DISTRIBUTION=Debian-MW$') 'the public WSL sample separates developer Debian from Debian-MW'
+    $sample = Get-Content -LiteralPath (Join-Path $repositoryRoot 'config.sample.json') -Raw | ConvertFrom-Json
+    $importSource = (Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Import-WslEnvironment.ps1') -Raw) +
+        (Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Import-WorkstationConfiguration.ps1') -Raw)
+    Assert-True ($sample.wsl.developer.distribution -eq 'Debian' -and $sample.wsl.malware.distribution -eq 'Debian-MW') 'the public local configuration separates developer Debian from Debian-MW'
     Assert-True ($importSource -match 'Developer Debian, malware Debian, DevOps NixOS, and AI NixOS distribution names must be different') 'the WSL selector requires four distinct distribution boundaries when AI NixOS is selected'
 
     $homebrew = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\linux-homebrew.psd1')
@@ -703,11 +709,7 @@ function Test-Documentation {
     Assert-True ($gettingStarted -match 'Windows 11 Pro is required') 'getting started names Windows 11 Pro as required'
 
     $gitignore = @(Get-Content -LiteralPath (Join-Path $repositoryRoot '.gitignore'))
-    $localSelections = @(
-        [pscustomobject]@{ Sample = '.excluded.sample'; Local = '.excluded' }
-        [pscustomobject]@{ Sample = '.wsl-env.sample'; Local = '.wsl-env' }
-        [pscustomobject]@{ Sample = '.terminal-fonts-sample'; Local = '.terminal-fonts' }
-    )
+    $localSelections = @([pscustomobject]@{ Sample = 'config.sample.json'; Local = 'config.json' })
     foreach ($selection in $localSelections) {
         Assert-True (Test-Path -LiteralPath (Join-Path $repositoryRoot $selection.Sample) -PathType Leaf) "public sample '$($selection.Sample)' exists"
         Assert-True (@($gitignore | Where-Object { $_.Trim() -eq $selection.Local }).Count -eq 1) "local selection '$($selection.Local)' is ignored exactly once"

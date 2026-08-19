@@ -8,13 +8,15 @@ param(
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'Import-WslEnvironment.ps1')
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 $selection = Import-WslEnvironment $repositoryRoot
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\ai-nixos-wsl.psd1')
+$packageRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'NixOS-WSL' -Version $configuration.ReleaseTag
 if ($Mode -eq 'Plan') {
     $distribution = if ($selection.ContainsKey($configuration.DistributionVariable)) { [string] $selection[$configuration.DistributionVariable] } else { [string] $configuration.PlanDistribution }
     $dailyUser = if ($selection.ContainsKey($configuration.DailyUserVariable)) { [string] $selection[$configuration.DailyUserVariable] } else { [string] $configuration.PlanDailyUser }
 } elseif (-not $selection.ContainsKey($configuration.DistributionVariable) -or -not $selection.ContainsKey($configuration.DailyUserVariable)) {
-    throw "Copy the WSL_AI_DISTRIBUTION and WSL_AI_USER entries from .wsl-env.sample into .wsl-env before using AiNixOsWsl."
+    throw 'Set the wsl.ai distribution and user in config.json before using AiNixOsWsl.'
 } else {
     $distribution = [string] $selection[$configuration.DistributionVariable]
     $dailyUser = [string] $selection[$configuration.DailyUserVariable]
@@ -197,7 +199,7 @@ if (-not $before.Installed) {
     New-Item -ItemType Directory -Path $assetDirectory -Force | Out-Null
     if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf) -or (Get-FileHash $assetPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $configuration.AssetSha256) {
         Write-Host "Downloading pinned NixOS-WSL $($configuration.ReleaseTag) image."
-        Invoke-WebRequest -UseBasicParsing -Uri $configuration.AssetUrl -OutFile $assetPath
+        Invoke-WebRequest -UseBasicParsing -Uri $packageRelease.Uri -OutFile $assetPath
     }
     if ((Get-FileHash $assetPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $configuration.AssetSha256) { throw 'AI NixOS-WSL image SHA-256 mismatch.' }
     New-Item -ItemType Directory -Path (Split-Path -Parent $installLocation) -Force | Out-Null

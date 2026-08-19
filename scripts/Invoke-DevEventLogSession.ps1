@@ -9,18 +9,22 @@ param(
     [string] $Name,
 
     [string] $Executable,
-    [string] $WorkingDirectory = (Get-Location).Path,
+    [string] $WorkingDirectory,
+    [string] $ConfigurationPath,
     [ValidateRange(1, 1000)]
     [int] $MaxEvents = 100
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) { $WorkingDirectory = (Import-WorkstationConfiguration -ConfigurationPath $ConfigurationPath).Paths.Traces }
 $principal = [Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     throw 'Administrator rights are required. Run this script through sudo.'
 }
 
 $workingRoot = [IO.Path]::GetFullPath($WorkingDirectory)
+if ($Action -eq 'Start' -and -not (Test-Path -LiteralPath $workingRoot)) { New-Item -ItemType Directory -Path $workingRoot -Force | Out-Null }
 if (-not (Test-Path -LiteralPath $workingRoot -PathType Container)) {
     throw "Development directory does not exist: $workingRoot"
 }

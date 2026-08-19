@@ -8,7 +8,6 @@
             Channel = 'GitHubRelease'
             Command = $null
             Version = '1.18.18'
-            Uri = 'https://github.com/anomalyco/opencode/releases/download/v1.18.18/opencode-desktop-win-x64.exe'
             Sha256 = 'f46c9420df889483d64fcb96637adfced89e9b3a1895fb6cc913caa0d6ee1962'
             InstallPath = '%LOCALAPPDATA%\Programs\OpenCode\OpenCode.exe'
             InstallArguments = @('/S')

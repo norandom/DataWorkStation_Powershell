@@ -111,13 +111,11 @@ function Get-BergExtensionState {
 
 function Get-DeveloperEditorFont {
     param([string] $RepositoryRoot, [hashtable] $Configuration)
-    # The portable declaration selects .terminal-fonts when its family is an InstalledFont.
-    $preferencePath = Join-Path $RepositoryRoot $Configuration.LocalFontPreference
-    if (Test-Path -LiteralPath $preferencePath -PathType Leaf) {
-        $family = (Get-Content -LiteralPath $preferencePath -Raw).Trim()
-        if ($family -and (Test-InstalledFontFamily $family)) {
-            return [pscustomobject]@{ Family = $family; Source = 'local'; InstalledFont = $true }
-        }
+    . (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+    $localConfiguration = Import-WorkstationConfiguration -RepositoryRoot $RepositoryRoot
+    $family = [string] $localConfiguration.Fonts.TerminalFamily
+    if ($family -and (Test-InstalledFontFamily $family)) {
+        return [pscustomobject]@{ Family = $family; Source = 'local'; InstalledFont = $true }
     }
     [pscustomobject]@{ Family = $Configuration.PortableFontFamily; Source = 'portable'; InstalledFont = (Test-InstalledFontFamily $Configuration.PortableFontFamily) }
 }

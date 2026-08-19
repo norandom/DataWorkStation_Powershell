@@ -46,17 +46,33 @@ The managed `smooth_scrolling` and `momentum_scrolling` options improve pixel/ge
 
 ## Managed Contour bindings
 
-Contour 0.6.3.8249 treats the line along the bottom as a status-line tab indicator, not a clickable tab bar. The managed mouse alternative is `Alt+wheel`.
+Contour 0.7.0.8982 provides a clickable GUI tab bar and split panes. The managed `Alt+wheel` binding is an additional mouse shortcut.
 
 ### Tabs and navigation
 
 | Binding | Action |
 | --- | --- |
 | `Ctrl+Shift+T` | Create a tab. |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab` | Switch to the right/left tab. |
+| `Ctrl+Page Down` / `Ctrl+Page Up` | Switch to the right/left tab. |
 | `Alt+wheel up` / `Alt+wheel down` | Switch to the left/right tab. |
 | `Shift+Left` / `Shift+Right` | Switch to the left/right tab. |
 | `Alt+1` through `Alt+9`, `Alt+0` | Switch directly to tabs 1 through 10. |
 | `Ctrl+Alt+K` / `Ctrl+Alt+J` | Jump to the previous/next PowerShell prompt mark outside the alternate screen. |
+
+### Panes and commands
+
+| Binding | Action |
+| --- | --- |
+| `Ctrl+Shift+E` / `Ctrl+Shift+O` | Split the active pane vertically/horizontally. |
+| `Alt+Shift+Arrow` | Focus the pane in that direction. |
+| `Ctrl+Alt+Arrow` | Swap the active pane in that direction. |
+| `Ctrl+Alt+Shift+Arrow` | Resize the active pane in that direction. |
+| `Ctrl+Shift+\` | Toggle the split orientation. |
+| `Ctrl+Shift+Z` | Toggle pane zoom. |
+| `Ctrl+Shift+X` | Close the active pane. |
+| `Ctrl+Shift+P` | Open the command palette. |
+| `Ctrl+Shift+S` | Speak the current selection. |
 
 ### Scrollback, selection, and search
 

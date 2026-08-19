@@ -7,8 +7,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'Import-WslEnvironment.ps1')
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 $wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
 $configuration = Import-PowerShellDataFile (Join-Path $PSScriptRoot '..\config\developer-tools.psd1')
+$codeQlRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'CodeQL' -Version $configuration.CodeQL.Version
 $configuration.DebianDistribution = $wslEnvironment.WSL_DISTRIBUTION
 $pyinfra = "/home/$($wslEnvironment.WSL_USER)/.local/bin/pyinfra"
 $codeqlRoot = Join-Path $env:LOCALAPPDATA "Programs\CodeQL\$($configuration.CodeQL.Version)\codeql"
@@ -96,7 +98,7 @@ function Install-CodeQL {
     New-Item -ItemType Directory -Path $downloadDirectory -Force | Out-Null
     $archiveName = "codeql-win64-v$($configuration.CodeQL.Version).zip"
     $archive = Join-Path $downloadDirectory $archiveName
-    & $aria2 --continue=true --max-connection-per-server=3 --split=3 --dir=$downloadDirectory --out=$archiveName $configuration.CodeQL.Url
+    & $aria2 --continue=true --max-connection-per-server=3 --split=3 --dir=$downloadDirectory --out=$archiveName $codeQlRelease.Uri
     if ($LASTEXITCODE -ne 0) { throw "CodeQL download failed with exit code $LASTEXITCODE." }
     $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualHash -ne $configuration.CodeQL.Sha256) { throw "CodeQL archive hash mismatch: $actualHash" }

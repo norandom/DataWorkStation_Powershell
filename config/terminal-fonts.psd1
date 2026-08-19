@@ -3,7 +3,6 @@
     Package = @{
         Name = 'Fira Code'
         Version = '6.2'
-        Uri = 'https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip'
         Sha256 = '0949915ba8eb24d89fd93d10a7ff623f42830d7c5ffc3ecbf960e4ecad3e3e79'
     }
     InstallDirectory = '%LOCALAPPDATA%\Microsoft\Windows\Fonts'

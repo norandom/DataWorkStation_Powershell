@@ -50,6 +50,7 @@ nav:
       - Choose desired state: desired-state.md
       - Select modules and dependencies: workstation-modules.md
       - Review and run updates: workstation-update.md
+      - Clean disk and traces: cleanup.md
   - Configure:
       - Contour Terminal and BlueTerm: contour-terminal.md
       - Terminal keys and scrolling: terminal-keybindings.md

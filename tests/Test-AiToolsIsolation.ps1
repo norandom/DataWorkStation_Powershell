@@ -178,9 +178,9 @@ function Test-BergActivation {
 }
 
 function Test-AiDistributionIdentity {
-    $sample = Get-RequiredText '.wsl-env.sample'
-    $import = Get-RequiredText 'scripts/Import-WslEnvironment.ps1'
-    Assert-True ($sample -match '(?m)^WSL_AI_DISTRIBUTION=NixOS-AI$' -and $sample -match '(?m)^WSL_AI_USER=') 'AI selectors are public'
+    $sample = Get-RequiredText 'config.sample.json' | ConvertFrom-Json
+    $import = (Get-RequiredText 'scripts/Import-WslEnvironment.ps1') + (Get-RequiredText 'scripts/Import-WorkstationConfiguration.ps1')
+    Assert-True ($sample.wsl.ai.distribution -eq 'NixOS-AI' -and $sample.wsl.ai.user) 'AI selectors are public'
     Assert-True ($import -match 'four.*distribution|AI.*different|distinct' -and $import -match 'WSL_AI_DISTRIBUTION') 'all four distro identities must differ'
 }
 
@@ -324,9 +324,9 @@ function Test-FocusedModuleBoundary {
 
 function Test-PortableSecretExclusions {
     $ignore = Get-RequiredText '.gitignore'
-    foreach ($token in @('.wsl-env', '.terminal-fonts', 'state/ai', 'state/cases')) { Assert-True ($ignore -match [regex]::Escape($token)) "$token is excluded" }
+    foreach ($token in @('config.json', 'state/ai', 'state/cases')) { Assert-True ($ignore -match [regex]::Escape($token)) "$token is excluded" }
     $tracked = @(git -C $repositoryRoot ls-files)
-    Assert-True (@($tracked | Where-Object { $_ -match '(?i)(id_rsa|id_ed25519|\.pem$|\.key$|case-evidence|\.terminal-fonts$|\.wsl-env$)' }).Count -eq 0) 'portable files contain no obvious private material'
+    Assert-True (@($tracked | Where-Object { $_ -match '(?i)(id_rsa|id_ed25519|\.pem$|\.key$|case-evidence|^config\.json$)' }).Count -eq 0) 'portable files contain no obvious private material'
 }
 
 $sections = if ($Section -eq 'All') {

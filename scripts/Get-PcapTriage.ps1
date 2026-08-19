@@ -17,10 +17,13 @@ param(
     [ValidateRange(1, 10000)]
     [int] $Count = 100,
 
-    [string] $WorkingDirectory = (Get-Location).Path
+    [string] $WorkingDirectory,
+    [string] $ConfigurationPath
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) { $WorkingDirectory = (Import-WorkstationConfiguration -ConfigurationPath $ConfigurationPath).Paths.Traces }
 $workingRoot = [IO.Path]::GetFullPath($WorkingDirectory)
 $candidate = if (Test-Path -LiteralPath $Capture) {
     (Resolve-Path -LiteralPath $Capture).Path

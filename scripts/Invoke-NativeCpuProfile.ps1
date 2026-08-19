@@ -8,11 +8,14 @@ param(
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')]
     [string] $Name,
 
-    [string] $WorkingDirectory = (Get-Location).Path,
+    [string] $WorkingDirectory,
+    [string] $ConfigurationPath,
     [switch] $Json
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) { $WorkingDirectory = (Import-WorkstationConfiguration -ConfigurationPath $ConfigurationPath).Paths.Traces }
 $writeJson = $Json
 $wptRoot = 'C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit'
 $wpr = Join-Path $wptRoot 'wpr.exe'
@@ -39,6 +42,7 @@ $stateFile = Join-Path $captureRoot 'state.json'
 $etlFile = Join-Path $captureRoot 'cpu.etl'
 
 if ($Action -eq 'Start') {
+    New-Item -ItemType Directory -Path $WorkingDirectory -Force | Out-Null
     if (Test-Path -LiteralPath $stateFile) {
         $existing = Get-Content -LiteralPath $stateFile -Raw | ConvertFrom-Json
         if ($existing.Active) { throw "Native profile '$Name' is already marked active." }

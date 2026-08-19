@@ -100,8 +100,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `.config/native-text-tools.winget` | Focused native Win32 package state for PowerShell `awk` and `sed`. |
 | `.config/caffeine.winget` | Focused Zhorn Software Caffeine package state. |
 | `.config/malware-analysis-tools.winget` | Opt-in isolated-analysis packages; excluded from the default workstation set. |
-| `.terminal-fonts-sample` | Portable one-line terminal font-family example; copy it to ignored `.terminal-fonts` for local use. |
-| `.wsl-env.sample` | Portable Debian, Debian-MW, and NixOS WSL distribution/user selectors; copy it to ignored `.wsl-env`. |
+| `config.sample.json` | Portable local font, WSL-boundary, storage-path, Defender-exclusion, and cleanup-retention template; copy it to ignored `config.json`. |
+| `config/local-config.schema.json` | JSON schema for the unified local workstation configuration. |
 | `nixos/` | Locked NixOS-WSL flake, CLI package set, and read-only integrity self-check. |
 | `config/nixos-wsl.psd1` | Pinned NixOS-WSL image identity, install boundary, and managed command inventory. |
 | `config/shared-ssh.psd1` | Canonical Windows SSH config and trusted WSL link boundaries; Debian-MW is excluded. |
@@ -210,8 +210,9 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Get-PcapTriage.ps1` | Provides compact packet, failure, protocol, port, and endpoint views from PktMon ETL. |
 | `scripts/ssh-copy-id.ps1` | Installs an OpenSSH public key on a POSIX SSH target. |
 | `scripts/Set-FirewallState.ps1` | Maintains default-block profiles, named service rules, and expert-approved local application rules. |
-| `.excluded.sample` | Public, machine-agnostic template for the ignored local Defender exclusion list. |
-| `config/defender-exclusions.psd1` | Declares Defender performance policy and the local exclusion-list filename. |
+| `scripts/Invoke-WindowsCleanup.ps1` | Plans or explicitly runs the performance-preserving Windows cleanup profile. |
+| `scripts/Invoke-TraceCleanup.ps1` | Plans or explicitly removes expired inactive items from the configured trace root. |
+| `config/defender-exclusions.psd1` | Declares Defender performance policy; local exclusion paths live in ignored `config.json`. |
 | `config/wslconfig.ini` | Declares the global WSL 2 memory policy. |
 | `config/eventlogs.psd1` | Declares channels, sizes, audit coverage, and archive rotation. |
 | `config/taildrive-policy.hujson` | Tailnet policy fragment required for Taildrive. |
@@ -226,10 +227,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 Run from PowerShell 7:
 
 ```powershell
-Copy-Item .excluded.sample .excluded
-Copy-Item .wsl-env.sample .wsl-env
-# Edit .excluded for this workstation.
-# Set WSL_USER in .wsl-env; this workstation uses WSL_DISTRIBUTION=Debian.
+Copy-Item config.sample.json config.json
+# Set local fonts, WSL boundaries, storage paths, Defender exclusions, and trace retention.
 .\Apply-Workstation.ps1 -Mode Test
 .\Apply-Workstation.ps1 -Mode Ensure
 .\Apply-Workstation.ps1 -Mode Reinitialize
@@ -239,11 +238,13 @@ Preview or run updates with one command:
 
 ```powershell
 update
+update -Check
 update -Json
 update -Run
 ```
 
-The first two commands only print a plan. `update -Run` installs accepted Windows software updates
+The default and `-Json` commands print a static plan. `update -Check` performs a read-only network
+check for supported pinned releases. `update -Run` installs accepted Windows software updates
 and updates ordinary WinGet and Scoop applications. It also updates WSL, both declared Debian
 distributions, the developer Homebrew installation, developer Docker, and Debian-MW rootless
 Podman. The command finishes by applying and testing the current checkout's default,
@@ -252,6 +253,19 @@ non-destructive desired state.
 The update command does not install drivers, restart Windows, shut down WSL, prune containers, clean
 Scoop, override pinned or unknown packages, or touch undeclared distributions. See
 [Managed workstation update](docs/workstation-update.md).
+
+Preview cleanup without deletion. Windows cleanup requests elevation so its restore-point and VSS
+inventory is accurate; trace cleanup does not:
+
+```powershell
+cleanup-windows
+cleanup-traces
+```
+
+Windows cleanup requires sudo only with `-Run`, and old restore-point/shadow-copy deletion additionally
+requires `-ConfirmRestorePoints`. Trace deletion requires `-Run -ConfirmCleanup`. Prefetch, event logs,
+shader/thumbnail caches, active traces, and the separate event-log archive root are preserved. See
+[Disk and trace cleanup](docs/cleanup.md).
 
 Use `Ensure` for routine work. It changes only resources that have drifted. Use `Reinitialize` after
 troubleshooting when you need to reapply local state. That mode exports a full `.wfw` backup before
@@ -290,8 +304,7 @@ MalwareContainerImage requires RootlessPodman.
 MalwareContainerImage, Autopsy, SleuthKitCli, NativeForensicTools, and the destructive LegacyDockerCleanup module. See
 [Sample outputs](docs/sample-outputs.md) for human and JSON output.
 
-Defender reads managed exclusion paths from the ignored local `.excluded` file. Copy
-`.excluded.sample` after cloning, then edit the copy for this workstation. You can use native Windows
+Defender reads managed exclusion paths from ignored local `config.json`. You can use native Windows
 `%ENVIRONMENT_VARIABLE%` references. The repository contains no workstation-specific paths and does
 not remove unrelated Defender exclusions.
 
@@ -304,7 +317,8 @@ SaveZone controls Mark-of-the-Web separately. This project does not change Smart
 WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Windows uses a 16 GiB initial and 32 GiB maximum pagefile; changing that policy requires a Windows restart.
 
 The event-log template keeps the selected live logs circular and increases their size. A scheduled
-task exports the latest 48 hours to EVTX each day. It stores ZIP archives in `E:\Logs` for no more
+task exports the latest 48 hours to EVTX each day. It stores ZIP archives under the configured
+`paths.eventLogs` root for no more
 than 14 days and caps the directory at 768 MiB. Rotation starts early when E: has less than 128 MiB
 free. The task stages files under ProgramData on C:, runs from an administrator-controlled copy of
 the exporter, and uses the SYSTEM account.
@@ -313,6 +327,9 @@ The package set includes PowerShell 7, Windows Terminal, Go, Microsoft Coreutils
 WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, Git, GitHub CLI
 (`gh`), Tailscale, WSL, Debian, IrfanView with its matching plug-ins, and lightweight qView for SVG
 profile viewing. Node.js supplies npm and npx.
+
+New diagnostic captures default to `paths.traces`. Use `cleanup-windows` and `cleanup-traces` to
+inspect cleanup plans; destructive execution remains explicit. See [Disk and trace cleanup](docs/cleanup.md).
 
 Windows PowerShell 5.1 and the newest installed PowerShell Core load the same prompt, aliases, tools,
 and readline settings. Windows Terminal starts PowerShell Core by default and keeps Windows

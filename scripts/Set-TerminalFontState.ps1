@@ -6,8 +6,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\terminal-fonts.psd1')
 $package = $configuration.Package
+$packageRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'Fira Code' -Version $package.Version
 $installDirectory = [Environment]::ExpandEnvironmentVariables($configuration.InstallDirectory)
 $registryPath = $configuration.RegistryPath
 $backupDirectory = Join-Path $repositoryRoot $configuration.BackupDirectory
@@ -84,7 +86,7 @@ $archivePath = Join-Path $temporaryDirectory 'FiraCode.zip'
 $expandedDirectory = Join-Path $temporaryDirectory 'expanded'
 try {
     New-Item -ItemType Directory -Path $temporaryDirectory -Force | Out-Null
-    Invoke-WebRequest -Uri $package.Uri -OutFile $archivePath -UseBasicParsing
+    Invoke-WebRequest -Uri $packageRelease.Uri -OutFile $archivePath -UseBasicParsing
     $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($archiveHash -ne $package.Sha256) {
         throw "Fira Code archive SHA-256 mismatch. Expected $($package.Sha256), got $archiveHash."

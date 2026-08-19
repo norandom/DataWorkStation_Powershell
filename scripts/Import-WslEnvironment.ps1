@@ -2,44 +2,20 @@ function Import-WslEnvironment {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true)]
-        [string] $RepositoryRoot
+        [string] $RepositoryRoot,
+        [string] $ConfigurationPath
     )
 
-    $environmentFile = Join-Path $RepositoryRoot '.wsl-env'
-    if (-not (Test-Path -LiteralPath $environmentFile -PathType Leaf)) {
-        throw "Missing $environmentFile. Copy .wsl-env.sample to .wsl-env and select the local distribution and user."
+    . (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+    $configuration = Import-WorkstationConfiguration -RepositoryRoot $RepositoryRoot -ConfigurationPath $ConfigurationPath
+    @{
+        WSL_DISTRIBUTION = [string] $configuration.Wsl.developer.distribution
+        WSL_USER = [string] $configuration.Wsl.developer.user
+        WSL_MALWARE_DISTRIBUTION = [string] $configuration.Wsl.malware.distribution
+        WSL_MALWARE_USER = [string] $configuration.Wsl.malware.user
+        WSL_NIXOS_DISTRIBUTION = [string] $configuration.Wsl.nixos.distribution
+        WSL_NIXOS_USER = [string] $configuration.Wsl.nixos.user
+        WSL_AI_DISTRIBUTION = [string] $configuration.Wsl.ai.distribution
+        WSL_AI_USER = [string] $configuration.Wsl.ai.user
     }
-
-    $values = @{}
-    foreach ($line in Get-Content -LiteralPath $environmentFile) {
-        $trimmed = $line.Trim()
-        if (-not $trimmed -or $trimmed.StartsWith('#')) { continue }
-        $parts = $trimmed -split '=', 2
-        if ($parts.Count -ne 2 -or $parts[0] -notmatch '^WSL_[A-Z_]+$' -or -not $parts[1].Trim()) {
-            throw "Invalid .wsl-env entry: $line"
-        }
-        $values[$parts[0]] = $parts[1].Trim()
-    }
-
-    foreach ($required in @('WSL_DISTRIBUTION', 'WSL_USER', 'WSL_MALWARE_DISTRIBUTION', 'WSL_MALWARE_USER', 'WSL_NIXOS_DISTRIBUTION', 'WSL_NIXOS_USER')) {
-        if (-not $values.ContainsKey($required)) { throw "Missing $required in $environmentFile." }
-    }
-    if ($values.ContainsKey('WSL_AI_DISTRIBUTION') -xor $values.ContainsKey('WSL_AI_USER')) {
-        throw 'WSL_AI_DISTRIBUTION and WSL_AI_USER must be declared together.'
-    }
-    foreach ($key in @('WSL_DISTRIBUTION', 'WSL_MALWARE_DISTRIBUTION', 'WSL_NIXOS_DISTRIBUTION', 'WSL_AI_DISTRIBUTION')) {
-        if (-not $values.ContainsKey($key)) { continue }
-        if ($values[$key] -notmatch '^[A-Za-z0-9._-]+$') { throw "Invalid distribution name in $key." }
-    }
-    foreach ($key in @('WSL_USER', 'WSL_MALWARE_USER', 'WSL_NIXOS_USER', 'WSL_AI_USER')) {
-        if (-not $values.ContainsKey($key)) { continue }
-        if ($values[$key] -notmatch '^[a-z_][a-z0-9_-]*$') { throw "Invalid Linux user name in $key." }
-    }
-    $distributions = @($values.WSL_DISTRIBUTION, $values.WSL_MALWARE_DISTRIBUTION, $values.WSL_NIXOS_DISTRIBUTION)
-    if ($values.ContainsKey('WSL_AI_DISTRIBUTION')) { $distributions += $values.WSL_AI_DISTRIBUTION }
-    if (@($distributions | Sort-Object -Unique).Count -ne $distributions.Count) {
-        throw 'Developer Debian, malware Debian, DevOps NixOS, and AI NixOS distribution names must be different.'
-    }
-
-    return $values
 }

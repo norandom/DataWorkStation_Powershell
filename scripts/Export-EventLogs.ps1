@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string] $ConfigurationPath
+    [string] $ConfigurationPath,
+    [string] $ArchiveRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,7 +22,11 @@ if ([string]::IsNullOrWhiteSpace($ConfigurationPath)) {
     $ConfigurationPath = Join-Path $scriptDirectory 'eventlogs.psd1'
 }
 $configuration = Import-PowerShellDataFile -LiteralPath $ConfigurationPath
-$archiveRoot = [Environment]::ExpandEnvironmentVariables($configuration.ArchiveRoot)
+if ([string]::IsNullOrWhiteSpace($ArchiveRoot)) {
+    if (-not $configuration.ArchiveRoot) { throw 'ArchiveRoot must be supplied by the local workstation configuration.' }
+    $ArchiveRoot = [Environment]::ExpandEnvironmentVariables([string] $configuration.ArchiveRoot)
+}
+$archiveRoot = [IO.Path]::GetFullPath($ArchiveRoot)
 $runStamp = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHHmmssZ')
 $stagingRoot = Join-Path $env:ProgramData 'LinuxShell\EventLogs\staging'
 $staging = Join-Path $stagingRoot $runStamp

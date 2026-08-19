@@ -1,6 +1,6 @@
 # Contour Terminal and BlueTerm
 
-Contour 0.6.3.8249 is installed machine-wide from the [official GitHub release MSI](https://github.com/contour-terminal/contour/releases/tag/v0.6.3.8249). It is independent of the separately maintained Scoop installation.
+Contour 0.7.0.8982 is installed machine-wide from the [official GitHub release MSI](https://github.com/contour-terminal/contour/releases/tag/v0.7.0.8982). It is independent of the separately maintained Scoop installation. This release fixes the font-fallback run segmentation that affected prompts containing an ornament absent from the primary font, including Claude Code prompts.
 
 ## Human-readable commands
 
@@ -41,19 +41,23 @@ This is a functional gate for the installed graphics stack, not a vendor-specifi
 
 The managed target is `%LocalAppData%\contour\contour.yml`, Contour's native Windows configuration path. The source palette is `%USERPROFILE%\Source\BlueTerm\Blue.json`; its existing Windows Terminal translation was used to cross-check RGB values.
 
-The repository template contains a font-family placeholder. Copy `.terminal-fonts-sample` to the ignored `.terminal-fonts` file and put exactly one installed family name on that line. The tracked sample selects the automatically installed `Fira Code`; this workstation selects its separately licensed and installed `Berkeley Mono`. `Test` refuses a missing, empty, or multi-line preference, and `Ensure` renders it into `profiles.main.font.regular.family` without publishing the local choice.
+The repository template contains a font-family placeholder. Set `fonts.terminalFamily` in ignored
+`config.json`; the portable sample selects the automatically installed `Fira Code`, while this
+workstation selects its separately licensed and installed `Berkeley Mono`. `Test` refuses a missing,
+empty, or multi-line preference, and `Ensure` renders it into `profiles.main.font.regular.family`
+without publishing the local choice.
 
 The translation preserves:
 
 - the deep-blue palette as the default and the near-black palette as the `blue-dark` profile;
 - 17-pixel text, equivalent to the source's 17-pixel iTerm sizing and close to the 12-point Windows Terminal translation;
 - a blinking bar cursor, unlimited history, and visual alert without bell sound;
-- the locally declared terminal font and an initial working directory of `~` (`$HOME`);
+- the locally declared terminal font and an initial working directory of `~` (`$HOME`), reinforced with PowerShell's `-WorkingDirectory ~` argument for tabs created from the GUI;
 - the `xterm-256color` environment intent and PowerShell 7 as the shell.
 
 Contour requires the first color scheme to be named `default`, so the deep-blue BlueTerm palette has that internal name. The second scheme is `Blue Dark` and can be launched with `contour profile blue-dark`. Contour uses `magenta` where Windows Terminal calls the same ANSI slot `purple`.
 
-Although the 0.6.3.8249 generated comments mention automatic light/dark mappings, its config inspector treats that map as missing. The managed config therefore uses explicit profiles so it remains compatible with this release parser.
+The managed config keeps explicit `main` and `blue-dark` profiles rather than relying on automatic light/dark mappings, so the selected palette is deterministic.
 
 ## PowerShell integration and tabs
 
@@ -65,18 +69,23 @@ clipboard instead of Contour's platform-dependent selection clipboard. Selecting
 therefore replaces the current clipboard contents, which other processes in the interactive Windows
 session may be able to read.
 
-The managed map preserves Contour 0.6.3's bindings and adds common scrolling and mouse tab switching:
+The managed map preserves Contour 0.7.0's bindings and adds common scrolling and mouse tab switching:
 
 - `Ctrl+Alt+K` / `Ctrl+Alt+J`: jump to the previous or next marked prompt;
 - `Ctrl+click`: follow the OSC 8 link under the pointer;
 - `Ctrl+Shift+U`: enter hint mode for detected URLs and file paths;
 - `Ctrl+Shift+T`: create a tab;
+- `Ctrl+Tab` / `Ctrl+Shift+Tab`: switch to the tab on the right or left;
+- `Ctrl+Shift+E` / `Ctrl+Shift+O`: split the active pane vertically or horizontally;
+- `Ctrl+Shift+P`: open the command palette;
 - `Alt+wheel up` / `Alt+wheel down`: switch to the tab on the left or right;
 - `Shift+Left` / `Shift+Right`: switch to the tab on the left or right;
 - `Alt+1` through `Alt+9`, and `Alt+0` for tab 10: switch directly to a tab.
 - `Ctrl+Shift+Page Up` / `Ctrl+Shift+Page Down`: scroll terminal history by a page, matching Windows Terminal.
 
-The bottom status line shows the active tabs but is not a clickable tab bar in this Contour release. Use `Alt+wheel` for mouse-driven switching. Plain wheel scrolling remains terminal scrollback, `Shift+wheel` moves by a page, and `Ctrl+wheel` changes font size.
+Contour 0.7 supplies a clickable GUI tab bar and split panes. The managed `Alt+wheel` binding remains a fast mouse-driven alternative. Plain wheel scrolling remains terminal scrollback, `Shift+wheel` moves by a page, and `Ctrl+wheel` changes font size.
+
+The MSI launches Contour with its installation directory as the application working directory. The GUI new-tab button can otherwise pass that directory to a new shell. The managed profile starts `pwsh.exe` with `-WorkingDirectory ~`, so every newly created PowerShell tab opens in the user's home directory instead of Contour's `bin` directory.
 
 The deep-blue palette uses a warm coral ANSI red (`#FF8F80`) and a pale-coral bright red (`#FFD0C8`). Red and blue are perceptual opposites, but the original dark red had only about 2.0:1 contrast against `#00347F`. The replacement retains error semantics while reaching about 5.3:1 for normal red and 8.4:1 for bright red. The same values are carried into the BlueTerm Windows Terminal conversion.
 
@@ -90,17 +99,18 @@ profile does not run uncached PowerShell commands during status-line redraw beca
 start another process. The separate host-writable VT status line is controlled by the application;
 it is not a declarative item system.
 
-Contour replaces its entire built-in map when `input_mapping` is present. The managed YAML therefore declares the complete 0.6.3.8249 map rather than a partial override. See [Terminal keyboard and scrolling](terminal-keybindings.md) for the full Contour, Windows Terminal, compact-keyboard, and PSReadLine reference.
+Contour replaces its entire built-in map when `input_mapping` is present. The managed YAML therefore declares the complete 0.7.0.8982 map rather than a partial override. See [Terminal keyboard and scrolling](terminal-keybindings.md) for the full Contour, Windows Terminal, compact-keyboard, and PSReadLine reference.
 
-The MSI installs the binary at `C:\Program Files\Contour Terminal Emulator 0.6\bin\contour.exe` and supplies the all-users Desktop shortcut `C:\Users\Public\Desktop\Contour Terminal Emulator.lnk`. Desired state validates both. If a different user configuration exists, Ensure copies it to `state/contour-backups` before deploying the managed artifact.
+The MSI upgrades the binary in place at `C:\Program Files\Contour Terminal Emulator 0.6\bin\contour.exe` and refreshes the all-users Desktop shortcut `C:\Users\Public\Desktop\Contour Terminal Emulator.lnk`. Desired state validates both. If a different user configuration exists, Ensure copies it to `state/contour-backups` before deploying the managed artifact.
 
 ## Package and supply-chain behavior
 
 The declaration pins:
 
-- version `0.6.3.8249`;
-- product code `{0E736497-2B72-4117-95E9-54EC6D000603}`;
-- release asset `contour-0.6.3.8249-win64.msi`;
-- SHA-256 `5c8b55c5580a3e263c971c6a9a3ced35014d94b210305a8cb5099177fb89e6a0`.
+- version `0.7.0.8982`;
+- product code `{0E736497-2B72-4117-95E9-54EC6D000700}`;
+- upgrade code `{0E736497-2B72-4117-95E9-54EC6D000000}`;
+- release asset `contour-0.7.0.8982-win64.msi`;
+- SHA-256 `29bed53dd40ae8625a0489deaea6a7303e18678869116622cad69f687440042e`.
 
 The upstream MSI is not Authenticode-signed. Desired state therefore relies on the exact HTTPS GitHub release URL plus the pinned SHA-256 and refuses installation on any mismatch. The MSI declares `ALLUSERS=1`, writes under Program Files and the common Desktop, and consequently requires administrator rights. Downloads and installation require network access; test and plan modes do not.

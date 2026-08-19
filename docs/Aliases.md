@@ -40,6 +40,7 @@ managed PowerShell alias loaded on this workstation.
 | Command | Purpose |
 |---|---|
 | `update` | Show the complete ordered workstation update plan without invoking an updater. |
+| `update -Check` | Query supported upstream releases and report stale or inconsistent pinned version strings without changing files or software. |
 | `update -Json` | Emit the same plan as bounded structured data. |
 | `update -Target WinGet,Scoop` | Plan only the selected targets and their declared prerequisites. |
 | `update -Run` | Explicitly run Windows, package-manager, WSL, Linux, Homebrew, container, and current-release reconciliation stages. |
@@ -49,6 +50,21 @@ Windows with a pending restart. It displays each Windows administrator or WSL-ro
 It never restarts Windows, shuts down WSL, updates drivers, discovers unrelated distributions,
 overrides pins, cleans Scoop versions/caches, or prunes container data. See
 [Managed workstation update](workstation-update.md).
+
+## Cleanup
+
+| Command | Purpose |
+|---|---|
+| `workstation-config [-Json]` | Read the validated ignored `config.json` containing local fonts, WSL selectors, paths, exclusions, and retention. |
+| `cleanup-windows` | Plan the allowlisted elevated Windows cleanup without changing state. |
+| `cleanup-windows -Run -ConfirmRestorePoints` | Run component/update cleanup and delete old C: shadow copies while keeping the newest one. |
+| `cleanup-traces [-RetentionDays N]` | Plan expired inactive items under the configured trace root. |
+| `cleanup-traces -Run -ConfirmCleanup` | Delete only the reviewed expired inactive trace candidates. |
+
+Prefetch, event logs, shader and thumbnail caches, crash dumps, driver packages, Downloads, Recycle
+Bin, and Windows rollback material are excluded from the Windows cleanup profile. Trace cleanup uses
+`paths.traces`; event-log archives use the separate `paths.eventLogs` root. See
+[Disk and trace cleanup](cleanup.md).
 
 ## Files and text
 
@@ -323,7 +339,7 @@ Taildrive is a persistent WebDAV file server inside the Tailnet, locally reachab
 | `wsl-mw podman info --format json` | Inspect local rootless Podman in `Debian-MW`. |
 | `wsl --terminate Debian` | Stop Debian and its Docker daemon. A later Docker command starts Debian again. |
 
-The ordinary Docker wrappers are defined only when the corresponding native Windows executable is absent. This means Docker Desktop or another Windows Docker CLI can take precedence if installed later. Direct malware-runtime diagnosis uses the generic `wsl-mw` boundary and its dedicated distro/user from `.wsl-env`; there is no runtime-specific malware alias or Compose wrapper.
+The ordinary Docker wrappers are defined only when the corresponding native Windows executable is absent. This means Docker Desktop or another Windows Docker CLI can take precedence if installed later. Direct malware-runtime diagnosis uses the generic `wsl-mw` boundary and its dedicated distro/user from `config.json`; there is no runtime-specific malware alias or Compose wrapper.
 
 `Debian` currently runs the pyinfra-managed engine required by Dagger. `Debian-MW` is a clean, separately managed distro with daemonless rootless Podman and user-scoped storage beneath `/home/mc/.local/share/containers`. Its Podman API socket remains disabled. Do not use `Debian` for untrusted analysis, and do not add Dagger to `Debian-MW`. For best filesystem performance, keep ordinary container projects in Debian's Linux filesystem rather than under `/mnt/c`.
 
@@ -415,7 +431,7 @@ process-creation events, and enables PowerShell script-block logging. It avoids 
 file-system, registry, handle, packet, and per-connection auditing. Existing additional audit
 categories are preserved.
 
-Windows event channels do not have a time-based retention property. Live logs therefore use circular overwrite, while a SYSTEM task exports the most recent 48 hours daily. Archives in `E:\Logs` are kept for at most 14 days and also rotated against a 768 MiB budget with 128 MiB reserved free space.
+Windows event channels do not have a time-based retention property. Live logs therefore use circular overwrite, while a SYSTEM task exports the most recent 48 hours daily. Archives under the local `paths.eventLogs` root are kept for at most 14 days and also rotated against a 768 MiB budget with 128 MiB reserved free space.
 
 For offline investigation, the recommended templates are:
 
@@ -459,7 +475,10 @@ These community tools are not installed automatically because they do not curren
 | `.\Apply-Workstation.ps1 -Mode Ensure -Module Debloat -ConfirmRemoval` | Run the same opt-in debloat profile through the general module orchestrator. |
 | `sudo COMMAND` | Run a command elevated in the current terminal; Windows sudo is maintained in `normal` inline mode. |
 
-The workstation state reads Microsoft Defender paths from the ignored `.excluded` file. Start from `.excluded.sample`; native Windows `%ENVIRONMENT_VARIABLE%` references expand before paths are validated. The public repository therefore contains no machine-specific exclusion list, and unrelated Defender exclusions are preserved.
+The workstation state reads Microsoft Defender paths from `defender.exclusions` in ignored
+`config.json`. Native Windows `%ENVIRONMENT_VARIABLE%` references expand before paths are validated.
+The public repository therefore contains no machine-specific exclusion list, and unrelated Defender
+exclusions are preserved.
 
 Scheduled Defender activity runs only while idle, at low priority, with a 15% average CPU target and no catch-up scans. SmartScreen uses warning mode and permits an explicit override. Use `unblock PATH` to remove Mark-of-the-Web from a file you have independently verified. Smart App Control is not modified.
 
@@ -583,7 +602,7 @@ matching. See [Analysis and differencing cases](analysis-differencing.md) for ar
 Windows Sandbox is not a WSL distribution. `wsl-dev` is the ordinary Debian development boundary
 and must never receive suspicious samples. `wsl-mw` reaches the separate rootless analysis distro;
 `wsl-nix` reaches the locked Kubernetes/IaC tool environment. The shared SSH module excludes `wsl-mw`.
-it does not make arbitrary containers safe. Both commands read ignored `.wsl-env`, refuse a missing
+it does not make arbitrary containers safe. Both commands read ignored `config.json`, refuse a missing
 selection, and refuse to use the same distribution for developer and malware state. With no
 arguments they open the selected distribution; with arguments they execute that command directly.
 

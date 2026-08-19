@@ -1,5 +1,4 @@
 @{
-    ExclusionFile = '.excluded'
 
     Preferences = @{
         ScanAvgCPULoadFactor               = 15

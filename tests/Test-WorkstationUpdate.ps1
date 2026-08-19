@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All', 'CommandSurface', 'PlanContract', 'OutputContract', 'TargetContract', 'SafetyContract', 'DependencyContract', 'WindowsContract', 'WinGetContract', 'ScoopContract', 'WslContract', 'LinuxContract', 'HomebrewContract', 'ContainerContract', 'ReconciliationContract', 'PrivilegeContract', 'ExecutionContract', 'DualShellContract')]
+    [ValidateSet('All', 'CommandSurface', 'PlanContract', 'OutputContract', 'TargetContract', 'SafetyContract', 'DependencyContract', 'PinnedSoftwareContract', 'WindowsContract', 'WinGetContract', 'ScoopContract', 'WslContract', 'LinuxContract', 'HomebrewContract', 'ContainerContract', 'ReconciliationContract', 'PrivilegeContract', 'ExecutionContract', 'DualShellContract')]
     [string] $Section = 'All'
 )
 
@@ -75,6 +75,7 @@ function Test-CommandSurface {
     Assert-True ($scriptSource -match "ValidateSet\('All'.*'PowerShellEnvironment'\)") 'direct command declares bounded targets'
     Assert-True ($aliases -match 'function global:update') 'managed profile exposes update'
     Assert-True ($aliases -match 'Invoke-WorkstationUpdate\.ps1') 'profile wrapper uses the human script'
+    Assert-True ($scriptSource -match '\[switch\]\s*\$Check' -and $aliases -match '\[switch\]\s*\$Check') 'direct command and profile wrapper expose the read-only pinned release check'
     Assert-True ($capabilities -match 'update -Run') 'capability routing exposes explicit update execution'
     Assert-True ($docs -match 'update -Run') 'operator docs expose explicit update execution'
 }
@@ -88,6 +89,7 @@ function Test-PlanContract {
     Assert-True (@($plan.Stages).Count -eq 8) 'complete plan contains eight stages'
     Assert-True (@($plan.Stages | Where-Object Status -ne 'planned').Count -eq 0) 'all default stages are planned'
     Assert-True (@($plan.Stages | Where-Object ChangesState -ne $true).Count -eq 0) 'plan identifies every mutating stage'
+    Assert-True (@($plan.PinnedSoftware).Count -eq 0) 'default plan performs no pinned release network check'
 }
 
 function Test-OutputContract {
@@ -98,6 +100,8 @@ function Test-OutputContract {
     Assert-True ($null -ne $plan.RestartRequired) 'aggregate restart field exists'
     Assert-True ($null -ne $plan.Succeeded) 'aggregate success field exists'
     Assert-True ($null -ne $plan.NewShellRecommended) 'new-shell field exists'
+    Assert-True ($plan.PSObject.Properties.Name -contains 'PinnedSoftware') 'pinned software result field exists'
+    Assert-True ($plan.PSObject.Properties.Name -contains 'PinnedUpdatesAvailable') 'pinned update count exists'
     foreach ($stage in @($plan.Stages)) {
         foreach ($property in @('Name', 'Order', 'DependsOn', 'Privilege', 'ChangesState', 'RestartMayBeRequired', 'Status', 'Detail')) {
             Assert-True ($stage.PSObject.Properties.Name -contains $property) "$($stage.Name) reports $property"
@@ -144,6 +148,62 @@ function Test-SafetyContract {
     $source = Get-Source 'scripts/Invoke-WorkstationUpdate.ps1'
     Assert-True ($source -notmatch 'Remove-LegacyDockerMwState') 'update never invokes destructive legacy cleanup'
     Assert-True ($source -notmatch "-Module\s+Debloat|ConfirmRemoval|ConfirmDestructive") 'update never selects destructive modules'
+}
+
+function Test-PinnedSoftwareContract {
+    $catalog = Get-Source 'config/software-updates.psd1'
+    $detector = Get-Source 'scripts/Get-PinnedSoftwareUpdate.ps1'
+    $resolver = Get-Source 'scripts/SoftwareRelease.Core.ps1'
+    Assert-True ($catalog -match "Provider = 'GitHubRelease'" -and $catalog -match "Name = 'Contour'" -and $catalog -match "TagTemplate = 'v\{version\}'") 'pinned software catalog declares version-templated GitHub releases without duplicating current versions'
+    Assert-True ($detector -match 'api\.github\.com/repos/' -and $detector -match 'releases/latest') 'detector uses the official GitHub releases API'
+    Assert-True ($detector -match '\[scriptblock\]\s*\$ReleaseFetcher') 'detector has a synthetic release-provider seam'
+    Assert-True ($detector -notmatch 'Set-Content|Add-Content|Out-File|Invoke-WebRequest') 'detector does not write declarations or download release assets'
+    Assert-True ($resolver -match 'Resolve-PinnedSoftwareReleaseAsset' -and $resolver -notmatch 'Invoke-RestMethod|Invoke-WebRequest') 'installer URI resolution is deterministic and performs no network access'
+    . (Join-Path $repositoryRoot 'scripts\SoftwareRelease.Core.ps1')
+    $contourAsset = Resolve-PinnedSoftwareReleaseAsset -Name 'Contour' -Version '9.8.7.6'
+    Assert-True ($contourAsset.Uri -eq 'https://github.com/contour-terminal/contour/releases/download/v9.8.7.6/contour-9.8.7.6-win64.msi') 'changing one version value produces the matching Contour tag, asset, and URI'
+
+    $fetcher = {
+        param($Definition, $CurrentVersion)
+        $latestVersion = if ($Definition.Name -eq 'Contour') { '0.8.0.9000' } else { [string] $CurrentVersion }
+        $tag = switch ([string] $Definition.Name) {
+            'Autopsy' { "autopsy-$latestVersion" }
+            'NixOS-WSL' { $latestVersion }
+            'Ghidra' { "Ghidra_$($latestVersion)_build" }
+            'Sleuth Kit' { "sleuthkit-$latestVersion" }
+            'Fira Code' { $latestVersion }
+            default { "v$latestVersion" }
+        }
+        $assets = @($Definition.AssetNameTemplates | ForEach-Object {
+            [pscustomobject]@{
+                name = ([string] $_).Replace('{version}', $latestVersion)
+                browser_download_url = "https://example.invalid/$latestVersion/$(([string] $_).Replace('{version}', $latestVersion))"
+                size = 42
+                digest = 'sha256:' + ('a' * 64)
+            }
+        })
+        if ($Definition.Name -eq 'Ghidra') {
+            $assets += [pscustomobject]@{
+                name = "ghidra_$($latestVersion)_PUBLIC_20260101.zip"
+                browser_download_url = "https://example.invalid/$latestVersion/ghidra.zip"
+                size = 42
+                digest = 'sha256:' + ('b' * 64)
+            }
+        }
+        [pscustomobject]@{ tag_name = $tag; html_url = "https://example.invalid/releases/$tag"; assets = @($assets) }
+    }
+    $detectorPath = Join-Path $repositoryRoot 'scripts\Get-PinnedSoftwareUpdate.ps1'
+    $detected = & $detectorPath -PassThru -ReleaseFetcher $fetcher
+    Assert-True ($detected.Succeeded) 'synthetic pinned release detection succeeds'
+    Assert-True ($detected.UpdatesAvailable -eq 1) 'synthetic detector reports one newer release'
+    Assert-True (($detected.Releases | Where-Object Name -eq 'Contour').Status -eq 'update-available') 'newer Contour release is reported without adoption'
+    Assert-True (@(($detected.Releases | Where-Object Name -eq 'OpenCode').Locations).Count -eq 2) 'duplicated OpenCode pins are checked together'
+    Assert-True (@($detected.Releases | Where-Object Status -eq 'inconsistent-pin').Count -eq 0) 'current duplicated version strings agree'
+
+    $updateScript = Join-Path $repositoryRoot 'scripts\Invoke-WorkstationUpdate.ps1'
+    $check = & $updateScript -Check -PassThru -ReleaseFetcher $fetcher
+    Assert-True ($check.Action -eq 'Check' -and $check.PinnedUpdatesAvailable -eq 1) 'update -Check exposes pinned release results'
+    Assert-True (@($check.Stages | Where-Object Status -ne 'planned').Count -eq 0) 'update -Check never executes mutating stages'
 }
 
 function Test-WindowsContract {
@@ -273,7 +333,7 @@ function Test-DualShellContract {
 }
 
 $sections = if ($Section -eq 'All') {
-    @('CommandSurface', 'PlanContract', 'OutputContract', 'TargetContract', 'SafetyContract', 'DependencyContract', 'WindowsContract', 'WinGetContract', 'ScoopContract', 'WslContract', 'LinuxContract', 'HomebrewContract', 'ContainerContract', 'ReconciliationContract', 'PrivilegeContract', 'ExecutionContract', 'DualShellContract')
+    @('CommandSurface', 'PlanContract', 'OutputContract', 'TargetContract', 'SafetyContract', 'DependencyContract', 'PinnedSoftwareContract', 'WindowsContract', 'WinGetContract', 'ScoopContract', 'WslContract', 'LinuxContract', 'HomebrewContract', 'ContainerContract', 'ReconciliationContract', 'PrivilegeContract', 'ExecutionContract', 'DualShellContract')
 } else { @($Section) }
 
 foreach ($name in $sections) {

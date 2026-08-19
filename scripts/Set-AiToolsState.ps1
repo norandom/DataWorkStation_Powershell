@@ -9,6 +9,7 @@ $ErrorActionPreference = 'Stop'
 $asJson = [bool] $Json
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'AiTools.Core.ps1')
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\ai-tools.psd1')
 
 function Write-Result {
@@ -26,12 +27,13 @@ function Invoke-OfficialPowerShellInstaller {
 
 function Install-OpenCodeDesktop {
     param([Parameter(Mandatory = $true)][hashtable] $Product)
+    $release = Resolve-PinnedSoftwareReleaseAsset -Name 'OpenCode' -Version $Product.Version -AssetIndex 0
     $downloadDirectory = Join-Path $repositoryRoot "state\ai-tools\opencode\$($Product.Version)"
     $installer = Join-Path $downloadDirectory 'opencode-desktop-win-x64.exe'
     New-Item -ItemType Directory -Path $downloadDirectory -Force | Out-Null
     if (-not (Test-Path -LiteralPath $installer -PathType Leaf) -or
         (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Product.Sha256) {
-        Invoke-WebRequest -UseBasicParsing -Uri $Product.Uri -OutFile $installer
+        Invoke-WebRequest -UseBasicParsing -Uri $release.Uri -OutFile $installer
     }
     $digest = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($digest -ne $Product.Sha256) { throw 'OpenCode Desktop installer SHA-256 mismatch.' }

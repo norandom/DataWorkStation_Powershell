@@ -80,7 +80,23 @@ Order Name                  Privilege            Status  DependsOn
    70 Containers            WslRoot              planned Linux
    80 PowerShellEnvironment Mixed                planned WinGet,Scoop,Wsl,Linux,Homebrew,Containers
 
-No updates were installed. Run update -Run to execute this plan.
+No updates were installed. Run update -Check to query pinned releases or update -Run to execute this plan.
+```
+
+The release check is also observational. Its exact versions vary with upstream releases:
+
+```text
+PS> update -Check
+Workstation update check (release 3.0.0)
+
+Name                  CurrentVersion LatestVersion Status           Review
+----                  -------------- ------------- ------           ------
+Contour               0.7.0.8982     0.7.0.8982    current
+Ghidra                 12.1.2         12.1.3        update-available host-and-container-artifacts
+malware_hashes         2.5.0          2.6.0         update-available version-and-integrity-lock
+Spec Kit EARS/TDD      0.1.0          0.4.0         update-available packaging-migration-required
+
+Pinned release check: 3 update(s) available. No files or software were changed.
 ```
 
 A focused selection includes hard prerequisites but no unrelated roots:
@@ -326,7 +342,7 @@ PS> pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Test
 
 Resource               State       Detail
 --------               -----       ------
-ContourMsi             compliant   0.6.3.8249 installed; 0.6.3.8249 required
+ContourMsi             compliant   0.7.0.8982 installed; 0.7.0.8982 required
 ContourScoopPackage    removed     ...\scoop\apps\contour
 ContourConfig          compliant   ...\contour\contour.yml; font=Berkeley Mono; starts=~
 ContourDesktopShortcut compliant   ...\Desktop\Contour Terminal Emulator.lnk
@@ -804,3 +820,35 @@ WSL trust boundary: drifted
 
 Use the corresponding `-Json` switch for the same fields as structured data. Distribution names,
 users, installed products, and drift are host-specific.
+
+## Disk and trace cleanup plans
+
+`cleanup-windows` requests elevation to inventory VSS, but remains read-only until `-Run` is added:
+
+```text
+PS> cleanup-windows
+Windows cleanup plan; system volume C:
+
+Name                    Enabled Detail
+----                    ------- ------
+ComponentStore             True DISM StartComponentCleanup; ResetBase is excluded.
+DiskCleanup                True 10 allowlisted handler(s) across the eligible volumes enumerated by cleanmgr /sagerun.
+RestorePointsAndShadows   False Delete 0 oldest C: shadow copy/copies and keep 1 newest.
+
+Disk Cleanup scope: All eligible volumes enumerated by cleanmgr /sagerun
+Preserved: Prefetch, Event logs, D3D Shader Cache, Thumbnail Cache, ...
+No files, restore points, shadow copies, event logs, or caches were changed.
+```
+
+Trace cleanup is also plan-first and reports only expired, inactive top-level items:
+
+```text
+PS> cleanup-traces
+Trace cleanup plan: E:\Traces
+0 candidate(s), 0 byte(s); 0 active and 0 recent item(s) preserved.
+No trace files were changed.
+```
+
+Counts and paths are host-specific. Windows cleanup execution requires `-Run`; old shadow-copy
+deletion additionally requires `-ConfirmRestorePoints`. Trace deletion requires both `-Run` and
+`-ConfirmCleanup`.

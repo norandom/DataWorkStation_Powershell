@@ -8,8 +8,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'Import-WslEnvironment.ps1')
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 $wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\nixos-wsl.psd1')
+$packageRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'NixOS-WSL' -Version $configuration.ReleaseTag
 $distribution = $wslEnvironment[$configuration.DistributionVariable]
 $linuxUser = $wslEnvironment[$configuration.UserVariable]
 $sourceDirectory = Join-Path $repositoryRoot 'nixos'
@@ -178,7 +180,7 @@ if (-not (Test-NixOsDistribution)) {
     if (-not (Test-Path -LiteralPath $assetPath -PathType Leaf) -or
         (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $configuration.AssetSha256) {
         Write-Host "Downloading pinned NixOS-WSL $($configuration.ReleaseTag) asset ($($configuration.AssetSizeBytes) bytes)."
-        Invoke-WebRequest -UseBasicParsing -Uri $configuration.AssetUrl -OutFile $assetPath
+        Invoke-WebRequest -UseBasicParsing -Uri $packageRelease.Uri -OutFile $assetPath
     }
     $actualHash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualHash -ne $configuration.AssetSha256) { throw 'NixOS-WSL asset hash mismatch.' }

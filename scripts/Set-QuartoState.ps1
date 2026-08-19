@@ -9,9 +9,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $jsonRequested = [bool] $Json
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 if (-not $ConfigurationPath) { $ConfigurationPath = Join-Path $repositoryRoot 'config\quarto.psd1' }
 $configuration = Import-PowerShellDataFile -LiteralPath $ConfigurationPath
 $package = $configuration.Package
+$packageRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'Quarto' -Version $package.Version
 $quantConfigurationPath = Join-Path $repositoryRoot $configuration.QuantConfiguration
 $quantConfiguration = Import-PowerShellDataFile -LiteralPath $quantConfigurationPath
 $installRoot = [Environment]::ExpandEnvironmentVariables($package.InstallRoot)
@@ -138,7 +140,7 @@ function Install-QuartoPortable {
     $committed = $false
     [IO.Directory]::CreateDirectory($expanded) | Out-Null
     try {
-        Invoke-WebRequest -Uri $package.Uri -OutFile $archive -UseBasicParsing
+        Invoke-WebRequest -Uri $packageRelease.Uri -OutFile $archive -UseBasicParsing
         $actualHash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($actualHash -ne ([string] $package.Sha256).ToLowerInvariant()) {
             throw "Quarto archive SHA-256 mismatch. Expected $($package.Sha256), got $actualHash."

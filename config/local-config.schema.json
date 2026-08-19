@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:norandom:dataworkstation:local-config:1",
+  "title": "DataWorkStation local configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "fonts", "wsl", "paths", "defender", "cleanup"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "fonts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["terminalFamily"],
+      "properties": {
+        "terminalFamily": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "wsl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["developer", "malware", "nixos", "ai"],
+      "properties": {
+        "developer": { "$ref": "#/$defs/wslTarget" },
+        "malware": { "$ref": "#/$defs/wslTarget" },
+        "nixos": { "$ref": "#/$defs/wslTarget" },
+        "ai": { "$ref": "#/$defs/wslTarget" }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traces", "eventLogs"],
+      "properties": {
+        "traces": { "type": "string", "minLength": 3 },
+        "eventLogs": { "type": "string", "minLength": 3 }
+      }
+    },
+    "defender": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exclusions"],
+      "properties": {
+        "exclusions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["traces"],
+      "properties": {
+        "traces": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["retentionDays"],
+          "properties": {
+            "retentionDays": { "type": "integer", "minimum": 0, "maximum": 3650 }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "wslTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distribution", "user"],
+      "properties": {
+        "distribution": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+        "user": { "type": "string", "pattern": "^[a-z_][a-z0-9_-]*$" }
+      }
+    }
+  }
+}

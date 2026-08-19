@@ -34,6 +34,7 @@ report no data when no supported provider is running.
 | Install or verify the workstation | [Install and verify](getting-started.md) | `./Apply-Workstation.ps1 -Mode Test -Plan` |
 | Change one managed component | [Select modules and dependencies](workstation-modules.md) | `./Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` |
 | Update the complete workstation | [Review and run managed updates](workstation-update.md) | `update` |
+| Reclaim Windows or trace storage | [Disk and trace cleanup](cleanup.md) | `cleanup-windows` or `cleanup-traces` |
 | Use reproducible Kubernetes/IaC tools | [Reproducible NixOS WSL tools](nixos-wsl.md) | `nixos-check` |
 | Investigate NixOS drift or alteration | [NixOS integrity and alteration detection](nixos-integrity.md) | `nixos-check -Json` |
 | Understand managed and explicit state | [Choose desired state](desired-state.md) | Review the mode and privilege boundary |

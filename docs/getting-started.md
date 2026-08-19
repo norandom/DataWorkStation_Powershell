@@ -5,22 +5,20 @@ sudo, and other Pro workstation features.
 
 ## Prepare the checkout
 
-Clone the repository and create the local configuration files. Review each file before applying
+Clone the repository and create the local configuration. Review it before applying
 desired state:
 
 ```powershell
 git clone https://github.com/norandom/DataWorkStation_Powershell.git "$HOME/Source/PowerShell"
 cd "$HOME/Source/PowerShell"
-Copy-Item .excluded.sample .excluded
-Copy-Item .wsl-env.sample .wsl-env
-Copy-Item .terminal-fonts-sample .terminal-fonts
-# Edit .excluded for this workstation before applying desired state.
-# Set the ordinary Debian, Debian-MW, and NixOS users in .wsl-env.
-# Keep Fira Code in .terminal-fonts, or replace it with an installed family.
+Copy-Item config.sample.json config.json
+# Set the WSL users, terminal font, Defender exclusions, and local storage paths.
+workstation-config
 ```
 
-The populated files are ignored by Git. They hold machine-specific paths, WSL users, and terminal
-preferences that do not belong in the public repository.
+The populated file is ignored by Git. It holds machine-specific paths, WSL users, terminal
+preferences, and cleanup retention that do not belong in the public repository. Credential-bearing
+files such as `.licenses.yaml` remain separate.
 
 ## Inspect the plan
 

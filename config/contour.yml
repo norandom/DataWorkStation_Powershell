@@ -4,7 +4,7 @@ default_profile: main
 on_mouse_select: CopyToClipboard
 
 # Defining input_mapping replaces Contour's complete built-in map.
-# Retain the 0.6.3.8249 defaults, match Windows Terminal page scrolling,
+# Retain the 0.7.0.8982 defaults, match Windows Terminal page scrolling,
 # and add mouse-wheel tab switching.
 input_mapping:
   - { mods: [Alt], key: Enter, action: ToggleFullscreen }
@@ -21,6 +21,22 @@ input_mapping:
   - { mods: [Shift], key: F3, action: FocusPreviousSearchMatch, mode: 'Search' }
   - { mods: [Shift], key: LeftArrow, action: SwitchToTabLeft }
   - { mods: [Shift], key: RightArrow, action: SwitchToTabRight }
+  - { mods: [Control], key: PageUp, action: SwitchToTabLeft }
+  - { mods: [Control], key: PageDown, action: SwitchToTabRight }
+  - { mods: [Control], key: Tab, action: SwitchToTabRight }
+  - { mods: [Shift, Control], key: Tab, action: SwitchToTabLeft }
+  - { mods: [Shift, Alt], key: LeftArrow, action: FocusPaneLeft }
+  - { mods: [Shift, Alt], key: RightArrow, action: FocusPaneRight }
+  - { mods: [Shift, Alt], key: UpArrow, action: FocusPaneUp }
+  - { mods: [Shift, Alt], key: DownArrow, action: FocusPaneDown }
+  - { mods: [Alt, Control], key: LeftArrow, action: SwapPaneLeft }
+  - { mods: [Alt, Control], key: RightArrow, action: SwapPaneRight }
+  - { mods: [Alt, Control], key: UpArrow, action: SwapPaneUp }
+  - { mods: [Alt, Control], key: DownArrow, action: SwapPaneDown }
+  - { mods: [Shift, Alt, Control], key: LeftArrow, action: ResizePane, direction: Left, percent: 5 }
+  - { mods: [Shift, Alt, Control], key: RightArrow, action: ResizePane, direction: Right, percent: 5 }
+  - { mods: [Shift, Alt, Control], key: UpArrow, action: ResizePane, direction: Up, percent: 5 }
+  - { mods: [Shift, Alt, Control], key: DownArrow, action: ResizePane, direction: Down, percent: 5 }
   - { mods: [Alt, Control], key: ',', action: ToggleInputMethodHandling }
   - { mods: [Shift, Control], key: '-', action: DecreaseFontSize }
   - { mods: [Shift, Control], key: '_', action: DecreaseFontSize }
@@ -30,6 +46,13 @@ input_mapping:
   - { mods: [Alt, Control], key: S, action: ScreenshotVT }
   - { mods: [Control], key: '0', action: ResetFontSize }
   - { mods: [Control, Shift], key: T, action: CreateNewTab }
+  - { mods: [Control, Shift], key: S, action: SpeakSelection }
+  - { mods: [Control, Shift], key: E, action: SplitVertical }
+  - { mods: [Control, Shift], key: O, action: SplitHorizontal }
+  - { mods: [Control, Shift], key: X, action: ClosePane }
+  - { mods: [Control, Shift], key: P, action: OpenCommandPalette }
+  - { mods: [Control, Shift], key: '\', action: ToggleSplitOrientation }
+  - { mods: [Control, Shift], key: Z, action: TogglePaneZoom }
   - { mods: [Alt], key: '1', action: SwitchToTab, position: 1 }
   - { mods: [Alt], key: '2', action: SwitchToTab, position: 2 }
   - { mods: [Alt], key: '3', action: SwitchToTab, position: 3 }
@@ -48,8 +71,8 @@ input_mapping:
   - { mods: [Shift, Control], key: SPACE, action: ViNormalMode, mode: 'Insert' }
   - { mods: [Shift, Control], key: ',', action: OpenConfiguration }
   - { mods: [Shift, Control], key: Q, action: Quit }
-  - { mods: [Alt, Control], key: K, action: ScrollMarkUp, mode: '~Alt' }
-  - { mods: [Alt, Control], key: J, action: ScrollMarkDown, mode: '~Alt' }
+  - { mods: [Alt, Control], key: K, action: ScrollMarkUp, mode: '~AltScreen' }
+  - { mods: [Alt, Control], key: J, action: ScrollMarkDown, mode: '~AltScreen' }
   - { mods: [Alt, Control], key: O, action: OpenFileManager }
   - { mods: [Alt, Control], key: '.', action: ToggleStatusLine }
   - { mods: [Shift, Control], key: F, action: SearchReverse }
@@ -57,18 +80,21 @@ input_mapping:
   - { mods: [Shift, Control], key: U, action: HintMode, patterns: url, hint_action: Open }
   - { mods: [Control], mouse: Left, action: FollowHyperlink }
   - { mods: [], mouse: Middle, action: PasteSelection }
-  - { mods: [], mouse: WheelDown, action: ScrollDown, mode: '~Alt' }
-  - { mods: [], mouse: WheelUp, action: ScrollUp, mode: '~Alt' }
+  - { mods: [], mouse: WheelDown, action: ScrollDown, mode: '~AltScreen' }
+  - { mods: [], mouse: WheelUp, action: ScrollUp, mode: '~AltScreen' }
   - { mods: [Alt], mouse: WheelDown, action: SwitchToTabRight }
   - { mods: [Alt], mouse: WheelUp, action: SwitchToTabLeft }
   - { mods: [Control], mouse: WheelDown, action: DecreaseFontSize }
   - { mods: [Control], mouse: WheelUp, action: IncreaseFontSize }
-  - { mods: [Shift], mouse: WheelDown, action: ScrollPageDown, mode: '~Alt' }
-  - { mods: [Shift], mouse: WheelUp, action: ScrollPageUp, mode: '~Alt' }
+  - { mods: [Shift], mouse: WheelDown, action: ScrollPageDown, mode: '~AltScreen' }
+  - { mods: [Shift], mouse: WheelUp, action: ScrollPageUp, mode: '~AltScreen' }
 
 profiles:
   main:
     shell: "pwsh.exe"
+    arguments:
+      - "-WorkingDirectory"
+      - "~"
     initial_working_directory: "~"
     terminal_size:
       columns: 80

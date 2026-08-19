@@ -1,7 +1,0 @@
-# Local Microsoft Defender exclusions, one existing path per line.
-# Copy this file to .excluded and customize it for the workstation.
-# Windows %ENVIRONMENT_VARIABLE% references expand.
-# Define DATA_ROOT in Windows or replace that example before applying state.
-
-%USERPROFILE%\Source
-%DATA_ROOT%\

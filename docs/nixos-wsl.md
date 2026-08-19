@@ -15,18 +15,17 @@ The PowerShell prefixes make the boundary visible: `wsl-dev`, `wsl-nix`, and `ws
 
 ## Local selection and prerequisites
 
-Copy the tracked selector once and review all three boundaries:
+Copy the tracked local configuration once and review all four boundaries:
 
 ```powershell
-Copy-Item .wsl-env.sample .wsl-env
-Get-Content .wsl-env
+Copy-Item config.sample.json config.json
+workstation-config
 ```
 
-The NixOS entries are:
+The NixOS entry is:
 
-```text
-WSL_NIXOS_DISTRIBUTION=NixOS
-WSL_NIXOS_USER=your-linux-user
+```json
+"nixos": { "distribution": "NixOS", "user": "your-linux-user" }
 ```
 
 The resource requires Windows 11 Pro, WSL 2, PowerShell 7 after the normal bootstrap stage, and distinct names for Debian, Debian-MW, and NixOS. It refuses an existing distribution with the selected name when that distribution is not NixOS.

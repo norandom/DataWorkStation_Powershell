@@ -21,8 +21,10 @@ $aliases = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Aliases.
 $nixSettings = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\nixos-wsl.psd1')
 $sshSettings = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\shared-ssh.psd1')
 $moduleCatalog = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\workstation-modules.psd1')
+. (Join-Path $repositoryRoot 'scripts\SoftwareRelease.Core.ps1')
+$nixRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'NixOS-WSL' -Version $nixSettings.ReleaseTag
 
-Assert-True ($nixSettings.AssetUrl -match [regex]::Escape($nixSettings.ReleaseTag)) 'the NixOS-WSL download is release-pinned'
+Assert-True ($nixRelease.Uri -match [regex]::Escape($nixSettings.ReleaseTag)) 'the NixOS-WSL download is derived from the release pin'
 Assert-True ($nixSettings.AssetSha256 -match '^[a-f0-9]{64}$') 'the NixOS-WSL asset has a SHA-256 pin'
 Assert-True ($nixSettings.AssetSizeBytes -gt 500MB) 'the operator plan declares the substantial download size'
 Assert-True ($flake -match 'nixos-26\.05') 'the flake selects a stable Nixpkgs branch'

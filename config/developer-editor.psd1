@@ -22,7 +22,6 @@
     }
     SettingsPath = '%APPDATA%\Code\User\settings.json'
     BackupDirectory = 'state\developer-editor-backups'
-    LocalFontPreference = '.terminal-fonts'
     PortableFontFamily = 'Fira Code'
     ManagedSettings = @(
         'workbench.colorTheme'

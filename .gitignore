@@ -17,9 +17,7 @@ site/
 __pycache__/
 *.pyc
 .skillopt-sleep/
-.excluded
-.terminal-fonts
-.wsl-env
+config.json
 pyinfra-debug.log
 
 # PowerShell and editor scratch files

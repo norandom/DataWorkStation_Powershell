@@ -15,12 +15,18 @@ param(
     [ValidateRange(1, 1000)]
     [int] $Rate = 100,
 
-    [string] $Output = (Join-Path (Get-Location).Path ("python-{0}.svg" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))),
+    [string] $Output,
+    [string] $ConfigurationPath,
     [switch] $Open,
     [switch] $Json
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
+if ([string]::IsNullOrWhiteSpace($Output)) {
+    $traceRoot = (Import-WorkstationConfiguration -ConfigurationPath $ConfigurationPath).Paths.Traces
+    $Output = Join-Path $traceRoot ("python-{0}.svg" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+}
 $pySpy = Join-Path $env:USERPROFILE '.local\bin\py-spy.exe'
 if (-not (Test-Path -LiteralPath $pySpy -PathType Leaf)) { throw "py-spy is missing: $pySpy" }
 $outputPath = [IO.Path]::GetFullPath($Output)

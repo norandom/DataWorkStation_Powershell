@@ -87,7 +87,7 @@ Hardening reduces attack paths; it does not make the host closed.
 | Hyper-V and Sandbox | the hypervisor, VM management service, virtual switches, and Windows Sandbox component increase privileged virtualization code and host/guest integration surface |
 | Outbound traffic | outbound firewall policy is Allow. Malicious code that executes can contact external services unless Defender, DNS/network controls, or an application policy blocks it |
 | Application execution | no WDAC/AppLocker allowlist is imposed. SmartScreen warning mode permits user override, and the legacy script-file association tricks were rejected |
-| Defender exclusions | paths declared in the ignored `.excluded` file are scanning blind spots. Keep them narrow and treat code arriving there as trusted-input risk |
+| Defender exclusions | paths declared under `defender.exclusions` in ignored `config.json` are scanning blind spots. Keep them narrow and treat code arriving there as trusted-input risk |
 | Print spooler | web discovery and HTTP printing are disabled, but the spooler remains enabled for local printing and retains its service/driver surface |
 
 No process was started to test reachability. Listener and firewall inspection is a point-in-time snapshot; use `ports`, `connections`, `firewall-status`, and the hardening `Test` command before drawing incident conclusions.

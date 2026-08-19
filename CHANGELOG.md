@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Unify local font, WSL, storage-path, Defender-exclusion, and trace-retention settings in ignored `config.json`; route new diagnostic captures to its trace root.
+- Add plan-first Windows component/update/old-shadow cleanup and retention-aware trace cleanup while preserving Prefetch, event logs, performance caches, recovery media, and active sessions.
+
 ## 3.0.0 - 2026-08-18
 
 - Add hash-pinned Quarto with embedded Pandoc, a Quarto-private TinyTeX installation, and `QUARTO_PYTHON` bound to the reproducible quant-base uv environment for scientific publishing and DOCX output.

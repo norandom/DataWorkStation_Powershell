@@ -3,9 +3,11 @@ param(
     [ValidateSet('All', 'Windows', 'WinGet', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
     [string[]] $Target = @('All'),
     [switch] $Run,
+    [switch] $Check,
     [switch] $Json,
     [scriptblock] $CommandRunner,
     [Parameter(DontShow = $true)][string] $ForensicCatalogPath,
+    [Parameter(DontShow = $true)][scriptblock] $ReleaseFetcher,
     [Parameter(DontShow = $true)][switch] $PassThru
 )
 
@@ -15,6 +17,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\workstation-update.psd1')
 $releaseVersion = (Get-Content -LiteralPath (Join-Path $repositoryRoot 'VERSION') -Raw).Trim()
 if ([string]::IsNullOrWhiteSpace($ForensicCatalogPath)) { $ForensicCatalogPath = Join-Path $repositoryRoot 'config\forensic-tools.psd1' }
+if ($Run -and $Check) { throw '-Run and -Check are mutually exclusive. Review available pinned releases before running ordinary updates.' }
 
 function Get-ForensicToolUpdateStatus {
     param([Parameter(Mandatory = $true)][string] $LiteralPath)
@@ -91,7 +94,11 @@ function Write-HumanResult {
     Write-Host "Workstation update $($Result.Action.ToLowerInvariant()) (release $($Result.ReleaseVersion))"
     $Result.Stages | Select-Object Order, Name, Privilege, Status, @{ Name = 'DependsOn'; Expression = { @($_.DependsOn) -join ',' } }, Detail |
         Format-Table -AutoSize -Wrap
-    if ($Result.Action -eq 'Plan') { Write-Host 'No updates were installed. Run update -Run to execute this plan.' }
+    if ($Result.Action -eq 'Plan') { Write-Host 'No updates were installed. Run update -Check to query pinned releases or update -Run to execute this plan.' }
+    if ($Result.Action -eq 'Check') {
+        $Result.PinnedSoftware | Select-Object Name, CurrentVersion, LatestVersion, Status, Review | Format-Table -AutoSize -Wrap
+        Write-Host "Pinned release check: $($Result.PinnedUpdatesAvailable) update(s) available. No files or software were changed."
+    }
     foreach ($candidate in @($Result.ForensicToolCandidates)) {
         Write-Host "Forensic candidate (not installed): $($candidate.ToolId) $($candidate.UpstreamVersion)-$($candidate.BuildRevision); explicit review is required."
     }
@@ -258,16 +265,26 @@ function Invoke-UpdateStage {
 Assert-UpdateCatalog
 $resolved = @(Resolve-UpdateTargets -Requested $Target)
 $forensicStatus = Get-ForensicToolUpdateStatus -LiteralPath $ForensicCatalogPath
+$pinnedSoftwareResult = if ($Check) {
+    $pinnedUpdateScript = Join-Path $PSScriptRoot 'Get-PinnedSoftwareUpdate.ps1'
+    $pinnedCatalogPath = Join-Path $repositoryRoot ([string] $configuration.PinnedSoftwareCatalog)
+    & $pinnedUpdateScript -CatalogPath $pinnedCatalogPath -PassThru -ReleaseFetcher $ReleaseFetcher
+} else { $null }
+$pinnedReleases = [object[]] @()
+if ($pinnedSoftwareResult) { $pinnedReleases = [object[]] @($pinnedSoftwareResult.Releases) }
 $result = [pscustomobject][ordered]@{
     SchemaVersion = 1
-    Action = if ($Run) { 'Run' } else { 'Plan' }
+    Action = if ($Run) { 'Run' } elseif ($Check) { 'Check' } else { 'Plan' }
     ReleaseVersion = $releaseVersion
     SelectedTargets = @($Target)
     Stages = @($resolved | ForEach-Object { New-PlannedStage -Definition $_ })
     ForensicToolApproved = @($forensicStatus.Approved)
     ForensicToolCandidates = @($forensicStatus.Candidates)
+    PinnedSoftware = $pinnedReleases
+    PinnedUpdatesAvailable = if ($pinnedSoftwareResult) { [int] $pinnedSoftwareResult.UpdatesAvailable } else { 0 }
+    PinnedReleaseCheckSucceeded = if ($pinnedSoftwareResult) { [bool] $pinnedSoftwareResult.Succeeded } else { $null }
     RestartRequired = $false
-    Succeeded = $true
+    Succeeded = if ($pinnedSoftwareResult) { [bool] $pinnedSoftwareResult.Succeeded } else { $true }
     NewShellRecommended = $false
 }
 
@@ -275,6 +292,7 @@ if (-not $Run) {
     if ($PassThru) { $result }
     elseif ($Json) { $result | ConvertTo-Json -Depth 8 }
     else { Write-HumanResult $result }
+    if (-not $PassThru -and -not $result.Succeeded) { exit 1 }
     return
 }
 

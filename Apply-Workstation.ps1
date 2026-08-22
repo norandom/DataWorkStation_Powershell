@@ -3,8 +3,8 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'DeveloperEditor', 'SpecDrivenDevelopment',
-        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'DeveloperEditor', 'SpecDrivenDevelopment',
+        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'SafeChain', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -24,6 +24,7 @@ param(
     [switch] $SkipSpecDrivenDevelopment,
     [switch] $SkipProfilingTools,
     [switch] $SkipSkillOpt,
+    [switch] $SkipSafeChain,
     [switch] $SkipFirewall,
     [switch] $SkipDefender,
     [switch] $SkipSmartScreen,
@@ -48,6 +49,7 @@ $nativeDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-NativeDevelopmen
 $malwareHashesScript = Join-Path $PSScriptRoot 'scripts\Set-MalwareHashesState.ps1'
 $moduleCatalogPath = Join-Path $PSScriptRoot 'config\workstation-modules.psd1'
 $nativeTextToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeTextToolsState.ps1'
+$mpvScript = Join-Path $PSScriptRoot 'scripts\Set-MpvState.ps1'
 $caffeineScript = Join-Path $PSScriptRoot 'scripts\Set-CaffeineState.ps1'
 $scoopScript = Join-Path $PSScriptRoot 'scripts\Set-ScoopState.ps1'
 $terminalFontScript = Join-Path $PSScriptRoot 'scripts\Set-TerminalFontState.ps1'
@@ -80,6 +82,7 @@ $legacyDockerCleanupScript = Join-Path $PSScriptRoot 'scripts\Remove-LegacyDocke
 $developerDockerScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperDockerState.ps1'
 $profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
 $skillOptScript = Join-Path $PSScriptRoot 'scripts\Set-SkillOptState.ps1'
+$safeChainScript = Join-Path $PSScriptRoot 'scripts\Set-SafeChainState.ps1'
 $sudoScript = Join-Path $PSScriptRoot 'scripts\Set-SudoState.ps1'
 $defenderScript = Join-Path $PSScriptRoot 'scripts\Set-DefenderExclusionState.ps1'
 $smartScreenScript = Join-Path $PSScriptRoot 'scripts\Set-SmartScreenState.ps1'
@@ -246,6 +249,11 @@ function Invoke-WorkstationModule {
         'NativeTextTools' {
             Invoke-CheckedProcess 'Native awk and sed state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $nativeTextToolsScript -Mode $Mode
+            }
+        }
+        'Mpv' {
+            Invoke-CheckedProcess 'mpv package and Radeon GPU playback state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $mpvScript -Mode $Mode
             }
         }
         'Caffeine' {
@@ -486,6 +494,11 @@ function Invoke-WorkstationModule {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $profileScript -Mode $Mode
             }
         }
+        'SafeChain' {
+            Invoke-CheckedProcess 'Safe-Chain package-manager protection state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $safeChainScript -Mode $Mode
+            }
+        }
         'FocusFollowsMouse' {
             Invoke-CheckedProcess 'Focus-follows-mouse state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $focusFollowsMouseScript -Mode $Mode
@@ -542,7 +555,7 @@ function Invoke-WorkstationModule {
 
 $skipSwitchUsed = $SkipPackages -or $SkipWindowsFeatures -or $SkipHardening -or $SkipExploitProtection -or
     $SkipFocusFollowsMouse -or $SkipDeveloperTools -or $SkipNixOsWsl -or $SkipSpecDrivenDevelopment -or $SkipProfilingTools -or
-    $SkipSkillOpt -or $SkipFirewall -or $SkipDefender -or $SkipSmartScreen -or
+    $SkipSkillOpt -or $SkipSafeChain -or $SkipFirewall -or $SkipDefender -or $SkipSmartScreen -or
     $SkipMemoryPolicy -or $SkipEventLogs
 $explicitModules = @($Module | Where-Object { $_ -ne 'All' })
 if ($explicitModules.Count -gt 0 -and $skipSwitchUsed) {
@@ -563,6 +576,7 @@ if ($SkipNixOsWsl) {
 if ($SkipSpecDrivenDevelopment) { $excludedModules.Add('SpecDrivenDevelopment') }
 if ($SkipProfilingTools) { $excludedModules.Add('ProfilingTools') }
 if ($SkipSkillOpt) { $excludedModules.Add('SkillOpt') }
+if ($SkipSafeChain) { $excludedModules.Add('SafeChain') }
 if ($SkipFirewall) { $excludedModules.Add('Firewall') }
 if ($SkipDefender) { $excludedModules.Add('DefenderExclusions') }
 if ($SkipSmartScreen) { $excludedModules.Add('SmartScreen') }

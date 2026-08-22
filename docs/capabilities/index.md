@@ -50,6 +50,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `workstation-modules` | Select desired state or review the complete update workflow | `.\Apply-Workstation.ps1 -Mode Test -Module NAME -Plan` or `update` |
 | `linux-developer-packages` | Inspect Homebrew, pyinfra, Dagger, or container engines in WSL | `pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test` |
 | `go-development` | Inspect Go, its workspace, and toolchain selection | `go version` |
+| `package-supply-chain` | Inspect Safe-Chain protection for supported npm and Python package managers on Windows and trusted Debian | `pwsh -NoProfile -File .\scripts\Set-SafeChainState.ps1 -Mode Test` |
 | `native-development` | Inspect MSVC, CMake, Rust, Java, and explicitly activate MSVC | `msvc-activate; Get-Command cl.exe,link.exe,msbuild.exe` |
 | `spec-driven-development` | Check EARS requirements, tasks, tests, and final traceability | `ears-sdd status --phase final` |
 | `terminal-fonts` | Inspect the selected terminal font and pinned Fira Code fallback | `pwsh -NoProfile -File .\scripts\Set-TerminalFontState.ps1 -Mode Test` |
@@ -59,7 +60,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `windows-exploit-protection` | Compare DEP, ASLR, CFG, SEHOP, heap, and related process mitigations | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-ExploitProtectionState.ps1 -Mode Plan` |
 | `windows-debloat` | Review opt-in application and legacy-component removal | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Set-DebloatState.ps1 -Mode Plan` |
 | `windows-virtualization` | Inspect Hyper-V and Windows Sandbox dependency order | `powershell -NoProfile -File .\scripts\Set-WindowsFeatureState.ps1 -Mode Plan` |
-| `desktop-focus` | Inspect focus-follows-mouse without raising windows | `pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test` |
+| `desktop-focus` | Inspect the click-to-focus default and explicit hover-focus toggles | `pwsh -NoProfile -File .\scripts\Set-FocusFollowsMouseState.ps1 -Mode Test` |
 | `quant-research-environment` | Inspect Positron, Quarto/Pandoc/private TinyTeX, the OpenBB base, PyXLL, independently locked uv overlays, notebooks, or deferred Source relocation | `Set-QuartoState.ps1 -Mode Test`, `quant-status`, or `source-relocation-plan -Target D:\Source` |
 | `ai-tools-isolation` | Inspect opt-in native AI tools, the developer editor, AI NixOS, and all WSL trust roles | `pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test` or `pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1` |
 

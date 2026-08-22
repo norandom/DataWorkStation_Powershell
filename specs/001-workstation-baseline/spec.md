@@ -196,8 +196,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 50 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 31 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 52 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 32 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -224,6 +224,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | PowerShellTesting | REQ-002, REQ-012 |
 | Go | REQ-002, REQ-007, REQ-042 |
 | Packages | REQ-002, REQ-007 |
+| Mpv | REQ-002, REQ-007 |
 | NativeTextTools | REQ-022 |
 | Caffeine | REQ-002, REQ-007, REQ-025 |
 | Scoop | REQ-002, REQ-007 |
@@ -255,6 +256,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | ProfilingTools | REQ-033 |
 | SkillOpt | REQ-041 |
 | PowerShellProfile | REQ-012, REQ-025, REQ-048 |
+| SafeChain | REQ-002, REQ-006, REQ-007, REQ-012, REQ-023, REQ-024 |
 | MsvcBuildTools | REQ-001, REQ-002 |
 | CMake | REQ-001, REQ-002 |
 | RustToolchain | REQ-001, REQ-002 |
@@ -292,6 +294,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | workstation-modules | REQ-001, REQ-003, REQ-004 |
 | linux-developer-packages | REQ-023, REQ-026 |
 | go-development | REQ-026, REQ-042 |
+| package-supply-chain | REQ-023, REQ-024, REQ-026, REQ-027, REQ-029 |
 | native-development | REQ-002, REQ-012, REQ-026 |
 | spec-driven-development | REQ-038, REQ-039, REQ-040 |
 | terminal-fonts | REQ-026 |

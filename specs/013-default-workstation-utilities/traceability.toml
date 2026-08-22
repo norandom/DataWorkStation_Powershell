@@ -1,0 +1,53 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All"]
+
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All"]
+
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All"]
+
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All", "tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-MpvState.ps1#All", "tests/Test-SafeChainState.ps1#All"]
+
+[requirements.REQ-013]
+verification = "automated"
+tests = ["tests/Test-SpecFeatureGovernance.ps1#Repository"]

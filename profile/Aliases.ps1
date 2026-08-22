@@ -358,36 +358,31 @@ function global:pidports {
     Get-PortProcess -ProcessId $ProcessId | Sort-Object Protocol, LocalPort
 }
 
-function global:enable-firewall { Invoke-ManagedFirewall -Mode Enable }
-function global:disable-firewall { Invoke-ManagedFirewall -Mode Disable }
 function global:firewall-status { Invoke-ManagedFirewall -Mode Status }
-function global:fw-on { enable-firewall }
-function global:fw-off { disable-firewall }
-
-function global:set-smartscreen {
-    param([Parameter(Mandatory = $true, Position = 0)][ValidateSet('Off', 'Medium', 'Full')][string] $Mode)
-    Invoke-ManagedSmartScreenState -Mode $Mode
+function global:firewall-rules { Get-ManagedFirewallRules }
+function global:firewall-on { Invoke-ManagedFirewall -Mode Enable }
+function global:firewall-off { Invoke-ManagedFirewall -Mode Disable }
+function global:firewall-ensure { Invoke-ManagedFirewall -Mode Ensure }
+function global:firewall-reinitialize { Invoke-ManagedFirewall -Mode Reinitialize }
+function global:firewall-remove { Invoke-ManagedFirewall -Mode Remove }
+function global:firewall-restore {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $BackupPath)
+    Invoke-ManagedFirewall -Mode Restore -BackupPath $BackupPath
 }
-function global:disable-smartscreen { Invoke-ManagedSmartScreenState -Mode Off }
-function global:enable-smartscreen { Invoke-ManagedSmartScreenState -Mode Medium }
+
 function global:smartscreen-off { Invoke-ManagedSmartScreenState -Mode Off }
 function global:smartscreen-medium { Invoke-ManagedSmartScreenState -Mode Medium }
 function global:smartscreen-full { Invoke-ManagedSmartScreenState -Mode Full }
 function global:smartscreen-status { Invoke-ManagedSmartScreenState -Mode Status }
 
-function global:disable-savezone { Invoke-ManagedSaveZoneState -Mode Disable }
-function global:enable-savezone { Invoke-ManagedSaveZoneState -Mode Enable }
+function global:savezone-off { Invoke-ManagedSaveZoneState -Mode Disable }
+function global:savezone-on { Invoke-ManagedSaveZoneState -Mode Enable }
 function global:savezone-status { Invoke-ManagedSaveZoneState -Mode Status }
 
-function global:disable-defender { Invoke-ManagedDefenderState -Mode Disable }
-function global:enable-defender { Invoke-ManagedDefenderState -Mode Enable }
+function global:defender-off { Invoke-ManagedDefenderState -Mode Disable }
+function global:defender-on { Invoke-ManagedDefenderState -Mode Enable }
 function global:defender-status { Invoke-ManagedDefenderState -Mode Status }
 function global:defender-settings { Start-Process 'windowsdefender://threatsettings/' }
-
-function global:fw-ensure { Invoke-ManagedFirewall -Mode Ensure }
-function global:fw-reinit { Invoke-ManagedFirewall -Mode Reinitialize }
-function global:fw-lockdown { Invoke-ManagedFirewall -Mode Ensure }
-function global:fw-unlock { Invoke-ManagedFirewall -Mode Remove }
 
 function global:ts-status {
     & tailscale.exe status @args

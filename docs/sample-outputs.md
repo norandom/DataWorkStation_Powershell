@@ -802,6 +802,7 @@ without installing anything:
 PS> pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test
 AI tools: drifted (opt-in)
   OpenCode Desktop: absent; target=Windows; channel=GitHubRelease
+  OpenCode CLI: absent; target=Windows; channel=NpmGlobal
   Claude Code: wrong-channel; target=Windows; channel=OfficialPowerShell
   Antigravity CLI: absent; target=Windows; channel=OfficialPowerShell
   Cline CLI: absent; target=Windows; channel=NpmGlobal
@@ -852,3 +853,17 @@ No trace files were changed.
 Counts and paths are host-specific. Windows cleanup execution requires `-Run`; old shadow-copy
 deletion additionally requires `-ConfirmRestorePoints`. Trace deletion requires both `-Run` and
 `-ConfirmCleanup`.
+
+## GPU media playback
+
+The focused mpv test is observational and verifies the package, managed user block, command shim,
+and compiled D3D11VA decoder support without opening a media file:
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test
+mpv desired state: compliant
+  Package: mpv-player.mpv-CI.MSVC; installed=True; version=v0.41.0-dev-g41f6a6450
+  GPU decode: d3d11va; available=True
+  Config: C:\Users\user\AppData\Roaming\mpv\mpv.conf; compliant=True
+  Command: C:\Users\user\.local\bin\mpv.cmd; compliant=True
+```

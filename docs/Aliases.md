@@ -28,7 +28,7 @@ Build Tools instance in both Windows PowerShell 5.1 and PowerShell Core.
 | `workstation-help` / `wshelp` | List managed commands, loaded aliases, and repository skills together. Filter with `-Type Commands|Aliases|Skills`, `-Name PATTERN`, or emit stable data with `-Json`. |
 | `caffeine` | Start the real Zhorn Software Caffeine tray utility installed by the focused `Caffeine` WinGet module. It starts active at sign-in; double-click its tray icon to toggle inhibition. |
 | `focus-mouse-on` | Persistently enable focus-follows-mouse with the declared 500 ms delay and without raising windows. |
-| `focus-mouse-off` | Persistently disable focus-follows-mouse and restore click-to-focus. A later default workstation Ensure restores the declared enabled state. |
+| `focus-mouse-off` | Persistently disable focus-follows-mouse and restore the declared click-to-focus default. |
 
 Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
 
@@ -237,14 +237,14 @@ Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicat
 | Command | Purpose |
 |---|---|
 | `firewall-status` | Show status and default actions for all firewall profiles. |
-| `enable-firewall` | Enable Domain, Private, and Public profiles while preserving managed rules. |
-| `disable-firewall` | Disable all profiles while preserving managed rules. |
-| `fw-rules` | Show the managed allow/block rules and port ranges. |
-| `fw-on`, `fw-off`, `fw-status` | Compatibility names for the unified commands. |
-| `fw-ensure` | Test the declared firewall state and repair it only if drift is found. |
-| `fw-reinit` | Always back up the firewall, remove the managed group, and recreate it. |
-| `fw-lockdown` | Compatibility name for `fw-ensure`. |
-| `fw-unlock` | Remove only this repository's managed rules; Windows rules remain. |
+| `firewall-rules` | Show the managed allow rules and port ranges. |
+| `firewall-on`, `firewall-off` | Enable or disable Domain, Private, and Public profiles while preserving managed rules. |
+| `firewall-ensure` | Test the declared firewall state and repair it only if drift is found. |
+| `firewall-reinitialize` | Always back up the firewall, remove the managed group, and recreate it. |
+| `firewall-remove` | Remove only this repository's managed rules; Windows rules remain. |
+| `firewall-restore BACKUP.wfw` | Restore a selected full firewall backup. |
+
+The noun-first `firewall-*` family keeps every related action together in PowerShell tab completion.
 
 The declared policy keeps the default inbound action at Block. It allows inbound TCP 22 for SSH,
 3389 for RDP, and 8080/8081 for HTTP/application services, plus UDP 41641 for direct Tailscale
@@ -271,10 +271,10 @@ Containers on the same Docker network do not need published ports. To expose a l
 |---|---|
 | `defender-status` | Show real-time, behavior, script, download, cloud, network, and Tamper Protection state. |
 | `defender-settings` | Open Virus & threat protection settings directly. |
-| `disable-defender` | Disable those Defender runtime protections through inline `sudo`. No scan is started. |
-| `enable-defender` | Restore those Defender runtime protections through inline `sudo`. No scan is started. |
+| `defender-off` | Disable those Defender runtime protections through inline `sudo`. No scan is started. |
+| `defender-on` | Restore those Defender runtime protections through inline `sudo`. No scan is started. |
 
-Tamper Protection can reject these settings even for an administrator. `disable-defender` checks it before changing anything and directs you to `defender-settings` when necessary. Windows can also restore real-time protection later; `defender-status` reports the effective state.
+Tamper Protection can reject these settings even for an administrator. `defender-off` checks it before changing anything and directs you to `defender-settings` when necessary. Windows can also restore real-time protection later; `defender-status` reports the effective state.
 
 ## Autopsy and Sleuth Kit
 
@@ -300,15 +300,12 @@ private write-capable tools.
 
 | Command | Purpose |
 |---|---|
-| `set-smartscreen off` | Disable Explorer executable reputation checks. |
-| `set-smartscreen medium` | Enable `Warn` mode with a user override. This is the managed default. |
-| `set-smartscreen full` | Enable `Block` mode without a user bypass. |
+| `smartscreen-off` | Disable Explorer executable reputation checks. |
+| `smartscreen-medium` | Enable `Warn` mode with a user override. This is the managed default. |
+| `smartscreen-full` | Enable `Block` mode without a user bypass. |
 | `smartscreen-status` | Show the effective mode and policy values. |
-| `disable-smartscreen`, `smartscreen-off` | Convenience names for `off`. |
-| `enable-smartscreen`, `smartscreen-medium` | Convenience names for `medium`. |
-| `smartscreen-full` | Convenience name for `full`. |
-| `disable-savezone` | Stop adding Mark-of-the-Web to future downloaded attachments. |
-| `enable-savezone` | Restore the Windows default of preserving Mark-of-the-Web. |
+| `savezone-off` | Stop adding Mark-of-the-Web to future downloaded attachments. |
+| `savezone-on` | Restore the Windows default of preserving Mark-of-the-Web. |
 | `savezone-status` | Show whether future downloads receive a zone marker. |
 | `unblock PATH` | Remove Mark-of-the-Web from selected files. |
 | `unblock-downloads [-Path PATH]` | Recursively remove existing zone markers, defaulting to Downloads. |
@@ -482,10 +479,10 @@ exclusions are preserved.
 
 Scheduled Defender activity runs only while idle, at low priority, with a 15% average CPU target and no catch-up scans. SmartScreen uses warning mode and permits an explicit override. Use `unblock PATH` to remove Mark-of-the-Web from a file you have independently verified. Smart App Control is not modified.
 
-Complete firewall backups are stored under `state/firewall-backups`. Restore one from an elevated shell with:
+Complete firewall backups are stored under `state/firewall-backups`. Restore one explicitly with:
 
 ```powershell
-sudo pwsh -NoProfile -File .\scripts\Set-FirewallState.ps1 -Mode Restore -BackupPath .\state\firewall-backups\firewall-before-reinitialize-YYYYMMDD-HHMMSS.wfw
+firewall-restore .\state\firewall-backups\firewall-before-reinitialize-YYYYMMDD-HHMMSS.wfw
 ```
 ## Tricky cases and documentation
 

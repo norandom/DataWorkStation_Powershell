@@ -38,7 +38,7 @@ exclusions, and mode compatibility. It does not invoke a resource or resolve Pow
 | Stage | Available runtime | Gate | Modules |
 |---|---|---|---|
 | `Inbox` | Windows PowerShell 5.1 or native Windows executable | none | `Sudo`, `PowerShell7` |
-| `Core` | PowerShell 7, inbox shell when explicitly declared, or native executable | `PowerShell7` | Git/packages, test framework, Go, native text tools, Caffeine, Scoop, fonts, both terminals, and the shared PowerShell profile |
+| `Core` | PowerShell 7, inbox shell when explicitly declared, or native executable | `PowerShell7` | Git/packages, test framework, Go, mpv, native text tools, Caffeine, Scoop, fonts, both terminals, and the shared PowerShell profile |
 | `Extended` | declared runtime after Core is compliant | `PowerShell7` | Windows features and policy, WSL environments, developer tools, diagnostics, malware-analysis tooling, and optional debloat |
 
 Selecting a Core or Extended module automatically includes its stage gate. The `PowerShell7` module itself is a native WinGet operation in the Inbox stage. Therefore this fresh-host command is valid even when `pwsh.exe` is absent:
@@ -89,6 +89,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `PowerShellTesting` | yes | `PowerShell7` | exact Pester release shared by bounded parallel and compatibility test lanes |
 | `Go` | yes | none | official MSI-backed Go package, user workspace, command path, and built-in toolchain selection |
 | `Packages` | yes | `PowerShell7` | WinGet Configuration packages |
+| `Mpv` | yes | `PowerShell7` stage gate | official mpv Windows build with Radeon D3D11 rendering and safe hardware decode |
 | `NativeTextTools` | yes | none | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
 | `Caffeine` | yes | none | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
 | `Scoop` | yes | `Git` | per-user Scoop with official Main and Extras buckets |
@@ -106,7 +107,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperDocker` | no | `LinuxAutomation` | pyinfra-adopted rootful Docker daemon in Debian for Dagger |
 | `RootlessPodman` | yes | none | clean Debian-MW distro with local pyinfra and daemonless rootless Podman |
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
-| `AiTools` | **no** | `Packages` | OpenCode Desktop, Claude Code, Antigravity, Cline, and Copilot CLI through reviewed channels |
+| `AiTools` | **no** | `Packages` | native Windows OpenCode Desktop/CLI, Claude Code, Antigravity, Cline, and Copilot CLI through reviewed channels |
 | `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
@@ -119,7 +120,8 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `ProfilingTools` | yes | `Packages` | WPT, py-spy, dotnet-trace, and Speedscope |
 | `SkillOpt` | yes | `Packages` | pinned SkillOpt and conservative defaults |
 | `PowerShellProfile` | yes | `PowerShell7` | managed profile components |
-| `FocusFollowsMouse` | yes | none | hover focus without raising |
+| `SafeChain` | yes | `PowerShellProfile` | hash-pinned npm/Python package-manager protection on Windows and trusted Debian |
+| `FocusFollowsMouse` | yes | none | click-to-focus default with explicit hover-focus toggles |
 | `DefenderExclusions` | yes | `Sudo` | local exclusions and performance policy |
 | `SmartScreen` | yes | `Sudo` | warning/override policy |
 | `WslMemory` | yes | none | WSL memory and swap limits |

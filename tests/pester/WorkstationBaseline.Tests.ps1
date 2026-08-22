@@ -21,6 +21,7 @@ Describe 'Workstation baseline contracts' {
         @{ Section = 'SpecDrivenDevelopment' },
         @{ Section = 'BootstrapStages' },
         @{ Section = 'PowerShellRuntimes' },
+        @{ Section = 'SecurityCommandFamilies' },
         @{ Section = 'WindowsTerminal' }
     ) {
         $output = @(& $script:runtime -NoLogo -NoProfile -File $script:contract -Section $Section 2>&1)

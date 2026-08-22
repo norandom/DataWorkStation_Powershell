@@ -2,8 +2,16 @@
 
 ## Unreleased
 
+## 3.1.0 - 2026-08-22
+
+- Add the official mpv Windows CI/MSVC build as a default focused module with a managed `mpv` command, Radeon 890M Direct3D 11 rendering, and safe hardware-decoder fallback.
 - Unify local font, WSL, storage-path, Defender-exclusion, and trace-retention settings in ignored `config.json`; route new diagnostic captures to its trace root.
 - Add plan-first Windows component/update/old-shadow cleanup and retention-aware trace cleanup while preserving Prefetch, event logs, performance caches, recovery media, and active sessions.
+- Add hash-pinned Safe-Chain protection for supported npm and Python package managers on Windows and trusted Debian, with focused human commands and desired-state routing.
+- Add focused OpenCode Desktop and CLI reconciliation, verified per-user release extraction, former Scoop-package migration, and OpenCode 1.18.19 declarations for Windows and NixOS-AI.
+- Replace legacy security aliases with consistent noun-first firewall, Defender, SmartScreen, and SaveZone command families, including explicit firewall backup restore.
+- Make click-to-focus (`focus-mouse-off`) the workstation default while retaining the source-equivalent X-Mouse Controls 500 ms delay for explicit `focus-mouse-on` use.
+- Repair malware-analysis lookup of the declared `malware_hashes` install root and align WSL-role contract coverage with the central local-configuration validator.
 
 ## 3.0.0 - 2026-08-18
 

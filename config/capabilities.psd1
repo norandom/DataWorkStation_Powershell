@@ -114,6 +114,21 @@
             Triggers = @('defender', 'smartscreen', 'savezone', 'security', 'blocked')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @('firewall-status', 'defender-status', 'smartscreen-status', 'savezone-status')
+            StateCommands = @(
+                'firewall-on'
+                'firewall-off'
+                'firewall-ensure'
+                'firewall-reinitialize'
+                'firewall-remove'
+                'firewall-restore <backup.wfw>'
+                'defender-on'
+                'defender-off'
+                'smartscreen-off'
+                'smartscreen-medium'
+                'smartscreen-full'
+                'savezone-on'
+                'savezone-off'
+            )
             CaptureCommand = 'tricky add {case} <exported-state.json>'
         }
         @{
@@ -236,7 +251,7 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
@@ -249,8 +264,10 @@
                 'cleanup-traces'
                 'cleanup-traces -Json'
                 'workstation-config'
+                'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan'
             )
-            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup')
+            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{
@@ -297,6 +314,27 @@
             CaptureCommand = 'tricky add {case} <go-state.json>'
         }
         @{
+            Id = 'package-supply-chain'
+            FeatureSpec = 'specs/013-default-workstation-utilities'
+            Modules = @('SafeChain')
+            Title = 'Safe-Chain package-manager protection'
+            Triggers = @('safe-chain', 'npm malware', 'pypi malware', 'package supply chain', 'minimum package age', 'protected npm', 'protected uv')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-SafeChainState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module SafeChain -Plan'
+                'safe-chain --version'
+                'npm safe-chain-verify'
+                'uv safe-chain-verify'
+                "wsl.exe -d Debian -- bash -ic 'safe-chain --version'"
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module SafeChain'
+                'safe-chain setup'
+            )
+            CaptureCommand = 'tricky add {case} <safe-chain-state.json>'
+        }
+        @{
             Id = 'ai-tools-isolation'
             FeatureSpec = 'specs/010-ai-tools-isolation'
             Modules = @('AiTools', 'AiNixOsWsl', 'DeveloperEditor')
@@ -305,6 +343,7 @@
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product OpenCode'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test'
@@ -313,6 +352,7 @@
             )
             StateCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module DeveloperEditor'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module AiTools,AiNixOsWsl'
                 'pwsh -NoProfile -File .\scripts\Invoke-OpenCodeSandbox.ps1 -Project <path>'
                 'pwsh -NoProfile -File .\scripts\Import-MalwareCase.ps1 -Source <path> -CaseId <id>'
@@ -454,7 +494,7 @@
         }
         @{
             Id = 'desktop-focus'
-            Title = 'Mouse-driven window focus without raising'
+            Title = 'Click-to-focus default with explicit mouse-focus toggles'
             Triggers = @('focus follows mouse', 'xmouse', 'active window tracking', 'raise window', 'hover focus')
             EvidenceKinds = @('Snapshot')
             StateCommands = @(

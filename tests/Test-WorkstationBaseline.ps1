@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All', 'HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'DeveloperEnvironment', 'Documentation', 'PublicationGates', 'SpecificationWorkflow', 'SkillOptSafety', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal', 'FocusFollowsMouse')]
+    [ValidateSet('All', 'HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'DeveloperEnvironment', 'Documentation', 'PublicationGates', 'SpecificationWorkflow', 'SkillOptSafety', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'SecurityCommandFamilies', 'WindowsTerminal', 'FocusFollowsMouse')]
     [string] $Section = 'All'
 )
 
@@ -417,6 +417,7 @@ function Test-WindowsSafety {
     Assert-True ($firewallSource -match '-AllowInboundRules True' -and $firewallSource -match '-AllowLocalFirewallRules True') 'all profiles honor expert-approved local application rules'
     Assert-True ($firewallSource -match '-NotifyOnListen True') 'application listener prompts remain enabled'
     Assert-True ($firewallSource -notmatch 'LinuxShell-Block-Other|Get-BlockedPortRanges') 'blanket explicit block rules cannot override expert-created allow rules'
+    Assert-True ($firewallSource -match '\$enabledValue = if \(\$enableRequested\) \{ ''True'' \} else \{ ''False'' \}' -and $firewallSource -match '-Enabled \$enabledValue') 'firewall toggles pass the GpoBoolean-compatible string values required by NetSecurity'
     $windowsPowerShell = (Get-Command powershell.exe -ErrorAction Stop).Source
     $hardeningPlan = Invoke-External -FilePath $windowsPowerShell -ArgumentList @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $repositoryRoot 'scripts\Set-HardeningState.ps1'), '-Mode', 'Plan')
     Assert-True ($hardeningPlan.ExitCode -eq 0) "the human hardening plan succeeds: $($hardeningPlan.Output -join ' ')"
@@ -939,6 +940,58 @@ function Test-PowerShellRuntimes {
     }
 }
 
+function Test-SecurityCommandFamilies {
+    $aliases = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Aliases.ps1') -Raw
+    $tools = Get-Content -LiteralPath (Join-Path $repositoryRoot 'profile\Tools.ps1') -Raw
+    $capabilities = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\capabilities.psd1')
+    $route = @($capabilities.Capabilities | Where-Object Id -eq 'security-state')[0]
+    $commands = @(
+        'firewall-status', 'firewall-rules', 'firewall-on', 'firewall-off', 'firewall-ensure',
+        'firewall-reinitialize', 'firewall-remove', 'firewall-restore',
+        'defender-status', 'defender-settings', 'defender-on', 'defender-off',
+        'smartscreen-status', 'smartscreen-off', 'smartscreen-medium', 'smartscreen-full',
+        'savezone-status', 'savezone-on', 'savezone-off'
+    )
+    $removedCommands = @(
+        'fw-on', 'fw-off', 'fw-status', 'fw-rules', 'fw-ensure', 'fw-reinit', 'fw-lockdown', 'fw-unlock',
+        'enable-firewall', 'disable-firewall', 'enable-defender', 'disable-defender',
+        'enable-smartscreen', 'disable-smartscreen', 'set-smartscreen',
+        'enable-savezone', 'disable-savezone'
+    )
+
+    foreach ($name in $commands) {
+        Assert-True ($aliases -match "function global:$([regex]::Escape($name))\b") "noun-first security command '$name' is declared"
+    }
+
+    $loader = (Join-Path $repositoryRoot 'profile\Shell.ps1').Replace("'", "''")
+    $quotedCommands = (@($commands) + @($removedCommands) | ForEach-Object { "'$_'" }) -join ','
+    foreach ($runtime in @((Get-Command powershell.exe -ErrorAction Stop).Source, (Get-Command pwsh.exe -ErrorAction Stop).Source)) {
+        $command = ". '$loader'; @($quotedCommands) | ForEach-Object { `$found = Get-Command `$_ -CommandType Function -ErrorAction Ignore; [pscustomobject]@{ Name = `$_; Type = [string] `$found.CommandType } } | ConvertTo-Json -Compress"
+        $result = Invoke-External -FilePath $runtime -ArgumentList @('-NoLogo', '-NoProfile', '-Command', $command)
+        Assert-True ($result.ExitCode -eq 0) "security command families load in '$runtime': $($result.Output -join ' ')"
+        $jsonLine = @($result.Output | Where-Object { [string] $_ -match '^\s*\[' } | Select-Object -Last 1)
+        Assert-True ($jsonLine.Count -eq 1) "security command surface is machine-readable in '$runtime'"
+        if ($jsonLine.Count -ne 1) { continue }
+        $surface = $jsonLine[0] | ConvertFrom-Json
+        foreach ($name in $commands) {
+            Assert-True (@($surface | Where-Object { $_.Name -eq $name -and $_.Type -eq 'Function' }).Count -eq 1) "'$name' resolves as a function in '$runtime'"
+        }
+        foreach ($name in $removedCommands) {
+            Assert-True (@($surface | Where-Object { $_.Name -eq $name -and $_.Type }).Count -eq 0) "removed compatibility command '$name' does not resolve in '$runtime'"
+        }
+    }
+
+    foreach ($name in $removedCommands) {
+        Assert-True ($aliases -notmatch "(?m)(?:function global:|Set-Alias -Name )$([regex]::Escape($name))\b") "removed compatibility command '$name' is absent from the managed profile"
+    }
+
+    $firewallInvocation = 'if \(\$Mode -eq ''Status''\)[\s\S]+?& powershell\.exe @arguments[\s\S]+?& sudo\.exe --inline powershell\.exe @arguments'
+    Assert-True ($tools -match $firewallInvocation) 'firewall status is unprivileged and state changes use inline sudo'
+    foreach ($name in @('firewall-on', 'firewall-off', 'firewall-ensure', 'firewall-reinitialize', 'firewall-remove', 'firewall-restore <backup.wfw>', 'defender-on', 'defender-off', 'smartscreen-off', 'smartscreen-medium', 'smartscreen-full', 'savezone-on', 'savezone-off')) {
+        Assert-True (@($route.StateCommands) -contains $name) "security capability routing includes '$name'"
+    }
+}
+
 function Test-FocusFollowsMouse {
     $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\focus-follows-mouse.psd1')
     $stateSource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'scripts\Set-FocusFollowsMouseState.ps1') -Raw
@@ -946,7 +999,7 @@ function Test-FocusFollowsMouse {
     $capabilities = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\capabilities.psd1')
     $route = @($capabilities.Capabilities | Where-Object Id -eq 'desktop-focus')[0]
 
-    Assert-True ($configuration.Enabled -and -not $configuration.RaiseOnFocus) 'hover focus remains enabled without automatic raising'
+    Assert-True (-not $configuration.Enabled -and -not $configuration.RaiseOnFocus) 'click-to-focus remains the default without automatic raising'
     Assert-True ($configuration.DelayMilliseconds -eq 500) 'hover focus uses the X-Mouse Controls default delay instead of instant activation'
     Assert-True ($stateSource -match "ValidateSet\('Declared', 'On', 'Off'\)" -and $stateSource -match 'SPI_SETACTIVEWNDTRKTIMEOUT|\$setDelay') 'focused state supports explicit toggles and applies the declared delay'
     Assert-True ($profileSource -match 'Set-Alias -Name focus-mouse-on' -and $profileSource -match 'Set-Alias -Name focus-mouse-off') 'managed profile exposes both focus toggle aliases'
@@ -1021,7 +1074,7 @@ function Test-WindowsTerminal {
     }
 }
 
-$sections = if ($Section -eq 'All') { @('HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'WindowsTerminal', 'FocusFollowsMouse') } else { @($Section) }
+$sections = if ($Section -eq 'All') { @('HarnessSelfTest', 'Modules', 'ModulePlanning', 'PlanSafety', 'StateSafety', 'WindowsSafety', 'DebloatSafety', 'Capabilities', 'TrickyOutput', 'DiagnosticSkills', 'Contour', 'DeveloperTools', 'SpecDrivenDevelopment', 'Governance', 'BootstrapStages', 'PowerShellRuntimes', 'SecurityCommandFamilies', 'WindowsTerminal', 'FocusFollowsMouse') } else { @($Section) }
 foreach ($name in $sections) {
     & (Get-Command "Test-$name" -CommandType Function)
     Write-Host "PASS $name"

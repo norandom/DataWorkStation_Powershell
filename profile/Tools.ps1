@@ -237,12 +237,7 @@ function global:daemons {
             } }
 }
 
-function global:fw-status {
-    Get-NetFirewallProfile |
-        Select-Object Name, Enabled, DefaultInboundAction, DefaultOutboundAction, AllowInboundRules
-}
-
-function global:fw-rules {
+function global:Get-ManagedFirewallRules {
     Get-NetFirewallRule -Group 'Linux Shell - Inbound Allowlist' -ErrorAction Ignore |
         Sort-Object Action, DisplayName |
         ForEach-Object {
@@ -259,14 +254,29 @@ function global:fw-rules {
 }
 
 function global:Invoke-ManagedFirewall {
-    param([ValidateSet('Ensure', 'Reinitialize', 'Remove', 'Disable', 'Enable', 'Status')][string] $Mode)
+    param(
+        [ValidateSet('Ensure', 'Reinitialize', 'Remove', 'Restore', 'Disable', 'Enable', 'Status')]
+        [string] $Mode,
+        [string] $BackupPath
+    )
 
     $firewallScript = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-FirewallState.ps1'
     if (-not (Test-Path -LiteralPath $firewallScript)) {
         Write-Warning "Firewall script not found: $firewallScript"
         return
     }
-    & sudo.exe pwsh.exe -NoLogo -NoProfile -File $firewallScript -Mode $Mode
+    if ($Mode -eq 'Restore' -and (-not $BackupPath -or -not (Test-Path -LiteralPath $BackupPath -PathType Leaf))) {
+        throw 'Firewall restore requires an existing backup file.'
+    }
+
+    $arguments = @('-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $firewallScript, '-Mode', $Mode)
+    if ($BackupPath) { $arguments += @('-BackupPath', (Resolve-Path -LiteralPath $BackupPath -ErrorAction Stop).Path) }
+
+    if ($Mode -eq 'Status') {
+        & powershell.exe @arguments
+    } else {
+        & sudo.exe --inline powershell.exe @arguments
+    }
 }
 
 function global:Invoke-ManagedSmartScreenState {
@@ -277,7 +287,11 @@ function global:Invoke-ManagedSmartScreenState {
         Write-Warning "SmartScreen script not found: $script"
         return
     }
-    & sudo.exe powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $script -Mode $Mode
+    if ($Mode -eq 'Status') {
+        & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $script -Mode $Mode
+    } else {
+        & sudo.exe --inline powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File $script -Mode $Mode
+    }
 }
 
 function global:Invoke-ManagedSaveZoneState {

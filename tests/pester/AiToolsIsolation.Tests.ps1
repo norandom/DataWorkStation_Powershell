@@ -12,7 +12,7 @@ Describe 'AI tools and WSL isolation contracts' -Tag 'AiToolsIsolation' {
     It '<Section> passes' -ForEach @(
         @{ Section = 'EnabledProducts' }, @{ Section = 'OptInBoundary' },
         @{ Section = 'ObservationalStatus' }, @{ Section = 'OutputParity' },
-        @{ Section = 'OpenCodeTargets' }, @{ Section = 'ClaudeInstallChannel' },
+        @{ Section = 'OpenCodeTargets' }, @{ Section = 'FocusedProductSelection' }, @{ Section = 'ClaudeInstallChannel' },
         @{ Section = 'AntigravityCliChannel' }, @{ Section = 'ClineCliChannel' },
         @{ Section = 'CopilotCli' }, @{ Section = 'EditorInventory' },
         @{ Section = 'LocalFontPreference' }, @{ Section = 'PortableFontFallback' },

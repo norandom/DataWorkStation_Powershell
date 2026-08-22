@@ -94,6 +94,19 @@
             Description = 'Pinned Pester framework shared by the parallel PowerShell 7 and sequential Windows PowerShell test lanes.'
         }
         @{
+            Name = 'Mpv'
+            FeatureSpec = 'specs/013-default-workstation-utilities'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
+            Order = 22
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Official mpv Windows build with safe Radeon hardware decode and Direct3D 11 rendering.'
+        }
+        @{
             Name = 'NativeTextTools'
             Stage = 'Core'
             Runtime = 'PowerShell7'
@@ -322,7 +335,7 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'Opt-in Windows AI agent clients through explicitly reviewed vendor and npm channels.'
+            Description = 'Opt-in native Windows AI clients, including OpenCode Desktop and CLI, through explicitly reviewed channels.'
         }
         @{
             Name = 'DeveloperEditor'
@@ -470,6 +483,19 @@
             Description = 'PowerShell 7 and Windows PowerShell profile components.'
         }
         @{
+            Name = 'SafeChain'
+            FeatureSpec = 'specs/013-default-workstation-utilities'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 81
+            Default = $true
+            DependsOn = @('PowerShellProfile')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Hash-pinned Safe-Chain protection for supported package managers on Windows and trusted Debian.'
+        }
+        @{
             Name = 'MsvcBuildTools'
             Stage = 'Extended'
             Runtime = 'PowerShell7'
@@ -539,7 +565,7 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'Current-user hover focus without raising windows.'
+            Description = 'Current-user click-to-focus default with explicit hover-focus toggles.'
         }
         @{
             Name = 'DefenderExclusions'

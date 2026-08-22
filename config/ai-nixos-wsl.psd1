@@ -13,9 +13,9 @@
     RequiredCommands = @('opencode', 'nono', 'ai-workstation-self-check')
     SourceFiles = @('flake.nix', 'flake.lock', 'configuration.nix', 'self-check.nix', 'opencode-profile.json')
     OpenCode = @{
-        Version = '1.18.18'
-        Uri = 'https://github.com/anomalyco/opencode/releases/download/v1.18.18/opencode-linux-x64.tar.gz'
-        Sha256 = '0cddc222418b8553669905a8980c0cda7088f00da24d83d6ac76b01c9fdb2aaf'
+        Version = '1.18.19'
+        Uri = 'https://github.com/anomalyco/opencode/releases/download/v1.18.19/opencode-linux-x64.tar.gz'
+        Sha256 = '7bb35487c55f9957f5d91ae60be6fa49fc8f74629c210c1719ed75fdbf7e2bd9'
         InstallPath = '/run/current-system/sw/bin/opencode'
     }
     Nono = @{

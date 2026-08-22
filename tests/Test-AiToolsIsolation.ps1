@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('All', 'EnabledProducts', 'OptInBoundary', 'ObservationalStatus', 'OutputParity',
-        'OpenCodeTargets', 'ClaudeInstallChannel', 'AntigravityCliChannel', 'ClineCliChannel',
+        'OpenCodeTargets', 'FocusedProductSelection', 'ClaudeInstallChannel', 'AntigravityCliChannel', 'ClineCliChannel',
         'CopilotCli', 'EditorInventory', 'LocalFontPreference', 'PortableFontFallback', 'EditorMerge', 'BergActivation',
         'AiDistributionIdentity', 'AiNixIntegrity', 'NonoInstallChannel', 'NonoLaunchContract',
         'NonoFailClosed', 'NonoFilesystemPolicy', 'NonoCredentialPolicy', 'NonoNetworkPolicy',
@@ -48,7 +48,7 @@ function Get-WorkstationModule {
 function Test-EnabledProducts {
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $names = @($config.Products | Where-Object Enabled | ForEach-Object Name)
-    foreach ($name in @('OpenCode Desktop', 'Claude Code', 'Antigravity CLI', 'Cline CLI', 'GitHub Copilot CLI')) {
+    foreach ($name in @('OpenCode Desktop', 'OpenCode CLI', 'Claude Code', 'Antigravity CLI', 'Cline CLI', 'GitHub Copilot CLI')) {
         Assert-True ($names -contains $name) "$name is enabled in the reviewed AI declaration"
     }
 }
@@ -77,9 +77,20 @@ function Test-OutputParity {
 function Test-OpenCodeTargets {
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $desktop = @($config.Products | Where-Object Name -eq 'OpenCode Desktop')[0]
-    Assert-True ($desktop.Target -eq 'Windows' -and $desktop.Channel -eq 'GitHubRelease') 'OpenCode Desktop is Windows-only'
+    Assert-True ($desktop.Target -eq 'Windows' -and $desktop.Channel -eq 'GitHubRelease' -and $desktop.InstallerMode -eq 'ExtractedRelease') 'OpenCode Desktop uses the verified official Windows release payload without Scoop'
+    $windowsCli = @($config.Products | Where-Object Name -eq 'OpenCode CLI')[0]
+    Assert-True ($windowsCli.Target -eq 'Windows' -and $windowsCli.Channel -eq 'NpmGlobal' -and $windowsCli.NpmPackage -eq 'opencode-ai') 'OpenCode CLI is available natively through the official npm package'
+    Assert-True ($desktop.FormerScoopPackage -eq 'opencode-desktop' -and $windowsCli.FormerScoopPackage -eq 'opencode') 'former Scoop packages are declared for post-install migration'
     $ai = Get-RequiredData 'config/ai-nixos-wsl.psd1'
-    Assert-True ($ai.RequiredCommands -contains 'opencode' -and $ai.DistributionVariable -eq 'WSL_AI_DISTRIBUTION') 'OpenCode CLI is AI-WSL-only'
+    Assert-True ($ai.RequiredCommands -contains 'opencode' -and $ai.DistributionVariable -eq 'WSL_AI_DISTRIBUTION') 'OpenCode CLI remains available in the restricted AI WSL'
+}
+
+function Test-FocusedProductSelection {
+    $script = Get-RequiredText 'scripts/Set-AiToolsState.ps1'
+    Assert-True ($script -match '\[string\[\]\]\s*\$Product' -and $script -match 'Resolve-SelectedAiToolsConfiguration') 'AI tools expose a focused product selector'
+    $capabilities = Get-RequiredData 'config/capabilities.psd1'
+    $route = @($capabilities.Capabilities | Where-Object Id -eq 'ai-tools-isolation')[0]
+    Assert-True (@($route.StateCommands | Where-Object { $_ -match 'Set-AiToolsState.+-Product OpenCode' }).Count -eq 1) 'the routing catalog documents a human-readable focused OpenCode install command'
 }
 
 function Test-ClaudeInstallChannel {
@@ -330,7 +341,7 @@ function Test-PortableSecretExclusions {
 }
 
 $sections = if ($Section -eq 'All') {
-    @('EnabledProducts', 'OptInBoundary', 'ObservationalStatus', 'OutputParity', 'OpenCodeTargets',
+    @('EnabledProducts', 'OptInBoundary', 'ObservationalStatus', 'OutputParity', 'OpenCodeTargets', 'FocusedProductSelection',
         'ClaudeInstallChannel', 'AntigravityCliChannel', 'ClineCliChannel', 'CopilotCli',
         'EditorInventory', 'LocalFontPreference', 'PortableFontFallback', 'EditorMerge', 'BergActivation',
         'AiDistributionIdentity', 'AiNixIntegrity', 'NonoInstallChannel', 'NonoLaunchContract',

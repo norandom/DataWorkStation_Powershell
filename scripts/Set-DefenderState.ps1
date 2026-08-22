@@ -41,7 +41,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 $initial = Get-DefenderState
 if ($Mode -eq 'Disable' -and $initial.TamperProtected) {
     $initial
-    Write-Warning 'Tamper Protection must be turned off first. Run defender-settings, switch off Tamper Protection, then run disable-defender again.'
+    Write-Warning 'Tamper Protection must be turned off first. Run defender-settings, switch off Tamper Protection, then run defender-off again.'
     exit 2
 }
 

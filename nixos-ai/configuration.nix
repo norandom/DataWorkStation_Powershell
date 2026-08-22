@@ -3,10 +3,10 @@
 let
   opencode = pkgs.stdenvNoCC.mkDerivation {
     pname = "opencode";
-    version = "1.18.18";
+    version = "1.18.19";
     src = pkgs.fetchurl {
-      url = "https://github.com/anomalyco/opencode/releases/download/v1.18.18/opencode-linux-x64.tar.gz";
-      hash = "sha256-DN3CIkGLhVNmmQWomAwM2nCI8A2iTYPWrHawHJ/bKq8=";
+      url = "https://github.com/anomalyco/opencode/releases/download/v1.18.19/opencode-linux-x64.tar.gz";
+      hash = "sha256-e7NUh8VfmVf12RrmC+b6SfyPdGKcIQwXGe11/b9+K9k=";
     };
     dontUnpack = true;
     nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];

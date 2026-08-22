@@ -1,6 +1,6 @@
 @{
     SchemaVersion = 1
-    Enabled = $true
+    Enabled = $false
     RaiseOnFocus = $false
     DelayMilliseconds = 500
 }

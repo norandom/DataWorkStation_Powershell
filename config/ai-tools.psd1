@@ -7,10 +7,25 @@
             Target = 'Windows'
             Channel = 'GitHubRelease'
             Command = $null
-            Version = '1.18.18'
-            Sha256 = 'f46c9420df889483d64fcb96637adfced89e9b3a1895fb6cc913caa0d6ee1962'
+            InstallerMode = 'ExtractedRelease'
+            Version = '1.18.19'
+            Sha256 = '59f19cebc0b0de0303b20b73686d5cfbf9734a8d4ab152d02719ebf95e714c87'
             InstallPath = '%LOCALAPPDATA%\Programs\OpenCode\OpenCode.exe'
-            InstallArguments = @('/S')
+            ShortcutPath = '%APPDATA%\Microsoft\Windows\Start Menu\Programs\OpenCode.lnk'
+            FormerScoopPackage = 'opencode-desktop'
+            FormerScoopPath = '%USERPROFILE%\scoop\apps\opencode-desktop\current\OpenCode.exe'
+        }
+        @{
+            Name = 'OpenCode CLI'
+            Enabled = $true
+            Target = 'Windows'
+            Channel = 'NpmGlobal'
+            Command = 'opencode'
+            NpmPackage = 'opencode-ai'
+            InstallCommand = 'npm install -g opencode-ai'
+            ExpectedPath = '%APPDATA%\npm\opencode.cmd'
+            FormerScoopPackage = 'opencode'
+            FormerScoopPath = '%USERPROFILE%\scoop\shims\opencode.exe'
         }
         @{
             Name = 'Claude Code'

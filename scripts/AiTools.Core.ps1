@@ -16,9 +16,13 @@ function Get-AiCommandRecord {
         $command = Get-Command $Product.Command -CommandType Application,ExternalScript -ErrorAction Ignore |
             Select-Object -First 1
     }
-    $observedPath = if ($command) { [string] $command.Source } else { $null }
-    $wrongChannel = [bool] ($observedPath -and $Product.ForbiddenPathPattern -and
-        $observedPath -match [string] $Product.ForbiddenPathPattern)
+    $observedPath = if (-not $command) { $null }
+        elseif ($command.PSObject.Properties['Source']) { [string] $command.Source }
+        elseif ($command.PSObject.Properties['FullName']) { [string] $command.FullName }
+        else { $null }
+    $forbiddenPathPattern = if ($Product.ContainsKey('ForbiddenPathPattern')) { [string] $Product.ForbiddenPathPattern } else { $null }
+    $wrongChannel = [bool] ($observedPath -and $forbiddenPathPattern -and
+        $observedPath -match $forbiddenPathPattern)
     $expectedPathMatched = -not $expectedPath -or
         ($observedPath -and [IO.Path]::GetFullPath($observedPath) -eq [IO.Path]::GetFullPath($expectedPath))
 
@@ -52,6 +56,10 @@ function Get-NpmGlobalPackageRecord {
             $version = $null
         }
     }
+    $expectedPath = if ($Product.ContainsKey('ExpectedPath')) { Resolve-AiToolPath $Product.ExpectedPath } else { $null }
+    $formerScoopPath = if ($Product.ContainsKey('FormerScoopPath')) { Resolve-AiToolPath $Product.FormerScoopPath } else { $null }
+    $wrongChannel = [bool] ($formerScoopPath -and (Test-Path -LiteralPath $formerScoopPath -PathType Leaf))
+    $expectedPathMatched = -not $expectedPath -or (Test-Path -LiteralPath $expectedPath -PathType Leaf)
     [pscustomobject]@{
         Name = $Product.Name
         Enabled = [bool] $Product.Enabled
@@ -61,10 +69,10 @@ function Get-NpmGlobalPackageRecord {
         Package = $Product.NpmPackage
         Installed = -not [string]::IsNullOrWhiteSpace($version)
         Version = $version
-        ObservedPath = if ($npm) { $npm.Source } else { $null }
-        WrongChannel = $false
-        Status = if ($version) { 'compliant' } else { 'absent' }
-        Action = if ($Product.Enabled -and -not $version) { 'npm-global-install' } else { 'none' }
+        ObservedPath = if ($expectedPathMatched -and $expectedPath) { $expectedPath } elseif ($npm) { $npm.Source } else { $null }
+        WrongChannel = $wrongChannel
+        Status = if ($wrongChannel) { 'wrong-channel' } elseif (-not $version) { 'absent' } elseif (-not $expectedPathMatched) { 'wrong-channel' } else { 'compliant' }
+        Action = if (-not $Product.Enabled -or ($version -and $expectedPathMatched -and -not $wrongChannel)) { 'none' } else { 'npm-global-install' }
         PrivilegeBoundary = 'Current Windows user global npm prefix; explicit Ensure only.'
     }
 }
@@ -73,6 +81,12 @@ function Get-OpenCodeDesktopRecord {
     param([Parameter(Mandatory = $true)][hashtable] $Product)
     $path = Resolve-AiToolPath $Product.InstallPath
     $present = Test-Path -LiteralPath $path -PathType Leaf
+    $shortcutPath = if ($Product.ContainsKey('ShortcutPath')) { Resolve-AiToolPath $Product.ShortcutPath } else { $null }
+    $shortcutPresent = -not $shortcutPath -or (Test-Path -LiteralPath $shortcutPath -PathType Leaf)
+    $formerScoopPath = if ($Product.ContainsKey('FormerScoopPath')) { Resolve-AiToolPath $Product.FormerScoopPath } else { $null }
+    $wrongChannel = [bool] ($formerScoopPath -and (Test-Path -LiteralPath $formerScoopPath -PathType Leaf))
+    $observedVersion = if ($present) { [string] (Get-Item -LiteralPath $path).VersionInfo.FileVersion } else { $null }
+    $versionMatched = [string]::IsNullOrWhiteSpace([string] $Product.Version) -or $observedVersion -eq [string] $Product.Version
     [pscustomobject]@{
         Name = $Product.Name
         Enabled = [bool] $Product.Enabled
@@ -80,12 +94,15 @@ function Get-OpenCodeDesktopRecord {
         Channel = $Product.Channel
         Command = $null
         Installed = $present
-        Version = $Product.Version
+        Version = $observedVersion
+        DeclaredVersion = $Product.Version
         ObservedPath = if ($present) { $path } else { $null }
-        WrongChannel = $false
-        Status = if ($present) { 'compliant' } else { 'absent' }
-        Action = if ($Product.Enabled -and -not $present) { 'install-pinned-release' } else { 'none' }
-        PrivilegeBoundary = 'Current Windows user desktop application; explicit Ensure only.'
+        ShortcutPath = $shortcutPath
+        ShortcutPresent = $shortcutPresent
+        WrongChannel = $wrongChannel
+        Status = if ($wrongChannel) { 'wrong-channel' } elseif (-not $present) { 'absent' } elseif (-not $versionMatched) { 'version-drift' } elseif (-not $shortcutPresent) { 'shortcut-missing' } else { 'compliant' }
+        Action = if (-not $Product.Enabled -or ($present -and $versionMatched -and $shortcutPresent -and -not $wrongChannel)) { 'none' } else { 'install-from-declared-channel' }
+        PrivilegeBoundary = 'Current Windows user verified release extraction; explicit Ensure only.'
     }
 }
 

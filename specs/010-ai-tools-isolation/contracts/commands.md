@@ -6,6 +6,7 @@
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure
 
 pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test
@@ -23,6 +24,9 @@ JSON uses schema version 1 and represents the same checks. Drift exits 1; altere
 failed secure launch prerequisite exits 2 where the command distinguishes it.
 
 ## Managed OpenCode launch
+
+Use `opencode` directly for ordinary native Windows work. Use the command below when the private
+AI-WSL project and verified `nono` restrictions are required.
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Invoke-OpenCodeSandbox.ps1 -Project /home/ai/projects/project

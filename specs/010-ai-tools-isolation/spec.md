@@ -169,7 +169,7 @@ effective font selection while preserving unrelated editor settings and extensio
 
 - A vendor changes an installer URL, package identifier, release layout, or command name.
 - A remote installation script downloads successfully but fails validation or exits part-way.
-- OpenCode Desktop is available for Windows while the CLI must remain confined to the AI WSL.
+- OpenCode Desktop and CLI are available natively on Windows while the restricted CLI remains available in AI WSL.
 - The AI distribution exists under the wrong name, is WSL 1, has the wrong default user, or shares
   an identity with DevOps, Debian, or Debian-MW.
 - The AI user belongs to an administrative group, has a sudo rule, owns a setuid helper, or can
@@ -195,11 +195,11 @@ effective font selection while preserving unrelated editor settings and extensio
 
 ### Functional Requirements
 
-- **REQ-001**: Where the AI-tools category is selected, the workstation manager shall maintain only the products explicitly marked enabled in its reviewed declaration.
+- **REQ-001**: Where the AI-tools category or a focused product subset is selected, the workstation manager shall maintain only the selected products explicitly marked enabled in its reviewed declaration.
 - **REQ-002**: While the AI-tools category is not selected, the workstation manager shall leave its optional products and configuration unchanged.
 - **REQ-003**: When AI-tool state is tested or planned, the workstation manager shall report each product, target environment, selected delivery channel, observed state, privilege boundary, and intended action without changing state.
 - **REQ-004**: When machine-readable AI-tool status is requested, the workstation manager shall return structured results representing the same checks and decisions as the default human report.
-- **REQ-005**: Where OpenCode is enabled, the workstation manager shall provide its CLI only inside the dedicated AI NixOS WSL environment and its Desktop application on Windows.
+- **REQ-005**: Where OpenCode is enabled, the workstation manager shall provide its Desktop application and ordinary CLI on Windows and retain a separately invoked CLI inside the dedicated AI NixOS WSL environment.
 - **REQ-006**: Where Claude Code is enabled, the workstation manager shall use the official PowerShell installer invoked by `irm https://claude.ai/install.ps1 | iex` and omit its former WinGet declaration.
 - **REQ-007**: Where Antigravity is enabled, the workstation manager shall install only its CLI through `irm https://antigravity.google/cli/install.ps1 | iex` without adding a desktop application.
 - **REQ-008**: Where the Cline CLI is enabled, the workstation manager shall install it through the declared global npm command `npm i -g cline`.
@@ -290,8 +290,8 @@ effective font selection while preserving unrelated editor settings and extensio
   are excluded from it.
 - `nono` provides process-level defense in depth inside the AI distribution and does not replace
   the separate distribution, non-root account, disabled interoperability, or mount boundaries.
-- OpenCode Desktop runs on Windows, while the managed OpenCode CLI runs only inside the dedicated
-  AI NixOS WSL environment.
+- OpenCode Desktop and the ordinary CLI run on Windows, while the explicitly managed sandbox entry
+  point runs a separate CLI inside the dedicated AI NixOS WSL environment.
 - Network access remains necessary for selected AI providers and delegated developer tools, but
   local-network and credential access are denied unless a reviewed policy explicitly grants them.
 - Homebrew is permitted inside the AI environment solely as a separately verified package boundary

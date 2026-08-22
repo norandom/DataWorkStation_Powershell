@@ -8,6 +8,7 @@ or create a separate WSL distribution.
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product OpenCode
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json
 pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test
@@ -22,8 +23,9 @@ stopped distribution is reported as not inspected and returns drift instead.
 
 | Product | Location | Declared channel |
 |---|---|---|
-| OpenCode Desktop | Windows | pinned official GitHub release asset and SHA-256 |
-| OpenCode CLI | `NixOS-AI` | pinned Nix derivation in the complete verified Nix store |
+| OpenCode Desktop | Windows | signed official release payload with pinned SHA-256, extracted to the standard per-user Programs path |
+| OpenCode CLI | Windows | official global npm package `opencode-ai` |
+| OpenCode CLI (sandboxed) | `NixOS-AI` | pinned Nix derivation in the complete verified Nix store |
 | Claude Code | Windows | `irm https://claude.ai/install.ps1 \| iex` |
 | Antigravity CLI (`agy`) | Windows | `irm https://antigravity.google/cli/install.ps1 \| iex` |
 | Cline CLI | Windows | `npm i -g cline` |
@@ -39,7 +41,20 @@ Claude Code is not declared through WinGet. If the state command observes the fo
 `Anthropic.ClaudeCode` WinGet path, an explicit `AiTools` Ensure removes it before running the
 official installer. A failed installer stops the module; no alternate package source is used.
 
-An Ensure executes network-delivered vendor code as the current Windows user:
+Install only the two native Windows OpenCode products as the current user:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode
+```
+
+The focused Ensure installs the replacements first, then removes any former Scoop OpenCode Desktop
+and CLI packages. Both silent and interactive execution of the Desktop installer faulted on this
+workstation, so the command verifies its pinned hash and Authenticode signature, extracts the
+embedded application payload with inbox Windows `tar.exe`, and creates the normal Start-menu
+shortcut without executing the broken installer wrapper.
+
+Omitting `-Product` selects every enabled Windows AI product. That broader Ensure executes
+network-delivered vendor code as the current Windows user:
 
 ```powershell
 .\Apply-Workstation.ps1 -Mode Ensure -Module AiTools,AiNixOsWsl
@@ -96,6 +111,17 @@ still enter every distribution as root and access its VHD. It is not a boundary 
 compromised Windows host, WSL kernel, or administrator.
 
 ## Managed OpenCode launch
+
+Choose the entry point according to the trust boundary needed for the task:
+
+| Task | Command | Boundary |
+|---|---|---|
+| Ordinary work in a Windows-accessible project | `opencode` | Native Windows user access |
+| Autonomous or higher-risk work in a private AI project | `Invoke-OpenCodeSandbox.ps1` below | Private `NixOS-AI` VHD plus verified `nono` policy |
+
+The native CLI is intentionally convenient and is not confined by the Nix/nono policy. Use the
+sandbox command when the project or agent activity needs the narrower filesystem, credential,
+socket, and network boundary.
 
 Keep AI projects in the private AI VHD beneath `/home/<ai-user>/projects`. Windows VS Code can open
 the distribution explicitly. The guest does not receive a Windows drive mount.

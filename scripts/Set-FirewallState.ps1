@@ -147,14 +147,15 @@ if ($Mode -eq 'Remove') {
 if ($Mode -in 'Status', 'Disable', 'Enable') {
     if ($Mode -ne 'Status') {
         Assert-Administrator
-        $enabled = $Mode -eq 'Enable'
-        Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled $enabled
+        $enableRequested = $Mode -eq 'Enable'
+        $enabledValue = if ($enableRequested) { 'True' } else { 'False' }
+        Set-NetFirewallProfile -Profile Domain,Private,Public -Enabled $enabledValue
 
         $deadline = (Get-Date).AddSeconds(5)
         do {
             Start-Sleep -Milliseconds 250
             $profiles = @(Get-NetFirewallProfile -Profile Domain,Private,Public)
-            $expected = @($profiles | Where-Object { ("$($_.Enabled)" -eq 'True') -ne $enabled }).Count -eq 0
+            $expected = @($profiles | Where-Object { ("$($_.Enabled)" -eq 'True') -ne $enableRequested }).Count -eq 0
         } while (-not $expected -and (Get-Date) -lt $deadline)
     } else {
         $profiles = @(Get-NetFirewallProfile -Profile Domain,Private,Public)

@@ -99,6 +99,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `.config/go.winget` | Focused official Go MSI-backed package state for Windows development. |
 | `.config/native-text-tools.winget` | Focused native Win32 package state for PowerShell `awk` and `sed`. |
 | `.config/caffeine.winget` | Focused Zhorn Software Caffeine package state. |
+| `.config/mpv.winget` | Focused official mpv Windows CI/MSVC package state. |
 | `.config/malware-analysis-tools.winget` | Opt-in isolated-analysis packages; excluded from the default workstation set. |
 | `config.sample.json` | Portable local font, WSL-boundary, storage-path, Defender-exclusion, and cleanup-retention template; copy it to ignored `config.json`. |
 | `config/local-config.schema.json` | JSON schema for the unified local workstation configuration. |
@@ -114,7 +115,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/workstation-update.psd1` | Plan-first host, package-manager, WSL, Homebrew, container, and release-reconciliation update stages. |
 | `config/hardening-profiles.psd1` | Declarative Windows 11 developer hardening profile. |
 | `config/debloat-profiles.psd1` | Opt-in allowlist for consumer-app and legacy-component removal. |
-| `config/focus-follows-mouse.psd1` | Declarative current-user hover-focus behavior without window raising. |
+| `config/focus-follows-mouse.psd1` | Declarative click-to-focus default with explicit hover-focus toggles. |
 | `config/developer-tools.psd1` | Pinned CodeQL and TTD versions plus Trail of Bits CodeQL packs. |
 | `config/go.psd1` | Go minimum version, workspace, command path, and built-in toolchain-selection policy. |
 | `config/malware-hashes.psd1` | Pinned `malware_hashes` GitHub release asset, SHA-256, and narrow install paths. |
@@ -126,6 +127,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/pester.psd1` | Pinned Pester release, shared module path, test discovery, output bounds, and parallel throttle. |
 | `config/native-text-tools.psd1` | Declares the native BusyBox applet host and the two exposed PowerShell commands. |
 | `config/caffeine.psd1` | Declares the real Caffeine package and installed executable names. |
+| `config/mpv.psd1` | Declares the official mpv package and bounded user GPU configuration. |
 | `config/positron.psd1` | Pins the official Positron x64 user installer, hash, signer, license boundary, and command paths. |
 | `config/quarto.psd1` | Pins portable Quarto/Pandoc and declares private TinyTeX plus the quant-base Python binding. |
 | `config/malware-analysis.psd1` | Bounded host-inspection rules, indicators, supported files, and case defaults. |
@@ -138,11 +140,13 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
 | `config/capabilities.psd1` | Machine-readable investigation and routing catalog. |
 | `config/skillopt.psd1` | Pinned SkillOpt package and conservative optimization defaults. |
+| `config/safe-chain.psd1` | Pinned Safe-Chain installers and binaries for Windows and trusted Debian. |
 | `profile/Shell.ps1` | Minimal managed profile-component loader. |
 | `profile/Config.ps1` | PSReadLine, prompt, and native-command precedence. |
 | `profile/Tools.ps1` | Reusable diagnostics and command implementations. |
 | `profile/Aliases.ps1` | Short user-facing wrappers and Linux-style mappings. |
 | `scripts/Set-PowerShellProfile.ps1` | Deploys and verifies the loader and components for both PowerShell runtimes. |
+| `scripts/Set-SafeChainState.ps1` | Installs and registers Safe-Chain for supported npm and Python package managers on Windows and trusted Debian. |
 | `scripts/Invoke-WorkstationUpdate.ps1` | Plans or explicitly runs the complete dependency-ordered workstation update. |
 | `scripts/Invoke-WindowsUpdate.ps1` | Scans or installs accepted Windows software updates without drivers or automatic restart. |
 | `scripts/Set-LinuxHomebrewState.ps1` | Maintains Homebrew inside Debian WSL as a focused developer-package prerequisite. |
@@ -178,6 +182,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Set-ScoopState.ps1` | Maintains per-user Scoop and official Main/Extras buckets. |
 | `scripts/Set-NativeTextToolsState.ps1` | Maintains native Win32 `awk.exe` and `sed.exe` commands without Git Bash, MSYS, or Cygwin. |
 | `scripts/Set-CaffeineState.ps1` | Maintains the Caffeine package and enabled active-at-launch per-user startup. |
+| `scripts/Set-MpvState.ps1` | Maintains mpv plus safe Radeon D3D11 rendering and hardware-decode configuration. |
 | `scripts/Invoke-MalwareAnalysis.ps1` | Inspects bytes on the host, plans/launches explicit Sandbox jobs, and reports existing evidence. |
 | `scripts/Invoke-MalwareSandboxRunner.ps1` | Guest-only document, reverse-engineering, and bounded detonation runner. |
 | `scripts/Compare-MalwareEvidence.ps1` | Validates clean-control/target case compatibility and produces retained common-tool unified diffs. |
@@ -196,7 +201,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Set-HardeningState.ps1` | Plans, tests, and ensures the reviewed hardening profile without restarting Windows. |
 | `scripts/Set-ExploitProtectionState.ps1` | Plans, tests, applies, or rolls back the separate DEP/ASLR/SEHOP Exploit Protection profile. |
 | `scripts/Set-DebloatState.ps1` | Plans and tests opt-in removals; Ensure requires explicit confirmation and records a snapshot. |
-| `scripts/Set-FocusFollowsMouseState.ps1` | Gives hovered windows focus without changing their Z-order. |
+| `scripts/Set-FocusFollowsMouseState.ps1` | Maintains click-to-focus by default and supports explicit hover-focus toggles. |
 | `scripts/Set-DefenderExclusionState.ps1` | Maintains the declared Microsoft Defender path exclusions. |
 | `scripts/Set-DefenderState.ps1` | Explicitly enables, disables, or reports Defender runtime protection. |
 | `scripts/Set-SmartScreenState.ps1` | Controls SmartScreen Off, Medium/Warn, and Full/Block modes. |
@@ -262,7 +267,7 @@ cleanup-windows
 cleanup-traces
 ```
 
-Windows cleanup requires sudo only with `-Run`, and old restore-point/shadow-copy deletion additionally
+Windows cleanup uses sudo for an authoritative VSS inventory, and old restore-point/shadow-copy deletion additionally
 requires `-ConfirmRestorePoints`. Trace deletion requires `-Run -ConfirmCleanup`. Prefetch, event logs,
 shader/thumbnail caches, active traces, and the separate event-log archive root are preserved. See
 [Disk and trace cleanup](docs/cleanup.md).
@@ -280,6 +285,7 @@ Run one module and its dependencies with `-Module`:
 .\Apply-Workstation.ps1 -Mode Test -Module DeveloperTools -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module PowerShellTesting -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module Go -Plan
+.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module MalwareHashes -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module ContourTerminal -Plan
 .\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan
@@ -310,7 +316,7 @@ not remove unrelated Defender exclusions.
 
 Defender stays active outside the excluded paths. Scheduled work runs only while the machine is idle,
 uses low priority, targets 15% average CPU, and skips missed-scan catch-up jobs. The elevated
-`disable-defender` and `enable-defender` commands change runtime protection but do not start a scan.
+`defender-off` and `defender-on` commands change runtime protection but do not start a scan.
 SmartScreen supports `Off`, `Medium` (`Warn` with override), and `Full` (`Block` without bypass).
 SaveZone controls Mark-of-the-Web separately. This project does not change Smart App Control.
 
@@ -323,7 +329,7 @@ than 14 days and caps the directory at 768 MiB. Rotation starts early when E: ha
 free. The task stages files under ProgramData on C:, runs from an administrator-controlled copy of
 the exporter, and uses the SYSTEM account.
 
-The package set includes PowerShell 7, Windows Terminal, Go, Microsoft Coreutils, ripgrep, rclone,
+The package set includes PowerShell 7, Windows Terminal, Go, mpv, Microsoft Coreutils, ripgrep, rclone,
 WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, Git, GitHub CLI
 (`gh`), Tailscale, WSL, Debian, IrfanView with its matching plug-ins, and lightweight qView for SVG
 profile viewing. Node.js supplies npm and npx.
@@ -364,6 +370,11 @@ The Caffeine module installs Zhorn Software Caffeine through WinGet and starts i
 It does not use the `-startoff` flag. Run `caffeine` to start the verified 64-bit executable on demand;
 use the tray icon to toggle sleep inhibition.
 
+The default `Mpv` module installs the official mpv Windows CI/MSVC package and preserves personal
+settings outside a managed GPU block. The detected Radeon 890M uses `gpu-next`, Direct3D 11, and
+safe automatic hardware decode with software fallback. See
+[GPU-accelerated media playback](docs/media-playback.md).
+
 Start suspicious-file work with bounded host inspection:
 
 ```powershell
@@ -397,8 +408,8 @@ as inert containers and never opens them in licensed Office. See
 ## Automatic versus explicit actions
 
 `Apply-Workstation.ps1 -Mode Ensure` installs or repairs the declared WinGet packages, Hyper-V,
-Windows Sandbox, `DeveloperBaseline` hardening, hover focus, developer CLIs, profiling tools, and
-SkillOpt configuration. Hover focus does not raise or reorder windows. Windows features and
+Windows Sandbox, `DeveloperBaseline` hardening, click-to-focus, developer CLIs, profiling tools, and
+SkillOpt configuration. Optional hover focus does not raise or reorder windows. Windows features and
 hardening use elevated resources, but the command does not restart Windows.
 
 The WPT resource installs only `OptionId.WindowsPerformanceToolkit`, not the full ADK. AMD uProf is

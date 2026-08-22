@@ -55,6 +55,7 @@ nav:
       - Contour Terminal and BlueTerm: contour-terminal.md
       - Terminal keys and scrolling: terminal-keybindings.md
       - Native awk and sed: native-text-tools.md
+      - GPU-accelerated media playback: media-playback.md
       - Reproducible NixOS WSL tools: nixos-wsl.md
       - AI tools and WSL isolation: ai-tools-isolation.md
       - Quantitative research environment: quant-research-environment.md

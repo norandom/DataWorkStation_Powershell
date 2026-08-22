@@ -295,6 +295,15 @@ function Test-StateSafety {
     Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+IrfanSkiljan\.IrfanView\s*$')).Count -eq 1) 'the base package DSL declares IrfanView once'
     Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+IrfanSkiljan\.IrfanView\.PlugIns\s*$')).Count -eq 1) 'the base package DSL declares the matching IrfanView plug-ins once'
     Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+jurplel\.qView\s*$')).Count -eq 1) 'the base package DSL declares the lightweight qView SVG viewer once'
+    Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+OpenJS\.NodeJS\.LTS\s*$')).Count -eq 1) 'the base package DSL declares Node.js LTS once'
+    Assert-True (@([regex]::Matches($basePackages, '(?m)^\s+id:\s+pnpm\.pnpm\s*$')).Count -eq 1) 'the base package DSL declares the official pnpm developer package once'
+    Assert-True ($basePackages -match '(?ms)- name:\s+pnpm\s+type:\s+Microsoft\.WinGet/Package\s+properties:\s+id:\s+pnpm\.pnpm\s+source:\s+winget\s+useLatest:\s+true') 'pnpm follows the official stable WinGet package channel'
+    Assert-True ($basePackages.IndexOf('id: OpenJS.NodeJS.LTS') -lt $basePackages.IndexOf('id: pnpm.pnpm')) 'the base package DSL orders Node.js LTS before pnpm'
+    $capabilities = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\capabilities.psd1')
+    $packageRoute = @($capabilities.Capabilities | Where-Object Id -eq 'workstation-modules')[0]
+    Assert-True ($packageRoute.Triggers -contains 'pnpm') 'the desired-state route discovers pnpm as a managed package command'
+    Assert-True ($packageRoute.InspectCommands -contains 'pnpm --version') 'the desired-state route exposes a direct human pnpm inspection command'
+    Assert-True ($packageRoute.StateCommands -contains '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages') 'the desired-state route keeps pnpm reconciliation in the base Packages module'
     $modeValues = @(Get-ScriptValidateSet -Path $applyPath -ParameterName 'Mode')
     Assert-True (@(Compare-Object @('Ensure', 'Reinitialize', 'Test') ($modeValues | Sort-Object)).Count -eq 0) 'the orchestrator declares Test, Ensure, and Reinitialize'
 
@@ -792,7 +801,7 @@ function Test-SpecificationWorkflow {
 
     $taskIds = @([regex]::Matches($tasks, '(?m)^- \[(?: |x|X)\] T(\d{3})\b') | ForEach-Object { [int] $_.Groups[1].Value })
     Assert-True (@($taskIds | Sort-Object -Unique).Count -eq $taskIds.Count) 'task IDs are unique'
-    Assert-True (@(Compare-Object -ReferenceObject @(1..52) -DifferenceObject ($taskIds | Sort-Object)).Count -eq 0) 'the declared T001 through T052 task sequence has no omissions'
+    Assert-True (@(Compare-Object -ReferenceObject @(1..58) -DifferenceObject ($taskIds | Sort-Object)).Count -eq 0) 'the declared T001 through T058 task sequence has no omissions'
 
     $coverageRows = @([regex]::Matches($tasks, '(?m)^\| (REQ-[^|]+) \| (T[^|]+) \| (T[^|]+) \|$'))
     $coveredRequirements = [Collections.Generic.List[string]]::new()
@@ -904,7 +913,7 @@ function Get-ProfileSurface {
     param([string] $Runtime)
     $loader = Join-Path $repositoryRoot 'profile\Shell.ps1'
     $escapedLoader = $loader.Replace("'", "''")
-    $command = ". '$escapedLoader'; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore); QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore); FocusMouseOn = [bool](Get-Command focus-mouse-on -ErrorAction Ignore); FocusMouseOff = [bool](Get-Command focus-mouse-off -ErrorAction Ignore) } | ConvertTo-Json -Compress"
+    $command = ". '$escapedLoader'; `$mkdir = Get-Command mkdir -ErrorAction Ignore; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore); QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore); FocusMouseOn = [bool](Get-Command focus-mouse-on -ErrorAction Ignore); FocusMouseOff = [bool](Get-Command focus-mouse-off -ErrorAction Ignore); MkdirType = [string]`$mkdir.CommandType; DirectoryStyle = if (`$PSVersionTable.PSEdition -eq 'Core') { [string]`$PSStyle.FileInfo.Directory } else { '' } } | ConvertTo-Json -Compress"
     $result = Invoke-External -FilePath $Runtime -ArgumentList @('-NoLogo', '-NoProfile', '-Command', $command)
     Assert-True ($result.ExitCode -eq 0) "profile loads in '$Runtime': $($result.Output -join ' ')"
     $jsonLine = @($result.Output | Where-Object { [string] $_ -match '^\s*\{' } | Select-Object -Last 1)
@@ -920,6 +929,7 @@ function Test-PowerShellRuntimes {
     Assert-True (@($nativeCatalog.Commands).Count -gt 40) 'native command preference has one declarative catalog'
     Assert-True ($profileConfig -match 'NativeCommands\.cache\.psd1' -and $profileConfig -match 'Test-NativeApplicationAvailable') 'profile consumes the generated native-command cache'
     Assert-True ($profileConfig -match 'Get-Command\s+"\$Name\.exe"') 'a missing or stale cache entry retains live command-discovery fallback'
+    Assert-True ($profileConfig -match 'foreach \(\$commandProvider in ''Alias'', ''Function''\)' -and $profileConfig -match 'PSStyle\.FileInfo\.Directory') 'native precedence removes function shims and PowerShell directory objects receive an explicit readable style'
     Assert-True ($profileDeployer -match 'Get-NativeCommandCacheContent' -and $profileDeployer -match 'Test-NativeCommandCacheDrift') 'profile desired state generates and validates the native-command cache'
     Assert-True ($profileDeployer -match 'Get-Command\s+"\$commandName\.exe"[\s\S]+?Select-Object\s+-First\s+1') 'cache records the first executable PowerShell would invoke when PATH contains duplicates'
     Assert-True ($profileLoader -match 'QuantResearch\.ps1' -and $profileDeployer -match 'QuantResearch\.ps1') 'profile loader and deployer agree on the quantitative research component'
@@ -937,7 +947,9 @@ function Test-PowerShellRuntimes {
         Assert-True $surface.TestCommand 'test-powershell is available'
         Assert-True $surface.QuantStatus 'quant-status is available'
         Assert-True ($surface.FocusMouseOn -and $surface.FocusMouseOff) 'focus-mouse-on and focus-mouse-off are available'
+        Assert-True ($surface.MkdirType -eq 'Application') 'mkdir resolves to the declared native Coreutils application'
     }
+    Assert-True ($core.DirectoryStyle -eq "$([char] 27)[96m") 'PowerShell Core directory objects use bright-cyan foreground without a background override'
 }
 
 function Test-SecurityCommandFamilies {

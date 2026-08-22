@@ -68,7 +68,7 @@ installer operation reports that Windows requires it. Destructive debloat remain
 default run and requires its separate confirmation.
 
 Open a new PowerShell session after profile installation. The prompt should show
-`username@host path>`. Commands such as `rg`, `gh`, `uv`, `npx`, `contour`, `docker`, `mem`, `ports`,
+`username@host path>`. Commands such as `rg`, `gh`, `uv`, `npx`, `pnpm`, `contour`, `docker`, `mem`, `ports`,
 and `tricky` should resolve. Use `wsl-nix helm version`, `wsl-nix kubectl version --client`, and
 `nixos-check` for the reproducible NixOS tool boundary.
 

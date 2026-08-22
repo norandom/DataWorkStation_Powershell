@@ -4,7 +4,7 @@
         @{
             Id = 'powershell-environment'
             Title = 'Staged PowerShell bootstrap, dual-runtime profile, and Windows Terminal'
-            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile')
+            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile', 'mkdir', 'directory color', 'ansi color')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan'
@@ -251,7 +251,7 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
@@ -264,10 +264,12 @@
                 'cleanup-traces'
                 'cleanup-traces -Json'
                 'workstation-config'
+                '.\Apply-Workstation.ps1 -Mode Test -Module Packages -Plan'
+                'pnpm --version'
                 'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan'
             )
-            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv')
+            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{
@@ -318,11 +320,14 @@
             FeatureSpec = 'specs/013-default-workstation-utilities'
             Modules = @('SafeChain')
             Title = 'Safe-Chain package-manager protection'
-            Triggers = @('safe-chain', 'npm malware', 'pypi malware', 'package supply chain', 'minimum package age', 'protected npm', 'protected uv')
+            Triggers = @('safe-chain', 'pnpm safe-chain', 'protected pnpm', 'pnpx', 'npm malware', 'pypi malware', 'package supply chain', 'minimum package age', 'protected npm', 'protected uv')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-SafeChainState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module SafeChain -Plan'
+                'Get-Command pnpm,pnpx -CommandType Function | Format-List Name,Definition'
+                'pnpm safe-chain-verify'
+                'pnpx safe-chain-verify'
                 'safe-chain --version'
                 'npm safe-chain-verify'
                 'uv safe-chain-verify'
@@ -337,20 +342,23 @@
         @{
             Id = 'ai-tools-isolation'
             FeatureSpec = 'specs/010-ai-tools-isolation'
-            Modules = @('AiTools', 'AiNixOsWsl', 'DeveloperEditor')
-            Title = 'AI tools, developer editor, and restricted WSL trust boundaries'
-            Triggers = @('opencode', 'claude code', 'antigravity cli', 'cline', 'copilot cli', 'vscode', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
+            Modules = @('AiTools', 'AiNixOsWsl', 'OpenCodeExtensions', 'DeveloperEditor')
+            Title = 'AI tools, OpenCode extensions, developer editor, and restricted WSL trust boundaries'
+            Triggers = @('opencode', 'opencode theme', 'cream blue', 'cobalt', 'openultracode', 'claude code', 'antigravity cli', 'cline', 'copilot cli', 'vscode', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product OpenCode'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json'
+                'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1'
                 'pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1 -Json'
             )
             StateCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Ensure'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module DeveloperEditor'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module AiTools,AiNixOsWsl'

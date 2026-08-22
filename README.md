@@ -93,7 +93,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 
 | Path | Responsibility |
 |---|---|
-| `.config/configuration.winget` | Declarative WinGet package state, including `uv`, IrfanView, and lightweight qView. |
+| `.config/configuration.winget` | Declarative WinGet package state, including Node.js LTS, pnpm, `uv`, IrfanView, and lightweight qView. |
 | `.config/git.winget` | Focused Git package state used by Scoop dependencies. |
 | `.config/powershell7.winget` | Focused PowerShell 7 package state used by Contour, package, and profile dependencies. |
 | `.config/go.winget` | Focused official Go MSI-backed package state for Windows development. |
@@ -140,13 +140,13 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
 | `config/capabilities.psd1` | Machine-readable investigation and routing catalog. |
 | `config/skillopt.psd1` | Pinned SkillOpt package and conservative optimization defaults. |
-| `config/safe-chain.psd1` | Pinned Safe-Chain installers and binaries for Windows and trusted Debian. |
+| `config/safe-chain.psd1` | Pinned Safe-Chain installers, binaries, and protected-command inventory for Windows and trusted Debian. |
 | `profile/Shell.ps1` | Minimal managed profile-component loader. |
 | `profile/Config.ps1` | PSReadLine, prompt, and native-command precedence. |
 | `profile/Tools.ps1` | Reusable diagnostics and command implementations. |
 | `profile/Aliases.ps1` | Short user-facing wrappers and Linux-style mappings. |
 | `scripts/Set-PowerShellProfile.ps1` | Deploys and verifies the loader and components for both PowerShell runtimes. |
-| `scripts/Set-SafeChainState.ps1` | Installs and registers Safe-Chain for supported npm and Python package managers on Windows and trusted Debian. |
+| `scripts/Set-SafeChainState.ps1` | Installs and registers Safe-Chain, then validates every declared wrapper—including pnpm/pnpx—on Windows and trusted Debian. |
 | `scripts/Invoke-WorkstationUpdate.ps1` | Plans or explicitly runs the complete dependency-ordered workstation update. |
 | `scripts/Invoke-WindowsUpdate.ps1` | Scans or installs accepted Windows software updates without drivers or automatic restart. |
 | `scripts/Set-LinuxHomebrewState.ps1` | Maintains Homebrew inside Debian WSL as a focused developer-package prerequisite. |
@@ -330,15 +330,19 @@ free. The task stages files under ProgramData on C:, runs from an administrator-
 the exporter, and uses the SYSTEM account.
 
 The package set includes PowerShell 7, Windows Terminal, Go, mpv, Microsoft Coreutils, ripgrep, rclone,
-WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, Git, GitHub CLI
+WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, pnpm, Git, GitHub CLI
 (`gh`), Tailscale, WSL, Debian, IrfanView with its matching plug-ins, and lightweight qView for SVG
-profile viewing. Node.js supplies npm and npx.
+profile viewing. Node.js supplies npm and npx; the same default `Packages` state maintains pnpm
+through the official `pnpm.pnpm` WinGet package, and the default `SafeChain` module keeps its pnpm
+and pnpx shell wrappers routed through Aikido Safe-Chain.
 
 New diagnostic captures default to `paths.traces`. Use `cleanup-windows` and `cleanup-traces` to
 inspect cleanup plans; destructive execution remains explicit. See [Disk and trace cleanup](docs/cleanup.md).
 
 Windows PowerShell 5.1 and the newest installed PowerShell Core load the same prompt, aliases, tools,
-and readline settings. Windows Terminal starts PowerShell Core by default and keeps Windows
+and readline settings. Declared native commands also replace same-named PowerShell convenience
+functions, so Coreutils `mkdir` is silent on success; PowerShell-native directory objects use a
+bright-cyan foreground that remains readable on the Blue theme. Windows Terminal starts PowerShell Core by default and keeps Windows
 PowerShell available. Its shared Blue appearance is applied through `profiles.defaults`; unrelated
 profiles, keybindings, themes, and settings are preserved.
 

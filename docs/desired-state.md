@@ -79,6 +79,12 @@ The focused `Caffeine` module installs the real Zhorn Software tray utility and 
 
 `.config/windows-terminal.winget` declares the stable Windows Terminal package. `config/windows-terminal.psd1` declares only the managed settings subset: PowerShell Core as the default profile, both PowerShell profiles visible, generated `NixOS` and `NixOS-AI` profiles labelled `NixOS DevOps` and `NixOS AI`, shared Blue appearance, and a visible scrollbar. `Set-WindowsTerminalState.ps1 -Mode Test` is observational and never invokes WinGet; `Ensure` backs up an existing settings file before a semantic merge and preserves unrelated profiles, actions, themes, schemes, and root properties. Reopen Terminal after changing its settings. The PowerShell profile resource continues to deploy the same component set to both `Documents\WindowsPowerShell` and `Documents\PowerShell`. Profile `Ensure` also resolves the declared native executables once and writes a generated availability cache beside each component set. Normal shell startup validates cached executable paths and performs live command discovery only for a missing or stale entry, so native commands retain precedence without rescanning the complete catalog in every session.
 
+The profile removes both aliases and PowerShell convenience functions that shadow an available
+declared Coreutils executable, so `mkdir` resolves to the native command and successful creation is
+silent. PowerShell Core directory objects use a bright-cyan foreground with no ANSI background
+override; native `ls` keeps its independent color configuration and the shared terminal palette is
+unchanged.
+
 `.config/go.winget` declares the official MSI-backed `GoLang.Go` package. The focused `Go` resource
 keeps `%USERPROFILE%\go` as `GOPATH`, adds its `bin` directory to the user path, accepts an empty
 `GOBIN`, and requires effective `GOTOOLCHAIN=auto`. It leaves user `GOROOT` unset so the MSI owns the
@@ -117,7 +123,7 @@ SkillOpt 0.2.0 is installed automatically through an isolated `uv tool` environm
 
 The default `NixOsWsl` module installs the pinned NixOS-WSL image and activates the repository's locked system generation for Helm, kubectl, the Pulumi CLI, Git, jq, and native OpenSSH. Its read-only self-check compares the active system with the evaluated flake, verifies the deployed source manifest, checks command provenance and the restricted host-integration boundary, and content-verifies the complete local Nix store. DevOps credentials stay in its private VHD. `SharedSshConfig` links the canonical Windows `%USERPROFILE%\.ssh\config` only into ordinary trusted Debian; DevOps NixOS, AI NixOS, and Debian-MW are excluded. See [Reproducible NixOS WSL tools](nixos-wsl.md), [NixOS integrity and alteration detection](nixos-integrity.md), and [AI tools, editor, and WSL isolation](ai-tools-isolation.md).
 
-`DeveloperEditor` maintains stable VS Code, the pinned `jx22/berg` source theme, Cline, Jupyter, Python, and GitHub Copilot extensions, and the existing local-or-Fira font selection. `AiTools` and `AiNixOsWsl` are separate opt-in modules for native Windows agents and the additional restricted OpenCode CLI environment. The AI-tools state command accepts a focused `-Product` selection, so OpenCode Desktop and the native CLI can be reconciled without installing every other agent. Test and Plan are observational; Ensure executes reviewed network installers and may create or restart only the selected AI distribution. See [AI tools, editor, and WSL isolation](ai-tools-isolation.md).
+`DeveloperEditor` maintains stable VS Code, the pinned `jx22/berg` source theme, Cline, Jupyter, Python, and GitHub Copilot extensions, and the existing local-or-Fira font selection. `OpenCodeExtensions` maintains the pinned Cream Blue theme set, selects Cobalt, and installs the verified OpenUltraCode release while merge-preserving the global OpenCode configuration. `AiTools` and `AiNixOsWsl` are separate opt-in modules for native Windows agents and the additional restricted OpenCode CLI environment. The AI-tools state command accepts a focused `-Product` selection, so OpenCode Desktop and the native CLI can be reconciled without installing every other agent. Test and Plan are observational; Ensure executes reviewed network installers and may create or restart only the selected AI distribution. See [AI tools, editor, and WSL isolation](ai-tools-isolation.md).
 
 The selectable `DeveloperTools` bundle pulls in `Go`, `LinuxHomebrew`, `LinuxAutomation`, and `DeveloperDocker` after the Debian and package prerequisites. `LinuxAutomation` installs Homebrew `uv` and the pinned pyinfra version. `DeveloperDocker` adopts the existing official Docker CE packages, root-owned service/socket, and selected user's group membership through `linux/developer_docker.py`; this rootful daemon is retained because Dagger requires privileged engine capabilities. The developer bundle then runs the repository's Debian-native deploy:
 
@@ -141,9 +147,26 @@ hash-pinned container file in `Debian-MW`; no analysis command builds, downloads
 
 `PowerShellTesting` is a focused default module that depends on PowerShell 7 and maintains exact Pester 6.1.0 under the shared per-user `Documents\WindowsPowerShell\Modules` tree. `Test` only compares the declared manifest and what PowerShell 7 and Windows PowerShell 5.1 can resolve. `Ensure` is an explicit networked, non-elevated PSResourceGet installation. Running `test-powershell` never installs or upgrades the framework. The modern lane enables Pester's bounded file-level parallel mode; the compatibility lane and files marked `#pester:no-parallel` execute sequentially.
 
+The default `Packages` module maintains Node.js LTS and the official `pnpm.pnpm` package in one
+WinGet Configuration document. Test is observational; Ensure explicitly reconciles the complete
+base package set, so it may install or update other drifted packages in the same declaration.
+The separate default `SafeChain` module requires Aikido's registered `pnpm` and `pnpx` wrappers in
+both managed development shells:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Test -Module Packages
+Get-Command pnpm,pnpx -CommandType Function | Format-List Name,Definition
+pnpm safe-chain-verify
+pnpx safe-chain-verify
+pnpm --version
+.\Apply-Workstation.ps1 -Mode Ensure -Module Packages
+```
+
 `SafeChain` is a focused default module that installs the hash-pinned Aikido Safe-Chain release in
 the current Windows user and the declared trusted Debian developer distribution. It registers the
-upstream PowerShell and Bash startup scripts for supported npm and Python package managers. The
+upstream PowerShell and Bash startup scripts for supported npm and Python package managers, and
+tests every command in the declared wrapper inventory rather than accepting an initialization
+file based on presence alone. That inventory includes `pnpm` and `pnpx`. The
 resource deliberately excludes Debian-MW, NixOS, and NixOS-AI, verifies both installer and binary
 hashes, and preserves an unexpected binary before repair. Inspect it with
 `pwsh -NoProfile -File .\scripts\Set-SafeChainState.ps1 -Mode Test` or repair it with

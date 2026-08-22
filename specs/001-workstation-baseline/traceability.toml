@@ -203,3 +203,11 @@ tests = ["tests/Test-WorkstationBaseline.ps1#WindowsTerminal"]
 [requirements.REQ-051]
 verification = "automated"
 tests = ["tests/Test-WorkstationBaseline.ps1#WindowsTerminal"]
+
+[requirements.REQ-052]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#PowerShellRuntimes"]
+
+[requirements.REQ-053]
+verification = "automated"
+tests = ["tests/Test-WorkstationBaseline.ps1#StateSafety"]

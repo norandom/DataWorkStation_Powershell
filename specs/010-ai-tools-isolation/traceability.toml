@@ -147,3 +147,23 @@ tests = ["tests/Test-AiToolsIsolation.ps1#FocusedModuleBoundary"]
 [requirements.REQ-037]
 verification = "automated"
 tests = ["tests/Test-AiToolsIsolation.ps1#PortableSecretExclusions"]
+
+[requirements.REQ-038]
+verification = "automated"
+tests = ["tests/Test-OpenCodeExtensionsState.ps1#Declaration"]
+
+[requirements.REQ-039]
+verification = "automated"
+tests = ["tests/Test-OpenCodeExtensionsState.ps1#StateContract"]
+
+[requirements.REQ-040]
+verification = "automated"
+tests = ["tests/Test-OpenCodeExtensionsState.ps1#StateContract"]
+
+[requirements.REQ-041]
+verification = "automated"
+tests = ["tests/Test-OpenCodeExtensionsState.ps1#Declaration", "tests/Test-OpenCodeExtensionsState.ps1#StateContract"]
+
+[requirements.REQ-042]
+verification = "automated"
+tests = ["tests/Test-OpenCodeExtensionsState.ps1#StateContract", "tests/Test-OpenCodeExtensionsState.ps1#ModuleRouting"]

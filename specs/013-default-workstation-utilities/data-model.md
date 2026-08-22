@@ -15,8 +15,8 @@ Reinitialize. Test reports the transition that would be needed without performin
 
 - Platform identity: Windows or trusted Debian
 - Release version, installer URI, installer digest, binary path, and binary digest
-- Shell registration identity and expected initialization content
-- Observed presence, integrity, registration, and compliance
+- Shell registration identity, expected initialization content, and declared command wrappers
+- Observed presence, integrity, registration, wrapper coverage, and compliance
 
 Each platform is evaluated independently. An unverified installer or binary is a terminal failure,
 not a partially compliant state.

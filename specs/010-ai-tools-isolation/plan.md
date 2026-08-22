@@ -9,7 +9,8 @@
 Add two focused desired-state modules: an opt-in `AiTools` module for the requested native agents
 and a separate opt-in `AiNixOsWsl` module for the OpenCode CLI boundary; add a `DeveloperEditor`
 module for stable VS Code, the pinned Berg source theme, four extensions, and the existing local-font
-selection. Strengthen the existing DevOps NixOS and Debian-MW distributions by disabling WSL
+selection, plus a default `OpenCodeExtensions` module for pinned Cream Blue themes and verified
+OpenUltraCode assets. Strengthen the existing DevOps NixOS and Debian-MW distributions by disabling WSL
 interop and automatic host mounts, deploy their configuration through Windows-owned standard-input
 streams, keep ordinary Debian explicitly trusted, and add bounded case import/export commands for
 Debian-MW. The AI launcher uses a root-owned reviewed `nono` policy and refuses to start unless the

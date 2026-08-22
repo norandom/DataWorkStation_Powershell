@@ -228,3 +228,12 @@ boundary.
 - [X] T043 Extend installed-font validation to recognize the embedded family metadata of eligible
   font files in the per-user Windows font directory while preserving the portable Fira fallback
   per REQ-011–REQ-012 and SC-009 (partial)
+
+## Phase 10: OpenCode extensions
+
+- [X] T044 Add pinned Cream Blue and OpenUltraCode declarations plus focused red contract coverage
+  for REQ-038–REQ-042 in `config/opencode-extensions.psd1` and `tests/Test-OpenCodeExtensionsState.ps1`.
+- [X] T045 Implement observational Plan/Test and explicit verified Ensure/Reinitialize with bounded
+  OpenCode config merges and backups in `scripts/Set-OpenCodeExtensionsState.ps1` for REQ-038–REQ-042.
+- [X] T046 Route and document the default `OpenCodeExtensions` module and add Pester/traceability
+  coverage in the module catalog, capability catalog, operator docs, and feature artifacts.

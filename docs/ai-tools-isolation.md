@@ -1,8 +1,8 @@
 # AI tools, editor, and WSL isolation
 
-The AI tooling is split into three focused modules. `DeveloperEditor` is part of the normal
-developer workstation. `AiTools` and `AiNixOsWsl` are opt-in because they execute vendor installers
-or create a separate WSL distribution.
+The AI tooling is split into four focused modules. `DeveloperEditor` and `OpenCodeExtensions` are
+part of the normal developer workstation. `AiTools` and `AiNixOsWsl` are opt-in because they execute
+vendor installers or create a separate WSL distribution.
 
 ## Inspect before changing anything
 
@@ -10,6 +10,7 @@ or create a separate WSL distribution.
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product OpenCode
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1
@@ -18,6 +19,25 @@ pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1 -Json
 
 These commands are observational. The trust command does not start stopped distributions; a
 stopped distribution is reported as not inspected and returns drift instead.
+
+## OpenCode themes and OpenUltraCode
+
+`OpenCodeExtensions` installs the three Cream Blue themes from pinned commit
+`7cef8d00dccd2c459df6bc1fe867a80bef668790` and selects `cream-blue-cobalt` in the global
+`tui.json`. It installs the hash-verified OpenUltraCode 0.1.3 release under the user's local data
+directory, publishes its commands, agents, and skill into the global OpenCode configuration, and
+registers the release-local plugin while preserving unrelated configuration and assets.
+
+Inspect first, then explicitly reconcile as the current user:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Ensure
+```
+
+Ensure downloads only the declared commit/release, verifies SHA-256 and the complete release
+inventory, and backs up managed files before replacing drift. Restart an already-running OpenCode
+TUI after reconciliation so it loads the selected theme and plugin.
 
 ## Selected tools and sources
 

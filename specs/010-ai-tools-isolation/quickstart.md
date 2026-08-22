@@ -16,6 +16,7 @@ ears-sdd validate --feature specs/010-ai-tools-isolation --phase tasks
 ```powershell
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan -Product OpenCode
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1

@@ -351,6 +351,19 @@
             Description = 'Stable VS Code, pinned Berg theme, developer extensions, and merge-preserved font settings.'
         }
         @{
+            Name = 'OpenCodeExtensions'
+            FeatureSpec = 'specs/010-ai-tools-isolation'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 53
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Pinned Cream Blue OpenCode themes with Cobalt selected and verified OpenUltraCode assets.'
+        }
+        @{
             Name = 'MalwareHashes'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

@@ -214,6 +214,28 @@ settings.
 
 ---
 
+## Phase 11: Native mkdir and directory readability
+
+- [x] T053 Add failing dual-runtime assertions for native `mkdir` precedence and foreground-only
+  PowerShell directory styling in `tests/Test-WorkstationBaseline.ps1#PowerShellRuntimes` for REQ-052.
+- [x] T054 Remove available native-command function shims and declare the PowerShell Core directory
+  style in `profile/Config.ps1` for REQ-052.
+- [x] T055 Update PowerShell capability triggers, operator documentation, traceability, and run the
+  focused profile Test/Ensure/smoke sequence for REQ-035, REQ-036, and REQ-052.
+
+---
+
+## Phase 12: pnpm in the base developer package set
+
+- [x] T056 Add failing exact-once, channel, ordering, and routing assertions in
+  `tests/Test-WorkstationBaseline.ps1#StateSafety` for REQ-053.
+- [x] T057 Add `pnpm.pnpm` beside Node.js LTS in `.config/configuration.winget` and update package
+  documentation, capability routing, and the release note for REQ-035, REQ-036, and REQ-053.
+- [x] T058 Promote traceability and run StateSafety, routing smoke, repository lint, strict docs,
+  host Test/install/Test readback, and the final EARS gate for REQ-037 and REQ-053.
+
+---
+
 ## Requirement Coverage Matrix
 
 | Requirement | Test-first task | Remediation or verification task |
@@ -239,8 +261,10 @@ settings.
 | REQ-044, REQ-045, REQ-046, REQ-047 | T044 | T047, T050–T052 |
 | REQ-048 | T045 | T049–T052 |
 | REQ-049, REQ-050, REQ-051 | T046 | T048–T052 |
+| REQ-052 | T053 | T054–T055 |
+| REQ-053 | T056 | T057–T058 |
 
-Coverage: 51 of 51 requirements have a preceding test task and a named remediation or verification
+Coverage: 53 of 53 requirements have a preceding test task and a named remediation or verification
 task.
 
 ### Success-criterion coverage
@@ -318,7 +342,7 @@ can be drafted independently.
 
 ## Completion Conditions
 
-- All 52 tasks follow the checklist format with stable IDs and concrete paths.
+- All 58 tasks follow the checklist format with stable IDs and concrete paths.
 - Every behavior-changing task names its requirements and selectors.
 - Every requirement is covered by a preceding failing-test task.
 - Manual verification remains only where normal automated execution would violate a host or safety

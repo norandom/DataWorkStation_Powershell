@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add the official `pnpm.pnpm` WinGet package alongside Node.js LTS and require its declared pnpm/pnpx shell wrappers to remain under Aikido Safe-Chain.
+- Restore native Coreutils `mkdir` precedence over PowerShell's convenience function and render PowerShell directory objects with a readable bright-cyan foreground instead of the default blue ANSI background.
+- Add hash-pinned Cream Blue OpenCode themes with Cobalt selected by default and install the verified OpenUltraCode 0.1.3 commands, agents, skill, and plugin through a focused desired-state module.
+
 ## 3.1.0 - 2026-08-22
 
 - Add the official mpv Windows CI/MSVC build as a default focused module with a managed `mpv` command, Radeon 890M Direct3D 11 rendering, and safe hardware-decoder fallback.

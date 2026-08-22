@@ -12,7 +12,7 @@ host-dependent checks; no Ensure or Reinitialize command is part of this guide.
 .\ears-sdd.ps1 validate --project . --phase final
 ```
 
-Expected outcome: one feature, 51 requirements, and zero findings at each completed phase.
+Expected outcome: one feature, 53 requirements, and zero findings at each completed phase.
 
 ## 2. Inspect dependency plans
 

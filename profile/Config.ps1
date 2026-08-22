@@ -39,7 +39,14 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     }
 }
 
-# Prefer managed native commands over same-named Windows PowerShell aliases.
+# PowerShell's default directory style uses a blue background, which is hard to read on the
+# managed Blue terminal theme. Keep semantic styling in PowerShell and leave terminal palettes
+# unchanged; native ls retains its own color configuration.
+if ($PSVersionTable.PSEdition -eq 'Core') {
+    $PSStyle.FileInfo.Directory = $PSStyle.Foreground.BrightCyan
+}
+
+# Prefer managed native commands over same-named PowerShell aliases and convenience functions.
 # Ensure generates the availability cache once. Startup validates cached paths and
 # resolves only missing or stale entries, preserving the safe fallback behavior.
 $nativeCommandCatalogPath = Join-Path $PSScriptRoot 'NativeCommands.psd1'
@@ -78,8 +85,11 @@ function Test-NativeApplicationAvailable {
 }
 
 foreach ($commandName in $nativeCommandNames) {
-    if ((Test-NativeApplicationAvailable -Name $commandName) -and (Test-Path "Alias:$commandName")) {
-        Remove-Item "Alias:$commandName" -Force
+    if (Test-NativeApplicationAvailable -Name $commandName) {
+        foreach ($commandProvider in 'Alias', 'Function') {
+            $shadowPath = "${commandProvider}:$commandName"
+            if (Test-Path $shadowPath) { Remove-Item $shadowPath -Force }
+        }
     }
 }
 
@@ -95,7 +105,7 @@ if (Test-NativeApplicationAvailable -Name $nativeCommandCatalog.CurlCommand) {
 Remove-Item Function:Test-NativeApplicationAvailable -ErrorAction Ignore
 Remove-Variable nativeCommandCatalogPath, nativeCommandCachePath, nativeCommandCatalog,
     nativeCommandNames, nativeCommandCatalogKey, nativeCommandCache, cachedNativeCommands,
-    pathDirectories -ErrorAction Ignore
+    pathDirectories, commandProvider, shadowPath -ErrorAction Ignore
 
 function Test-ContourTerminalSession {
     -not [Console]::IsOutputRedirected -and (

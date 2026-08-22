@@ -68,7 +68,8 @@ Bin, and Windows rollback material are excluded from the Windows cleanup profile
 
 ## Files and text
 
-Microsoft Coreutils executables take precedence over same-named PowerShell aliases:
+Microsoft Coreutils executables take precedence over same-named PowerShell aliases and convenience
+functions:
 
 `cat`, `cp`, `cut`, `date`, `dir`, `echo`, `env`, `expand`, `factor`, `false`, `head`, `hostname`, `join`, `link`, `ln`, `ls`, `md5sum`, `mkdir`, `mktemp`, `mv`, `nl`, `nproc`, `od`, `paste`, `pathchk`, `printenv`, `printf`, `pwd`, `readlink`, `realpath`, `rm`, `rmdir`, `sha1sum`, `sha256sum`, `sha512sum`, `sleep`, `sort`, `split`, `stat`, `sum`, `tac`, `tail`, `tee`, `test`, `touch`, `tr`, `true`, `truncate`, `uname`, `uniq`, `wc`, `whoami`.
 
@@ -81,6 +82,29 @@ Microsoft Coreutils executables take precedence over same-named PowerShell alias
 | `curl` | Native Windows `curl.exe`, not `Invoke-WebRequest`. |
 
 Options such as `ls -la` now belong to the native Coreutils command. PowerShell `Get-ChildItem` parameters no longer apply to `ls`.
+Successful `mkdir NAME` is likewise the native Coreutils command and produces no object listing.
+PowerShell-native directory objects, such as output from `New-Item -ItemType Directory`, use a
+bright-cyan foreground without the default blue ANSI background so they remain readable on the
+managed Blue terminal theme. This semantic style does not alter the terminal palette or native
+`ls` colors.
+
+The default Windows package set includes Node.js LTS with npm/npx and the official pnpm package.
+Inspect the package state without changing it, check the installed command, or explicitly
+reconcile the complete base package set:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Test -Module Packages
+Get-Command pnpm,pnpx -CommandType Function | Format-List Name,Definition
+pnpm safe-chain-verify
+pnpx safe-chain-verify
+pnpm --version
+.\Apply-Workstation.ps1 -Mode Ensure -Module Packages
+```
+
+`Packages` owns the complete base WinGet declaration, so its Ensure mode may reconcile other
+drifted base packages as well as pnpm. The managed PowerShell profiles load Aikido Safe-Chain's
+`pnpm` and `pnpx` functions; the Safe-Chain desired state verifies those wrappers on Windows and
+trusted Debian and explicitly repairs missing wrappers only through `SafeChain` Ensure.
 
 ## Downloads, sync, and virtual mounts
 

@@ -7,8 +7,8 @@
 ## Summary
 
 Characterize the existing Windows workstation repository as a stable Spec Kit baseline. Preserve
-the existing focused desired-state and evidence-first architecture, freeze the current 40-module
-and 25-capability inventories, and introduce deterministic EARS/TDD traceability. Static catalog,
+the existing focused desired-state and evidence-first architecture, maintain the current 53-module
+and 32-capability inventories, and retain deterministic EARS/TDD traceability. Static catalog,
 documentation, and workflow contracts will receive repository-local automated characterization;
 host-dependent, privileged, destructive, graphics, reboot, and evidence-order behavior retains
 explicit manual verification until an isolated Windows test harness is available.
@@ -43,7 +43,7 @@ developer checkout; module planning and capability discovery remain interactive
 reinitialization, or reboot; no machine-local secrets or licenses in version control; no
 requirement prose or identifiers in production roots
 
-**Scale/Scope**: 40 desired-state modules, 25 routed capabilities, 51 baseline requirements,
+**Scale/Scope**: 53 desired-state modules, 32 routed capabilities, 53 baseline requirements,
 separate focused skills, and one Windows workstation per operator
 
 ## Constitution Check
@@ -196,6 +196,8 @@ VM harness can replace these entries without changing requirement intent.
 | REQ-049 | merge-preserving Windows Terminal default-profile state | A and B |
 | REQ-050 | shared PowerShell appearance with unrelated settings retained | A and B |
 | REQ-051 | observational Windows Terminal Test mode | A and B |
+| REQ-052 | native mkdir precedence and readable PowerShell directory styling | B |
+| REQ-053 | base WinGet pnpm declaration and Packages reconciliation | A and C |
 
 ## Complexity Tracking
 

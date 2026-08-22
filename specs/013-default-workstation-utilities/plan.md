@@ -8,7 +8,8 @@
 
 Own two focused default workstation modules: mpv provides bounded Radeon D3D11 playback state with
 safe decoder fallback, while Safe-Chain provides hash-verified package-manager protection only on
-Windows and trusted Debian. Both retain observational Test behavior, explicit Ensure behavior,
+Windows and trusted Debian and enforces every declared wrapper, including pnpm/pnpx. Both retain
+observational Test behavior, explicit Ensure behavior,
 direct human commands, contract tests, and publication governance.
 
 ## Technical Context
@@ -89,6 +90,8 @@ ownership feature.
 4. Verify Safe-Chain installer and binary hashes independently on Windows and Linux.
 5. Target only the current Windows user and the configured trusted Debian distribution.
 6. Attach both modules and the Safe-Chain state route to this complete feature directory.
+7. Treat every configured Safe-Chain command wrapper as desired state on Windows and Debian rather
+   than accepting an initialization file based only on its presence.
 
 ## Complexity Tracking
 

@@ -53,6 +53,21 @@ function Test-WindowsProfile {
     @(Get-Content -LiteralPath $Path | Where-Object { $_ -ceq $windowsProfileLine }).Count -eq 1
 }
 
+function Test-CommandWrappers {
+    param([AllowEmptyString()][string] $Content)
+    if ([string]::IsNullOrWhiteSpace($Content)) { return $false }
+    foreach ($name in @($configuration.SupportedCommands)) {
+        $pattern = '(?m)^\s*function\s+' + [regex]::Escape([string] $name) + '(?:\s*\(\s*\))?\s*\{'
+        if ($Content -notmatch $pattern) { return $false }
+    }
+    $true
+}
+
+function Test-WindowsInitScript {
+    if (-not (Test-Path -LiteralPath $windowsInit -PathType Leaf)) { return $false }
+    Test-CommandWrappers -Content (Get-Content -LiteralPath $windowsInit -Raw)
+}
+
 function Invoke-Wsl {
     param([Parameter(ValueFromRemainingArguments = $true)][string[]] $ArgumentList)
     & wsl.exe -d $distribution --user $linuxUser -- @ArgumentList
@@ -83,6 +98,13 @@ function Test-LinuxProfile {
     $LASTEXITCODE -eq 0
 }
 
+function Test-LinuxInitScript {
+    if (-not (Test-LinuxFile -Path $linuxInit)) { return $false }
+    $output = @(Invoke-Wsl cat -- $linuxInit 2>$null)
+    if ($LASTEXITCODE -ne 0) { return $false }
+    Test-CommandWrappers -Content ($output -join "`n")
+}
+
 function Get-WindowsManagerNames {
     @($configuration.SupportedCommands | Where-Object {
         Get-Command $_ -CommandType Application,ExternalScript -ErrorAction Ignore | Select-Object -First 1
@@ -104,13 +126,13 @@ function Get-SafeChainState {
         WindowsBinary = Test-Path -LiteralPath $windowsBinary -PathType Leaf
         WindowsBinaryHash = $windowsHash
         WindowsVersion = $windowsHash -and (Test-WindowsVersion)
-        WindowsInitScript = Test-Path -LiteralPath $windowsInit -PathType Leaf
+        WindowsInitScript = Test-WindowsInitScript
         WindowsPowerShellProfile = Test-WindowsProfile -Path $windowsProfiles[0]
         PowerShellCoreProfile = Test-WindowsProfile -Path $windowsProfiles[1]
         DebianBinary = Test-LinuxFile -Path $linuxBinary
         DebianBinaryHash = $linuxHash
         DebianVersion = $linuxHash -and (Test-LinuxVersion)
-        DebianInitScript = Test-LinuxFile -Path $linuxInit
+        DebianInitScript = Test-LinuxInitScript
         DebianBashProfile = Test-LinuxProfile
     }
 }
@@ -120,6 +142,7 @@ function Write-SafeChainState {
     $State.GetEnumerator() | ForEach-Object {
         Write-Host ("{0}: {1}" -f $_.Key, $(if ($_.Value) { 'compliant' } else { 'drift detected' }))
     }
+    Write-Host "Declared Safe-Chain wrappers: $($configuration.SupportedCommands -join ', ')"
     Write-Host "Protected Windows commands: $((Get-WindowsManagerNames) -join ', ')"
     Write-Host "Protected Debian commands: $((Get-LinuxManagerNames) -join ', ')"
 }

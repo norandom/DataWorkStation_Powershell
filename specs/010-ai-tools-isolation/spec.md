@@ -232,6 +232,11 @@ effective font selection while preserving unrelated editor settings and extensio
 - **REQ-035**: When this feature changes a command or desired-state interface, the project shall update the module catalog, capability routing, operator documentation, and human and structured examples together.
 - **REQ-036**: The AI-tools and WSL-isolation capability shall remain focused and separate from malware execution, forensic acquisition, Windows security-policy, and unrelated developer-environment modules.
 - **REQ-037**: While portable configuration is tracked, the project shall exclude credentials, tokens, private keys, private fonts, machine paths, locally generated sandbox state, and case evidence.
+- **REQ-038**: The workstation manager shall declare exact source identities and SHA-256 values for every managed Cream Blue theme and OpenUltraCode release payload.
+- **REQ-039**: When OpenCode extension reconciliation is explicitly requested, the workstation manager shall install every declared Cream Blue theme and select `cream-blue-cobalt` through the global TUI configuration.
+- **REQ-040**: While an existing global OpenCode configuration or unrelated extension asset is present, the workstation manager shall preserve it through bounded semantic merges and timestamped backups of replaced managed files.
+- **REQ-041**: When OpenUltraCode state is reconciled, the workstation manager shall verify the pinned release archive and complete extracted inventory before publishing its commands, agents, skill, and release-local plugin.
+- **REQ-042**: When OpenCode extension state is requested in plan or test mode, the workstation manager shall report theme, release, asset, and plugin compliance without network or filesystem mutation.
 
 ### Key Entities
 
@@ -250,6 +255,8 @@ effective font selection while preserving unrelated editor settings and extensio
   bounded analysis paths, result identity, and export validation.
 - **Developer editor state**: Stable editor identity, Berg state, declared extensions, local font
   preference validity, portable fallback, and preserved user-owned settings.
+- **OpenCode extension state**: Pinned theme identities, selected TUI theme, verified OpenUltraCode
+  release inventory, published assets, plugin registration, and preserved global configuration.
 
 ## Success Criteria *(mandatory)*
 
@@ -279,6 +286,8 @@ effective font selection while preserving unrelated editor settings and extensio
   valid effective font choice while preserving all unrelated sampled settings and extensions.
 - **SC-010**: One hundred percent of normative requirements pass EARS validation and receive a
   verification mapping before implementation planning is approved.
+- **SC-011**: Every declared OpenCode theme and OpenUltraCode asset reports compliant after one
+  reconciliation and a second reconciliation makes zero managed-content changes.
 
 ## Assumptions
 

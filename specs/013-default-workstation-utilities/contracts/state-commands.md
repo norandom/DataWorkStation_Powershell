@@ -15,12 +15,17 @@ elevation and returns nonzero when post-change state is not compliant.
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Set-SafeChainState.ps1 -Mode Test
+Get-Command pnpm,pnpx -CommandType Function | Format-List Name,Definition
+pnpm safe-chain-verify
+pnpx safe-chain-verify
+pnpm --version
 .\Apply-Workstation.ps1 -Mode Ensure -Module SafeChain
 ```
 
-`Test` reports Windows and trusted Debian binary/registration state without network or state
-changes. `Ensure` may download verified installers, execute them in the declared user boundaries,
-and reconcile shell registrations. Hash mismatch or incomplete readback returns nonzero.
+`Test` reports Windows and trusted Debian binary, registration, and declared command-wrapper state
+without network or state changes. The protected inventory includes pnpm/pnpx. `Ensure` may download
+verified installers, execute them in the declared user boundaries, and reconcile shell
+registrations or missing wrappers. Hash mismatch or incomplete readback returns nonzero.
 
 ## Orchestrator
 

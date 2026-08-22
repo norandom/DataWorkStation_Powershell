@@ -182,6 +182,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 - REQ-049: When Windows Terminal state is ensured, the terminal resource shall select the installed PowerShell Core profile by default while retaining inbox Windows PowerShell as a selectable profile.
 - REQ-050: When shared PowerShell appearance is managed in Windows Terminal, the terminal resource shall apply the same declared appearance to both PowerShell profiles while preserving unrelated terminal settings.
 - REQ-051: When Windows Terminal state is tested, the terminal resource shall report settings drift without installing a package or changing the settings file.
+- REQ-052: When the managed PowerShell Core profile loads, it shall prefer an available declared native `mkdir` executable over PowerShell command shims and style PowerShell directory objects with a readable foreground-only ANSI color.
+- REQ-053: Where the Windows developer package set is selected, the workstation shall maintain the pnpm command through the reviewed `pnpm.pnpm` WinGet package alongside Node.js LTS.
 
 ### Key Entities
 
@@ -196,7 +198,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 52 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-001**: All 53 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
 - **SC-002**: All 32 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
@@ -223,7 +225,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | PowerShell7 | REQ-002, REQ-012 |
 | PowerShellTesting | REQ-002, REQ-012 |
 | Go | REQ-002, REQ-007, REQ-042 |
-| Packages | REQ-002, REQ-007 |
+| Packages | REQ-002, REQ-007, REQ-053 |
 | Mpv | REQ-002, REQ-007 |
 | NativeTextTools | REQ-022 |
 | Caffeine | REQ-002, REQ-007, REQ-025 |
@@ -240,6 +242,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | SharedSshConfig | REQ-023, REQ-025, REQ-034 |
 | AiNixOsWsl | governed by `specs/010-ai-tools-isolation` |
 | AiTools | governed by `specs/010-ai-tools-isolation` |
+| OpenCodeExtensions | governed by `specs/010-ai-tools-isolation` |
 | DeveloperEditor | governed by `specs/010-ai-tools-isolation` |
 | DeveloperDocker | REQ-023 |
 | RootlessPodman | REQ-023, REQ-029 |
@@ -255,7 +258,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | LegacyDockerCleanup | REQ-010, REQ-023 |
 | ProfilingTools | REQ-033 |
 | SkillOpt | REQ-041 |
-| PowerShellProfile | REQ-012, REQ-025, REQ-048 |
+| PowerShellProfile | REQ-012, REQ-025, REQ-048, REQ-052 |
 | SafeChain | REQ-002, REQ-006, REQ-007, REQ-012, REQ-023, REQ-024 |
 | MsvcBuildTools | REQ-001, REQ-002 |
 | CMake | REQ-001, REQ-002 |
@@ -289,7 +292,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | workstation-help | REQ-025, REQ-026 |
 | repository-quality | REQ-026 |
 | powershell-testing | REQ-012, REQ-026 |
-| powershell-environment | REQ-025, REQ-044, REQ-048, REQ-049, REQ-050, REQ-051 |
+| powershell-environment | REQ-025, REQ-044, REQ-048, REQ-049, REQ-050, REQ-051, REQ-052 |
 | idle-sleep-inhibition | REQ-025, REQ-026 |
 | workstation-modules | REQ-001, REQ-003, REQ-004 |
 | linux-developer-packages | REQ-023, REQ-026 |

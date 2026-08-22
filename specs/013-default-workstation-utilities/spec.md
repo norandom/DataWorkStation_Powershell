@@ -7,7 +7,8 @@
 **Status**: Implemented brownfield feature
 
 **Input**: User description: "Add focused default modules for GPU-accelerated mpv playback and
-Safe-Chain package-manager protection, keeping inspection observational and repair explicit."
+Safe-Chain package-manager protection—including pnpm—while keeping inspection observational and
+repair explicit."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -53,6 +54,8 @@ the focused static contract suite.
    the current Windows user and trusted developer Debian receive the declared protection.
 3. **Given** a mismatched installer or binary digest, **When** repair is attempted, **Then**
    execution stops before the unverified payload is trusted.
+4. **Given** pnpm is installed in a managed development shell, **When** Safe-Chain state is tested,
+   **Then** the declared pnpm and pnpx interception wrappers are required without changing them.
 
 ---
 
@@ -83,6 +86,7 @@ lint, and strict documentation build without applying workstation state.
 - Hardware decoding cannot be used for a particular codec or file.
 - A Safe-Chain installer or installed binary differs from its declared digest.
 - An expected PowerShell or Bash registration is missing or duplicated.
+- An initialization file exists but omits a declared package-manager wrapper.
 - Trusted Debian is unavailable while Windows state remains inspectable.
 - A restricted AI, DevOps NixOS, or malware-analysis distribution is present.
 - A caller combines an explicit module selection with a legacy skip switch.
@@ -99,7 +103,7 @@ lint, and strict documentation build without applying workstation state.
 - **REQ-006**: The workstation shall expose Safe-Chain through a separately selectable default module after the managed PowerShell profile dependency.
 - **REQ-007**: Before a Safe-Chain installer is executed or an installed binary is accepted, the resource shall verify the corresponding declared cryptographic digest.
 - **REQ-008**: While Safe-Chain trust boundaries are evaluated, the resource shall include the current Windows user and trusted developer Debian while excluding restricted AI, DevOps NixOS, and malware-analysis environments.
-- **REQ-009**: When Safe-Chain state is tested, the resource shall report Windows, trusted Debian, binary, and shell-registration compliance without downloading, installing, or registering software.
+- **REQ-009**: When Safe-Chain state is tested, the resource shall report Windows, trusted Debian, binary, shell-registration, and declared command-wrapper compliance including pnpm/pnpx without downloading, installing, or registering software.
 - **REQ-010**: If Safe-Chain repair cannot produce the declared binary and shell-registration state, then the resource shall return a nonzero failure without claiming compliance.
 - **REQ-011**: When either utility is selected through the workstation orchestrator, the catalog shall expose stable order, dependencies, modes, privilege, destructiveness, and default selection.
 - **REQ-012**: When either utility interface changes, the project shall update human commands, capability routing where applicable, operator documentation, focused tests, and release notes together.
@@ -111,7 +115,7 @@ lint, and strict documentation build without applying workstation state.
   decoder capability, and compliance result.
 - **Safe-Chain release**: Versioned Windows and Linux installers and binaries with declared digests.
 - **Safe-Chain target**: A supported user environment, installed binary, shell registration, and
-  compliance result.
+  compliance result, and declared package-manager wrappers.
 - **Focused module declaration**: Module name, default selection, dependency, runtime, privilege,
   destructiveness, order, and feature ownership.
 
@@ -129,6 +133,8 @@ lint, and strict documentation build without applying workstation state.
   boundary, with zero restricted-environment targets.
 - **SC-005**: Focused utility, governance, lint, Tricky, full PowerShell, and strict documentation
   gates pass before the release tag is published.
+- **SC-006**: One hundred percent of declared pnpm and pnpx wrapper checks pass in both managed
+  development shells, and Test performs zero registration changes.
 
 ## Assumptions
 

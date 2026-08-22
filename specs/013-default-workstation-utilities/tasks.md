@@ -41,12 +41,23 @@
 - [X] T015 Run full PowerShell lint, Tricky human/JSON smoke, full Pester, and strict MkDocs gates for REQ-013
 - [X] T016 Run `ears-sdd validate --feature specs/013-default-workstation-utilities --phase final` and confirm complete traceability
 
+## Phase 6: pnpm Safe-Chain enforcement
+
+- [X] T017 Add failing declared-command, wrapper-state, repair, and routing assertions in
+  `tests/Test-SafeChainState.ps1#All` for REQ-009.
+- [X] T018 Validate every configured Windows and Debian wrapper in `scripts/Set-SafeChainState.ps1`
+  and update pnpm routing, operator documentation, design artifacts, and release notes for
+  REQ-009 and REQ-012.
+- [X] T019 Run focused Safe-Chain Test and pnpm interception smoke, lint, Tricky human/JSON, strict
+  documentation, and the final EARS gates for REQ-009, REQ-013, and SC-006.
+
 ## Dependencies & Execution Order
 
 - Characterization and design decisions precede reviewed implementation ownership.
 - User Stories 1 and 2 are independent after setup.
 - User Story 3 depends on both focused module contracts.
 - Publication gates depend on all stories.
+- pnpm wrapper enforcement depends on the existing Safe-Chain command inventory and registration.
 
 ## Parallel Opportunities
 

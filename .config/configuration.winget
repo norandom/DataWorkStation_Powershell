@@ -70,6 +70,12 @@ resources:
       id: OpenJS.NodeJS.LTS
       source: winget
       useLatest: true
+  - name: pnpm
+    type: Microsoft.WinGet/Package
+    properties:
+      id: pnpm.pnpm
+      source: winget
+      useLatest: true
   - name: GitHub CLI
     type: Microsoft.WinGet/Package
     properties:

@@ -8,6 +8,9 @@ pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test -Json
+pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Ensure
 
 pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test
 pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test

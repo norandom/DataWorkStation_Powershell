@@ -32,3 +32,12 @@
 - **Decision**: Pin and verify both installer and resulting binary digests per platform.
 - **Rationale**: Installer authenticity alone does not prove the executable retained after setup.
 - **Alternatives considered**: Mutable latest downloads or version-only checks.
+
+## Safe-Chain command-wrapper coverage
+
+- **Decision**: Treat every command in `SupportedCommands`, including pnpm and pnpx, as required
+  initialization content on Windows and trusted Debian.
+- **Rationale**: The initialization file can exist while a compatible package manager silently
+  bypasses Safe-Chain; wrapper-level readback closes that gap.
+- **Alternatives considered**: Testing only file presence or special-casing pnpm outside the shared
+  protected-command inventory.

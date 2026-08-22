@@ -88,7 +88,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `PowerShell7` | yes | none | focused WinGet Configuration state for PowerShell 7 |
 | `PowerShellTesting` | yes | `PowerShell7` | exact Pester release shared by bounded parallel and compatibility test lanes |
 | `Go` | yes | none | official MSI-backed Go package, user workspace, command path, and built-in toolchain selection |
-| `Packages` | yes | `PowerShell7` | WinGet Configuration packages |
+| `Packages` | yes | `PowerShell7` | base WinGet Configuration packages, including Node.js LTS and official pnpm |
 | `Mpv` | yes | `PowerShell7` stage gate | official mpv Windows build with Radeon D3D11 rendering and safe hardware decode |
 | `NativeTextTools` | yes | none | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
 | `Caffeine` | yes | none | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
@@ -109,6 +109,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
 | `AiTools` | **no** | `Packages` | native Windows OpenCode Desktop/CLI, Claude Code, Antigravity, Cline, and Copilot CLI through reviewed channels |
 | `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
+| `OpenCodeExtensions` | yes | none | pinned Cream Blue themes with Cobalt selected and verified OpenUltraCode 0.1.3 assets |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |
 | `MalwareHashes` | yes | none | hash-pinned v2.5.0 Windows executable from the project's GitHub release |
 | `QuantResearchEnvironment` | **no** | `Packages`, `PowerShellProfile` | Positron, Quarto/Pandoc/private TinyTeX, independently locked uv/OpenBB projects, notebooks, and PyXLL Excel integration |

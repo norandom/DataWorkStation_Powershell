@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'DeveloperEditor', 'SpecDrivenDevelopment',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'OpenCodeExtensions', 'DeveloperEditor', 'SpecDrivenDevelopment',
         'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'SafeChain', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -62,6 +62,7 @@ $focusFollowsMouseScript = Join-Path $PSScriptRoot 'scripts\Set-FocusFollowsMous
 $profileScript = Join-Path $PSScriptRoot 'scripts\Set-PowerShellProfile.ps1'
 $developerToolsScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperToolsState.ps1'
 $aiToolsScript = Join-Path $PSScriptRoot 'scripts\Set-AiToolsState.ps1'
+$openCodeExtensionsScript = Join-Path $PSScriptRoot 'scripts\Set-OpenCodeExtensionsState.ps1'
 $developerEditorScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperEditorState.ps1'
 $specDrivenDevelopmentScript = Join-Path $PSScriptRoot 'scripts\Set-SpecDrivenDevelopmentState.ps1'
 $positronScript = Join-Path $PSScriptRoot 'scripts\Set-PositronState.ps1'
@@ -414,6 +415,11 @@ function Invoke-WorkstationModule {
         'AiTools' {
             Invoke-CheckedProcess 'Optional AI tool state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $aiToolsScript -Mode $Mode
+            }
+        }
+        'OpenCodeExtensions' {
+            Invoke-CheckedProcess 'OpenCode extension state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $openCodeExtensionsScript -Mode $Mode
             }
         }
         'DeveloperEditor' {

@@ -69,6 +69,154 @@ function global:Get-WorkstationHelp {
 Set-Alias -Name workstation-help -Value Get-WorkstationHelp -Scope Global
 Set-Alias -Name wshelp -Value Get-WorkstationHelp -Scope Global
 
+# Portable shortcuts adapted from grml's zsh configuration. Commands that rely on
+# Linux-only state, weaken SSH verification, delete data, or collide with Windows
+# development tools are intentionally not reproduced.
+function Invoke-GrmlNativeCommand {
+    param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [string[]] $ArgumentList = @()
+    )
+
+    $command = Get-Command "$Name.exe" -CommandType Application -ErrorAction Ignore |
+        Select-Object -First 1
+    if (-not $command) { throw "$Name.exe is required by the grml-style '$Name' shortcut." }
+    & $command.Source @ArgumentList
+}
+
+function global:l { Invoke-GrmlNativeCommand -Name ls -ArgumentList (@('-l') + @($args)) }
+function global:ll { Invoke-GrmlNativeCommand -Name ls -ArgumentList (@('-l') + @($args)) }
+function global:la { Invoke-GrmlNativeCommand -Name ls -ArgumentList (@('-la') + @($args)) }
+function global:lh { Invoke-GrmlNativeCommand -Name ls -ArgumentList (@('-hAl') + @($args)) }
+function global:da { Invoke-GrmlNativeCommand -Name du -ArgumentList (@('-sch') + @($args)) }
+
+function Get-GrmlChildItem {
+    param(
+        [string[]] $Path = @('.'),
+        [switch] $Force
+    )
+
+    Get-ChildItem -Path $Path -Force:$Force
+}
+
+function global:lad {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path -Force |
+        Where-Object { $_.PSIsContainer -and $_.Name.StartsWith('.') }
+}
+
+function global:lsa {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path -Force |
+        Where-Object { -not $_.PSIsContainer -and $_.Name.StartsWith('.') }
+}
+
+function global:lsd {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path | Where-Object PSIsContainer
+}
+
+function global:lse {
+    param([string[]] $Path = @('.'))
+
+    foreach ($directory in @(Get-GrmlChildItem -Path $Path | Where-Object PSIsContainer)) {
+        try {
+            $firstChild = Get-ChildItem -LiteralPath $directory.FullName -Force -ErrorAction Stop |
+                Select-Object -First 1
+        } catch {
+            Write-Error -ErrorRecord $_
+            continue
+        }
+        if ($null -eq $firstChild) { $directory }
+    }
+}
+
+function global:lsl {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path | Where-Object {
+        ($_.PSObject.Properties['LinkType'] -and $_.LinkType) -or
+        ($_.Attributes -band [IO.FileAttributes]::ReparsePoint)
+    }
+}
+
+function global:lsx {
+    param([string[]] $Path = @('.'))
+
+    $executableExtensions = @($env:PATHEXT -split ';' | Where-Object { $_ } |
+        ForEach-Object { $_.ToUpperInvariant() })
+    Get-GrmlChildItem -Path $Path | Where-Object {
+        -not $_.PSIsContainer -and $executableExtensions -contains $_.Extension.ToUpperInvariant()
+    }
+}
+
+function global:lsbig {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path | Where-Object { -not $_.PSIsContainer } |
+        Sort-Object Length -Descending | Select-Object -First 10
+}
+
+function global:lsnew {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path -Force | Where-Object { -not $_.PSIsContainer } |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 10
+}
+
+function global:lsold {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path -Force | Where-Object { -not $_.PSIsContainer } |
+        Sort-Object LastWriteTime | Select-Object -First 10
+}
+
+function global:lssmall {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path | Where-Object { -not $_.PSIsContainer } |
+        Sort-Object Length | Select-Object -First 10
+}
+
+function global:lsnewdir {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path -Force | Where-Object PSIsContainer |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 10
+}
+
+function global:lsolddir {
+    param([string[]] $Path = @('.'))
+    Get-GrmlChildItem -Path $Path -Force | Where-Object PSIsContainer |
+        Sort-Object LastWriteTime | Select-Object -First 10
+}
+
+function global:.. { Set-Location -LiteralPath '..' }
+function global:... { Set-Location -LiteralPath '..\..' }
+function global:.... { Set-Location -LiteralPath '..\..\..' }
+
+function global:mkcd {
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Path)
+
+    if (Test-Path -LiteralPath $Path) {
+        $directory = Get-Item -LiteralPath $Path -ErrorAction Stop
+        if (-not $directory.PSIsContainer) { throw "The path exists but is not a directory: $Path" }
+    } else {
+        $directory = New-Item -ItemType Directory -Path $Path -Force
+    }
+    Set-Location -LiteralPath $directory.FullName
+}
+
+function global:cdt {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0)]
+        [ValidateNotNullOrEmpty()]
+        [ValidatePattern('^[^\\/:*?"<>|]+$')]
+        [string] $Prefix = 'grml'
+    )
+
+    $temporaryPath = Join-Path ([IO.Path]::GetTempPath()) ("$Prefix-$([guid]::NewGuid().ToString('N'))")
+    $directory = New-Item -ItemType Directory -Path $temporaryPath
+    Set-Location -LiteralPath $directory.FullName
+    Get-Location
+}
+
 function global:tricky {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-Tricky.ps1') @args
 }

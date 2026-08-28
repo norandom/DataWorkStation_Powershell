@@ -2,9 +2,12 @@
 
 ## Unreleased
 
+## 4.0.0 - 2026-08-28
+
 - Add the official `pnpm.pnpm` WinGet package alongside Node.js LTS and require its declared pnpm/pnpx shell wrappers to remain under Aikido Safe-Chain.
 - Restore native Coreutils `mkdir` precedence over PowerShell's convenience function and render PowerShell directory objects with a readable bright-cyan foreground instead of the default blue ANSI background.
 - Add hash-pinned Cream Blue OpenCode themes with Cobalt selected by default and install the verified OpenUltraCode 0.1.3 commands, agents, skill, and plugin through a focused desired-state module.
+- Add a PowerShell-native adaptation of the official grml prompt and portable daily shortcuts across Windows PowerShell 5.1 and PowerShell 7, with failure status, bounded clickable paths, Git context, and safeguards for native Coreutils and MSVC command precedence.
 
 ## 3.1.0 - 2026-08-22
 

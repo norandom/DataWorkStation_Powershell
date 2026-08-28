@@ -3,8 +3,8 @@
     Capabilities = @(
         @{
             Id = 'powershell-environment'
-            Title = 'Staged PowerShell bootstrap, dual-runtime profile, and Windows Terminal'
-            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile', 'mkdir', 'directory color', 'ansi color')
+            Title = 'Staged PowerShell bootstrap, dual-runtime grml-style profile, and Windows Terminal'
+            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile', 'mkdir', 'directory color', 'ansi color', 'grml', 'grml zsh', 'shell aliases', 'prompt style', 'git prompt')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan'
@@ -13,6 +13,7 @@
                 'pwsh -NoProfile -File .\scripts\Set-PowerShellProfile.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan'
+                "Get-Command l,ll,la,lh,da,lad,lsa,lsd,lse,lsl,lsx,lsbig,lsnew,lsold,lssmall,lsnewdir,lsolddir,mkcd,cdt,'..','...','....'"
             )
             StateCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module PowerShellProfile'

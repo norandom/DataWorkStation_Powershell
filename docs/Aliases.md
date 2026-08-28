@@ -23,7 +23,7 @@ Build Tools instance in both Windows PowerShell 5.1 and PowerShell Core.
 | `Shift+Tab` | Select the previous completion match. |
 | `Up` / `Down` | Search history using the text already entered as a prefix. |
 | `Ctrl+R` | Reverse-search command history. |
-| Prompt | Shows `username@computer path>`; in Contour it marks each prompt line and makes a filesystem path clickable. |
+| Prompt | Uses grml's one-line token order: a failed exit code when present, `username@computer`, a bold path shortened from the left at 40 characters, optional `(git)-[branch]`, and `%` (`#` in an elevated shell). In Contour it also marks each prompt line and makes the filesystem path clickable. |
 | `terminal-link URI [TEXT]` | Emit an OSC 8 hyperlink in Contour, falling back to plain text elsewhere or when output is redirected. |
 | `workstation-help` / `wshelp` | List managed commands, loaded aliases, and repository skills together. Filter with `-Type Commands|Aliases|Skills`, `-Name PATTERN`, or emit stable data with `-Json`. |
 | `caffeine` | Start the real Zhorn Software Caffeine tray utility installed by the focused `Caffeine` WinGet module. It starts active at sign-in; double-click its tray icon to toggle inhibition. |
@@ -31,6 +31,34 @@ Build Tools instance in both Windows PowerShell 5.1 and PowerShell Core.
 | `focus-mouse-off` | Persistently disable focus-follows-mouse and restore the declared click-to-focus default. |
 
 Contour's built-in bindings use `Ctrl+Alt+K` / `Ctrl+Alt+J` to jump to the previous or next marked prompt, `Ctrl+click` to follow an OSC 8 hyperlink, and `Ctrl+Shift+U` to open hint mode for detected URLs and paths.
+
+### Grml-style daily shortcuts
+
+These commands adapt the portable parts of the official
+[grml zsh configuration](https://github.com/grml/grml-etc-core/blob/da237eecc9a816024b069fb7d0d7ade81389c749/etc/zsh/zshrc)
+to PowerShell. They are PowerShell functions where arguments or object output are required; no zsh
+runtime or configuration file is installed.
+
+| Command | Purpose |
+|---|---|
+| `l [ARG...]` / `ll [ARG...]` | Run native Coreutils `ls -l`. |
+| `la [ARG...]` | Run native Coreutils `ls -la`. |
+| `lh [ARG...]` | Run native Coreutils `ls -hAl`. |
+| `da [ARG...]` | Run native Coreutils `du -sch`. |
+| `lad [PATH]` / `lsa [PATH]` | Return dot-directories or dot-files as PowerShell objects. |
+| `lsd [PATH]` / `lse [PATH]` | Return directories or empty directories. |
+| `lsl [PATH]` / `lsx [PATH]` | Return links/reparse points or files with an extension from `PATHEXT`. |
+| `lsbig [PATH]` / `lssmall [PATH]` | Return the ten largest or smallest files. |
+| `lsnew [PATH]` / `lsold [PATH]` | Return the ten newest or oldest files, including hidden entries. |
+| `lsnewdir [PATH]` / `lsolddir [PATH]` | Return the ten newest or oldest directories, including hidden entries. |
+| `..` / `...` / `....` | Move up one, two, or three directory levels. |
+| `mkcd PATH` | Create a directory when necessary and enter it. |
+| `cdt [PREFIX]` | Create a uniquely named directory under the Windows temporary root, enter it, and print its location. |
+
+The port deliberately omits grml's Linux package, block-device, syslog, reboot, and privilege
+aliases. It also omits `insecssh`/`insecscp`, destructive backup-removal and current-directory
+removal shortcuts, and grml's `cl` function. In this workstation, `cl` is reserved for the MSVC
+compiler and `dir` remains the declared native Coreutils command.
 
 See [Sample outputs](sample-outputs.md#managed-aliases) for one use case and invocation for every
 managed PowerShell alias loaded on this workstation.

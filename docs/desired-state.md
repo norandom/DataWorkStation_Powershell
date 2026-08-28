@@ -85,6 +85,11 @@ silent. PowerShell Core directory objects use a bright-cyan foreground with no A
 override; native `ls` keeps its independent color configuration and the shared terminal palette is
 unchanged.
 
+The same profile provides a PowerShell-native adaptation of grml's one-line prompt and portable
+daily shortcuts. The prompt shows failure status, user and host, a bounded path, optional Git
+reference, and a privilege-sensitive `%` or `#`. Linux-only, insecure, destructive, and
+Windows-conflicting grml aliases are excluded; in particular, `cl` remains available to MSVC.
+
 `.config/go.winget` declares the official MSI-backed `GoLang.Go` package. The focused `Go` resource
 keeps `%USERPROFILE%\go` as `GOPATH`, adds its `bin` directory to the user path, accepts an empty
 `GOBIN`, and requires effective `GOTOOLCHAIN=auto`. It leaves user `GOROOT` unset so the MSI owns the

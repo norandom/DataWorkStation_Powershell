@@ -339,8 +339,10 @@ and pnpx shell wrappers routed through Aikido Safe-Chain.
 New diagnostic captures default to `paths.traces`. Use `cleanup-windows` and `cleanup-traces` to
 inspect cleanup plans; destructive execution remains explicit. See [Disk and trace cleanup](docs/cleanup.md).
 
-Windows PowerShell 5.1 and the newest installed PowerShell Core load the same prompt, aliases, tools,
-and readline settings. Declared native commands also replace same-named PowerShell convenience
+Windows PowerShell 5.1 and the newest installed PowerShell Core load the same grml-style prompt,
+portable daily shortcuts, tools, and readline settings. The prompt retains Contour prompt marks and
+clickable paths while adding failure status and Git context. Declared native commands also replace
+same-named PowerShell convenience
 functions, so Coreutils `mkdir` is silent on success; PowerShell-native directory objects use a
 bright-cyan foreground that remains readable on the Blue theme. Windows Terminal starts PowerShell Core by default and keeps Windows
 PowerShell available. Its shared Blue appearance is applied through `profiles.defaults`; unrelated

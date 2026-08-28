@@ -913,7 +913,42 @@ function Get-ProfileSurface {
     param([string] $Runtime)
     $loader = Join-Path $repositoryRoot 'profile\Shell.ps1'
     $escapedLoader = $loader.Replace("'", "''")
-    $command = ". '$escapedLoader'; `$mkdir = Get-Command mkdir -ErrorAction Ignore; [pscustomobject]@{ Edition = `$PSVersionTable.PSEdition; Major = `$PSVersionTable.PSVersion.Major; Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore); Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition; Help = [bool](Get-Command workstation-help -ErrorAction Ignore); TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore); QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore); FocusMouseOn = [bool](Get-Command focus-mouse-on -ErrorAction Ignore); FocusMouseOff = [bool](Get-Command focus-mouse-off -ErrorAction Ignore); MkdirType = [string]`$mkdir.CommandType; DirectoryStyle = if (`$PSVersionTable.PSEdition -eq 'Core') { [string]`$PSStyle.FileInfo.Directory } else { '' } } | ConvertTo-Json -Compress"
+    $command = @'
+. '__LOADER__'
+$mkdir = Get-Command mkdir -ErrorAction Ignore
+$grmlNames = @(
+    'l', 'll', 'la', 'lh', 'da', 'lad', 'lsa', 'lsd', 'lse', 'lsl', 'lsx',
+    'lsbig', 'lsnew', 'lsold', 'lssmall', 'lsnewdir', 'lsolddir',
+    '..', '...', '....', 'mkcd', 'cdt'
+)
+$promptParameters = @{
+    UserName = 'alice'
+    ComputerName = 'host'
+    PathText = '~\src'
+    VcsKind = 'git'
+    VcsReference = 'main'
+    LastCommandSucceeded = $false
+    ExitCode = 7
+    IsAdministrator = $false
+}
+[pscustomobject]@{
+    Edition = $PSVersionTable.PSEdition
+    Major = $PSVersionTable.PSVersion.Major
+    Prompt = [bool](Get-Command prompt -CommandType Function -ErrorAction Ignore)
+    Wget = [string](Get-Alias wget -ErrorAction Ignore).Definition
+    Help = [bool](Get-Command workstation-help -ErrorAction Ignore)
+    TestCommand = [bool](Get-Command test-powershell -ErrorAction Ignore)
+    QuantStatus = [bool](Get-Command quant-status -ErrorAction Ignore)
+    FocusMouseOn = [bool](Get-Command focus-mouse-on -ErrorAction Ignore)
+    FocusMouseOff = [bool](Get-Command focus-mouse-off -ErrorAction Ignore)
+    MkdirType = [string]$mkdir.CommandType
+    DirectoryStyle = if ($PSVersionTable.PSEdition -eq 'Core') { [string]$PSStyle.FileInfo.Directory } else { '' }
+    GrmlCommands = [string](@($grmlNames | Where-Object { Get-Command $_ -CommandType Function -ErrorAction Ignore }) -join ',')
+    GrmlPrompt = Format-GrmlPromptText @promptParameters -UseColor:$false
+    GrmlColorPrompt = Format-GrmlPromptText @promptParameters -UseColor:$true
+    ClFunction = [bool](Get-Command cl -CommandType Function -ErrorAction Ignore)
+} | ConvertTo-Json -Compress
+'@.Replace('__LOADER__', $escapedLoader)
     $result = Invoke-External -FilePath $Runtime -ArgumentList @('-NoLogo', '-NoProfile', '-Command', $command)
     Assert-True ($result.ExitCode -eq 0) "profile loads in '$Runtime': $($result.Output -join ' ')"
     $jsonLine = @($result.Output | Where-Object { [string] $_ -match '^\s*\{' } | Select-Object -Last 1)
@@ -938,6 +973,11 @@ function Test-PowerShellRuntimes {
     $powerShell7 = (Get-Command pwsh.exe -ErrorAction Stop).Source
     $desktop = Get-ProfileSurface -Runtime $windowsPowerShell
     $core = Get-ProfileSurface -Runtime $powerShell7
+    $expectedGrmlCommands = @(
+        'l', 'll', 'la', 'lh', 'da', 'lad', 'lsa', 'lsd', 'lse', 'lsl', 'lsx',
+        'lsbig', 'lsnew', 'lsold', 'lssmall', 'lsnewdir', 'lsolddir',
+        '..', '...', '....', 'mkcd', 'cdt'
+    )
     Assert-True ($desktop.Edition -eq 'Desktop' -and [int] $desktop.Major -eq 5) 'Windows PowerShell 5.1 is characterized'
     Assert-True ($core.Edition -eq 'Core' -and [int] $core.Major -ge 7) 'newest installed PowerShell Core is characterized'
     foreach ($surface in @($desktop, $core)) {
@@ -948,6 +988,12 @@ function Test-PowerShellRuntimes {
         Assert-True $surface.QuantStatus 'quant-status is available'
         Assert-True ($surface.FocusMouseOn -and $surface.FocusMouseOff) 'focus-mouse-on and focus-mouse-off are available'
         Assert-True ($surface.MkdirType -eq 'Application') 'mkdir resolves to the declared native Coreutils application'
+        Assert-True (@(Compare-Object -ReferenceObject $expectedGrmlCommands -DifferenceObject @($surface.GrmlCommands -split ',')).Count -eq 0) 'the portable grml-style command set is available'
+        Assert-True ($surface.GrmlPrompt -eq '7 alice@host ~\src (git)-[main] % ') 'the plain prompt follows the grml token order'
+        foreach ($ansiCode in 31, 32, 33, 34, 35) {
+            Assert-True ($surface.GrmlColorPrompt.Contains("$([char] 27)[$($ansiCode)m")) "the grml-style prompt emits ANSI color $ansiCode"
+        }
+        Assert-True (-not $surface.ClFunction) 'the grml cd-and-list shortcut does not shadow the MSVC cl compiler'
     }
     Assert-True ($core.DirectoryStyle -eq "$([char] 27)[96m") 'PowerShell Core directory objects use bright-cyan foreground without a background override'
 }

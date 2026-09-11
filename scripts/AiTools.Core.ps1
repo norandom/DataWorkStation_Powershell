@@ -8,7 +8,11 @@ function Resolve-AiToolPath {
 function Get-AiCommandRecord {
     param([Parameter(Mandatory = $true)][hashtable] $Product)
 
-    $expectedPath = Resolve-AiToolPath $Product.ExpectedPath
+    $expectedPath = if ($Product.ContainsKey('ExpectedPath')) { Resolve-AiToolPath $Product.ExpectedPath } else { $null }
+    $commandShimPath = if ($Product.ContainsKey('CommandShimPath')) { Resolve-AiToolPath $Product.CommandShimPath } else { $null }
+    $commandShimPresent = -not $commandShimPath -or (Test-Path -LiteralPath $commandShimPath -PathType Leaf)
+    $forbiddenCommandPaths = if ($Product.ContainsKey('ForbiddenCommandPaths')) { @($Product.ForbiddenCommandPaths | ForEach-Object { Resolve-AiToolPath $_ }) } else { @() }
+    $presentForbiddenCommandPaths = @($forbiddenCommandPaths | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
     $command = $null
     if ($expectedPath -and (Test-Path -LiteralPath $expectedPath -PathType Leaf)) {
         $command = Get-Item -LiteralPath $expectedPath
@@ -34,9 +38,13 @@ function Get-AiCommandRecord {
         Command = $Product.Command
         Installed = [bool] $command
         ObservedPath = $observedPath
+        CommandShimPath = $commandShimPath
+        CommandShimPresent = $commandShimPresent
+        ForbiddenCommandPaths = $forbiddenCommandPaths
+        PresentForbiddenCommandPaths = $presentForbiddenCommandPaths
         WrongChannel = $wrongChannel
-        Status = if (-not $command) { 'absent' } elseif ($wrongChannel -or -not $expectedPathMatched) { 'wrong-channel' } else { 'compliant' }
-        Action = if (-not $Product.Enabled) { 'none' } elseif (-not $command -or $wrongChannel -or -not $expectedPathMatched) { 'install-from-declared-channel' } else { 'none' }
+        Status = if (-not $command) { 'absent' } elseif ($wrongChannel -or -not $expectedPathMatched) { 'wrong-channel' } elseif ($presentForbiddenCommandPaths.Count -gt 0) { 'command-alias-present' } elseif (-not $commandShimPresent) { 'command-shim-missing' } else { 'compliant' }
+        Action = if (-not $Product.Enabled) { 'none' } elseif (-not $command -or $wrongChannel -or -not $expectedPathMatched) { 'install-from-declared-channel' } elseif ($presentForbiddenCommandPaths.Count -gt 0) { 'remove-command-aliases' } elseif (-not $commandShimPresent) { 'publish-command-shim' } else { 'none' }
         PrivilegeBoundary = 'Current Windows user; network-delivered installer only during explicit Ensure.'
     }
 }

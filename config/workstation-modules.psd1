@@ -131,6 +131,18 @@
             Description = 'Zhorn Software Caffeine idle-sleep inhibitor with enabled per-user startup.'
         }
         @{
+            Name = 'AudioSwitcher'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
+            Order = 24
+            Default = $true
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Audio Switcher tray utility for changing Windows playback and recording devices with optional hotkeys.'
+        }
+        @{
             Name = 'Scoop'
             Stage = 'Core'
             Runtime = 'PowerShell7'

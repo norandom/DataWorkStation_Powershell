@@ -27,6 +27,7 @@ Build Tools instance in both Windows PowerShell 5.1 and PowerShell Core.
 | `terminal-link URI [TEXT]` | Emit an OSC 8 hyperlink in Contour, falling back to plain text elsewhere or when output is redirected. |
 | `workstation-help` / `wshelp` | List managed commands, loaded aliases, and repository skills together. Filter with `-Type Commands|Aliases|Skills`, `-Name PATTERN`, or emit stable data with `-Json`. |
 | `caffeine` | Start the real Zhorn Software Caffeine tray utility installed by the focused `Caffeine` WinGet module. It starts active at sign-in; double-click its tray icon to toggle inhibition. |
+| `audio-switcher [ARG...]` | Start the managed [Audio Switcher](https://audioswit.ch/er) tray utility for changing playback or recording devices; device favorites, hotkeys, and startup behavior remain user-controlled in the app. |
 | `focus-mouse-on` | Persistently enable focus-follows-mouse with the declared 500 ms delay and without raising windows. |
 | `focus-mouse-off` | Persistently disable focus-follows-mouse and restore the declared click-to-focus default. |
 

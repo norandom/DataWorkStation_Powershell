@@ -481,6 +481,20 @@ function global:uprof-cli {
 }
 function global:uprof-install { Start-Process 'https://www.amd.com/en/developer/uprof.html' }
 
+function global:audio-switcher {
+    $command = Get-Command audioswitcher.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+    $path = if ($command) {
+        $command.Source
+    } else {
+        $packageRoot = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+        (Get-ChildItem -LiteralPath $packageRoot -Recurse -File -Filter 'audioswitcher.exe' -ErrorAction Ignore |
+            Where-Object FullName -Like '*FortyOneLtd.AudioSwitcher*' |
+            Select-Object -First 1).FullName
+    }
+    if (-not $path) { throw 'Audio Switcher is not installed. Run .\Apply-Workstation.ps1 -Mode Ensure -Module AudioSwitcher.' }
+    Start-Process -FilePath $path -ArgumentList $args
+}
+
 function global:ports {
     Get-PortProcess -Listen @args | Sort-Object Protocol, LocalPort, ProcessId
 }

@@ -49,9 +49,61 @@ function Write-Result {
 
 function Invoke-OfficialPowerShellInstaller {
     param([Parameter(Mandatory = $true)][string] $InstallCommand)
-    $powerShell = (Get-Command pwsh.exe -CommandType Application -ErrorAction Stop).Source
+    $powerShell = (Get-Command pwsh.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
     & $powerShell -NoLogo -NoProfile -Command $InstallCommand
     if ($LASTEXITCODE -ne 0) { throw "Official installer failed with exit code $LASTEXITCODE." }
+}
+
+function Get-GitBashPath {
+    $git = Get-Command git.exe,git -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+    if ($git) {
+        $gitDirectory = Split-Path -Parent $git.Source
+        $candidate = Join-Path (Split-Path -Parent $gitDirectory) 'bin\bash.exe'
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+
+    foreach ($candidate in @(
+        (Join-Path $env:ProgramFiles 'Git\bin\bash.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Git\bin\bash.exe')
+    )) {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    throw 'Git Bash is required for the official GitHub Copilot CLI installer. Install Git for Windows, then retry.'
+}
+
+function Invoke-OfficialBashInstaller {
+    param([Parameter(Mandatory = $true)][string] $InstallCommand)
+    $bash = Get-GitBashPath
+    & $bash --noprofile --norc -c $InstallCommand
+    if ($LASTEXITCODE -ne 0) { throw "Official Bash installer failed with exit code $LASTEXITCODE." }
+}
+
+function Publish-AiCommandShim {
+    param([Parameter(Mandatory = $true)][hashtable] $Product)
+    if (-not $Product.ContainsKey('CommandShimPath')) { return }
+
+    $target = [Environment]::ExpandEnvironmentVariables([string] $Product.ExpectedPath)
+    if (-not (Test-Path -LiteralPath $target -PathType Leaf)) { throw "Cannot publish a command shim because the target is absent: $target" }
+    $shim = [Environment]::ExpandEnvironmentVariables([string] $Product.CommandShimPath)
+    New-Item -ItemType Directory -Path (Split-Path -Parent $shim) -Force | Out-Null
+    "@echo off`r`n`"$target`" %*`r`n" | Set-Content -LiteralPath $shim -Encoding ascii -NoNewline
+}
+
+function Remove-AiToolForbiddenCommandPaths {
+    param([Parameter(Mandatory = $true)][hashtable] $Product)
+    if (-not $Product.ContainsKey('ForbiddenCommandPaths')) { return }
+
+    $allowedRoot = [IO.Path]::GetFullPath((Join-Path $env:LOCALAPPDATA 'cursor-agent')) + [IO.Path]::DirectorySeparatorChar
+    foreach ($path in @($Product.ForbiddenCommandPaths | ForEach-Object { [Environment]::ExpandEnvironmentVariables([string] $_) })) {
+        $resolvedPath = [IO.Path]::GetFullPath($path)
+        if (-not $resolvedPath.StartsWith($allowedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Refusing to remove a command alias outside the Cursor CLI directory: $resolvedPath"
+        }
+        if (Test-Path -LiteralPath $resolvedPath -PathType Leaf) {
+            Write-Host "Removing conflicting Cursor command alias: $resolvedPath"
+            Remove-Item -LiteralPath $resolvedPath -Force
+        }
+    }
 }
 
 function Install-OpenCodeDesktop {
@@ -142,6 +194,16 @@ if ($Mode -eq 'Test') {
 foreach ($item in @($selectedConfiguration.Products | Where-Object Enabled)) {
     $record = @($before.Products | Where-Object { $_.Name -eq $item.Name })[0]
     if ($record.Status -eq 'compliant' -and $Mode -ne 'Reinitialize') { continue }
+    if ($record.Action -eq 'publish-command-shim') {
+        Write-Host "Publishing command shim for $($item.Name)."
+        Publish-AiCommandShim $item
+        continue
+    }
+    if ($record.Action -eq 'remove-command-aliases') {
+        Remove-AiToolForbiddenCommandPaths $item
+        Publish-AiCommandShim $item
+        continue
+    }
     Write-Host "Reconciling $($item.Name) through $($item.Channel)."
     switch ($item.Channel) {
         'OfficialPowerShell' {
@@ -150,6 +212,9 @@ foreach ($item in @($selectedConfiguration.Products | Where-Object Enabled)) {
                 if ($LASTEXITCODE -ne 0) { throw 'Failed to remove the former Claude Code WinGet installation.' }
             }
             Invoke-OfficialPowerShellInstaller $item.InstallCommand
+        }
+        'OfficialBash' {
+            Invoke-OfficialBashInstaller $item.InstallCommand
         }
         'NpmGlobal' {
             & npm.cmd install --global $item.NpmPackage
@@ -166,6 +231,8 @@ foreach ($item in @($selectedConfiguration.Products | Where-Object Enabled)) {
         }
         default { throw "Unsupported AI tool channel: $($item.Channel)" }
     }
+    Remove-AiToolForbiddenCommandPaths $item
+    Publish-AiCommandShim $item
     Remove-FormerScoopPackage $item
 }
 

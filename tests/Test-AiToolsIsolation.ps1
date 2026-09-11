@@ -48,7 +48,7 @@ function Get-WorkstationModule {
 function Test-EnabledProducts {
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $names = @($config.Products | Where-Object Enabled | ForEach-Object Name)
-    foreach ($name in @('OpenCode Desktop', 'OpenCode CLI', 'Claude Code', 'Antigravity CLI', 'Cline CLI', 'GitHub Copilot CLI')) {
+    foreach ($name in @('OpenCode Desktop', 'OpenCode CLI', 'Claude Code', 'Antigravity CLI', 'Cursor CLI', 'Grok Build CLI', 'Cline CLI', 'GitHub Copilot CLI')) {
         Assert-True ($names -contains $name) "$name is enabled in the reviewed AI declaration"
     }
 }
@@ -97,6 +97,7 @@ function Test-ClaudeInstallChannel {
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $item = @($config.Products | Where-Object Name -eq 'Claude Code')[0]
     Assert-True ($item.InstallCommand -eq 'irm https://claude.ai/install.ps1 | iex' -and $item.Channel -eq 'OfficialPowerShell') 'Claude uses only the selected official script'
+    Assert-True ((Get-RequiredText 'scripts/Set-AiToolsState.ps1') -match 'Get-Command pwsh\.exe.+Select-Object -First 1') 'official PowerShell installers select one concrete pwsh executable'
     $wingetText = @(Get-ChildItem (Join-Path $repositoryRoot '.config') -Filter '*.winget' | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join "`n"
     Assert-True ($wingetText -notmatch '(?i)Claude') 'Claude is absent from WinGet declarations'
 }
@@ -104,7 +105,7 @@ function Test-ClaudeInstallChannel {
 function Test-AntigravityCliChannel {
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $item = @($config.Products | Where-Object Name -eq 'Antigravity CLI')[0]
-    Assert-True ($item.InstallCommand -eq 'irm https://antigravity.google/cli/install.ps1 | iex' -and $item.Command -eq 'agy') 'Antigravity is CLI-only through the official script'
+    Assert-True ($item.InstallCommand -eq 'irm https://antigravity.google/cli/install.ps1 | iex' -and $item.Channel -eq 'OfficialPowerShell' -and $item.Command -eq 'agy') 'Antigravity is CLI-only through the official PowerShell script'
 }
 
 function Test-ClineCliChannel {
@@ -113,10 +114,29 @@ function Test-ClineCliChannel {
     Assert-True ($item.InstallCommand -eq 'npm i -g cline' -and $item.NpmPackage -eq 'cline') 'Cline uses the selected npm channel'
 }
 
+function Test-CursorCliCommandIsolation {
+    $config = Get-RequiredData 'config/ai-tools.psd1'
+    $item = @($config.Products | Where-Object Name -eq 'Cursor CLI')[0]
+    $script = Get-RequiredText 'scripts/Set-AiToolsState.ps1'
+    Assert-True ($item.InstallCommand -eq "irm 'https://cursor.com/install?win32=true' | iex" -and $item.Command -eq 'cursor-cli' -and $item.ExpectedPath -match 'cursor-agent\\cursor-agent\.cmd$') 'Cursor uses the official Windows installer through an explicit cursor-cli command'
+    Assert-True (@($item.ForbiddenCommandPaths | Where-Object { $_ -match 'cursor-agent\\agent\.(exe|cmd|ps1)$' }).Count -eq 3) 'Cursor declares every conflicting generic agent alias for removal'
+    Assert-True ($script -match 'Remove-AiToolForbiddenCommandPaths' -and $script -match 'Refusing to remove a command alias outside the Cursor CLI directory') 'Cursor command-alias removal is narrowly bounded to its vendor directory'
+}
+
+function Test-GrokBuildCliChannel {
+    $config = Get-RequiredData 'config/ai-tools.psd1'
+    $item = @($config.Products | Where-Object Name -eq 'Grok Build CLI')[0]
+    Assert-True ($item.InstallCommand -eq 'irm https://x.ai/cli/install.ps1 | iex' -and $item.Command -eq 'grok' -and $item.ExpectedPath -match '\\.grok\\bin\\grok\.exe$') 'Grok Build uses its official PowerShell installer and reserves grok as its canonical command'
+}
+
 function Test-CopilotCli {
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $item = @($config.Products | Where-Object Name -eq 'GitHub Copilot CLI')[0]
-    Assert-True ($item.NpmPackage -eq '@github/copilot' -and $item.Command -eq 'copilot') 'Copilot CLI uses the official npm identity'
+    $script = Get-RequiredText 'scripts/Set-AiToolsState.ps1'
+    $core = Get-RequiredText 'scripts/AiTools.Core.ps1'
+    Assert-True ($item.InstallCommand -eq 'curl -fsSL https://gh.io/copilot-install | bash' -and $item.Channel -eq 'OfficialBash' -and $item.Command -eq 'copilot' -and $item.CommandShimPath -match 'WinGet\\Links\\copilot\.cmd$') 'Copilot CLI uses the official Bash installer and declares its command shim'
+    Assert-True ($script -match 'Invoke-OfficialBashInstaller' -and $script -match 'Get-GitBashPath' -and $script -match 'Publish-AiCommandShim') 'Copilot runs through Git Bash instead of WSL or an npm fallback'
+    Assert-True ($core -match "ContainsKey\('ExpectedPath'\)") 'command-only official installers can be inspected without an ExpectedPath declaration'
 }
 
 function Test-EditorInventory {
@@ -342,7 +362,7 @@ function Test-PortableSecretExclusions {
 
 $sections = if ($Section -eq 'All') {
     @('EnabledProducts', 'OptInBoundary', 'ObservationalStatus', 'OutputParity', 'OpenCodeTargets', 'FocusedProductSelection',
-        'ClaudeInstallChannel', 'AntigravityCliChannel', 'ClineCliChannel', 'CopilotCli',
+        'ClaudeInstallChannel', 'AntigravityCliChannel', 'CursorCliCommandIsolation', 'GrokBuildCliChannel', 'ClineCliChannel', 'CopilotCli',
         'EditorInventory', 'LocalFontPreference', 'PortableFontFallback', 'EditorMerge', 'BergActivation',
         'AiDistributionIdentity', 'AiNixIntegrity', 'NonoInstallChannel', 'NonoLaunchContract',
         'NonoFailClosed', 'NonoFilesystemPolicy', 'NonoCredentialPolicy', 'NonoNetworkPolicy',

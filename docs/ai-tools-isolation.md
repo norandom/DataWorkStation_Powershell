@@ -48,8 +48,10 @@ TUI after reconciliation so it loads the selected theme and plugin.
 | OpenCode CLI (sandboxed) | `NixOS-AI` | pinned Nix derivation in the complete verified Nix store |
 | Claude Code | Windows | `irm https://claude.ai/install.ps1 \| iex` |
 | Antigravity CLI (`agy`) | Windows | `irm https://antigravity.google/cli/install.ps1 \| iex` |
+| Cursor CLI (`cursor-cli`) | Windows | `irm 'https://cursor.com/install?win32=true' \| iex`; vendor `agent` aliases are removed |
+| Grok Build CLI (`grok`) | Windows | `irm https://x.ai/cli/install.ps1 \| iex`; retains its vendor `agent` compatibility entry point |
 | Cline CLI | Windows | `npm i -g cline` |
-| GitHub Copilot CLI | Windows | `npm i -g @github/copilot` |
+| GitHub Copilot CLI | Windows | `curl -fsSL https://gh.io/copilot-install \| bash` (through Git Bash) |
 | nono | `NixOS-AI` | `brew install nono`, pinned after review |
 
 Homebrew bootstrap and package maintenance run as the non-login `ai-maint` identity through the
@@ -60,6 +62,29 @@ the maintenance FHS environment.
 Claude Code is not declared through WinGet. If the state command observes the former
 `Anthropic.ClaudeCode` WinGet path, an explicit `AiTools` Ensure removes it before running the
 official installer. A failed installer stops the module; no alternate package source is used.
+
+Install either additional CLI explicitly as the current Windows user:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product 'Antigravity CLI'
+pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product 'GitHub Copilot CLI'
+```
+
+Antigravity uses its vendor PowerShell installer. Copilot uses Git for Windows' `bash.exe` to run
+its vendor `curl -fsSL https://gh.io/copilot-install | bash` installer; it does not use WSL's
+`bash.exe` or an npm fallback. Copilot's current Windows installer delegates to WinGet; the module
+publishes only a `copilot.cmd` shim in the existing per-user WinGet Links directory so `copilot`
+works in a new shell. It does not alter `PATH` or add Git Bash to it. Both commands download and
+execute vendor code only during explicit `Ensure`.
+
+Cursor's vendor installer publishes both `cursor-agent` and the ambiguous `agent` command. The
+managed module retains the vendor binary but removes only `%LOCALAPPDATA%\cursor-agent\agent.exe`,
+`agent.cmd`, and `agent.ps1`, then publishes `cursor-cli` through the existing per-user WinGet Links
+directory. This preserves Grok's installed `agent.exe` without relying on user-PATH order. Re-run
+the focused Ensure after a Cursor update if its auto-updater recreates an `agent` alias.
+
+Grok Build's canonical command is `grok`; its vendor `agent.exe` remains available for upstream
+compatibility. Do not use a bare `agent` to select an agent product—use `cursor-cli` or `grok`.
 
 Install only the two native Windows OpenCode products as the current user:
 

@@ -47,6 +47,30 @@
             ExpectedPath = '%LOCALAPPDATA%\agy\bin\agy.exe'
         }
         @{
+            Name = 'Cursor CLI'
+            Enabled = $true
+            Target = 'Windows'
+            Channel = 'OfficialPowerShell'
+            Command = 'cursor-cli'
+            InstallCommand = "irm 'https://cursor.com/install?win32=true' | iex"
+            ExpectedPath = '%LOCALAPPDATA%\cursor-agent\cursor-agent.cmd'
+            CommandShimPath = '%LOCALAPPDATA%\Microsoft\WinGet\Links\cursor-cli.cmd'
+            ForbiddenCommandPaths = @(
+                '%LOCALAPPDATA%\cursor-agent\agent.exe'
+                '%LOCALAPPDATA%\cursor-agent\agent.cmd'
+                '%LOCALAPPDATA%\cursor-agent\agent.ps1'
+            )
+        }
+        @{
+            Name = 'Grok Build CLI'
+            Enabled = $true
+            Target = 'Windows'
+            Channel = 'OfficialPowerShell'
+            Command = 'grok'
+            InstallCommand = 'irm https://x.ai/cli/install.ps1 | iex'
+            ExpectedPath = '%USERPROFILE%\.grok\bin\grok.exe'
+        }
+        @{
             Name = 'Cline CLI'
             Enabled = $true
             Target = 'Windows'
@@ -59,10 +83,11 @@
             Name = 'GitHub Copilot CLI'
             Enabled = $true
             Target = 'Windows'
-            Channel = 'NpmGlobal'
+            Channel = 'OfficialBash'
             Command = 'copilot'
-            NpmPackage = '@github/copilot'
-            InstallCommand = 'npm i -g @github/copilot'
+            InstallCommand = 'curl -fsSL https://gh.io/copilot-install | bash'
+            ExpectedPath = '%LOCALAPPDATA%\Microsoft\WinGet\Packages\GitHub.Copilot_Microsoft.Winget.Source_8wekyb3d8bbwe\copilot.exe'
+            CommandShimPath = '%LOCALAPPDATA%\Microsoft\WinGet\Links\copilot.cmd'
         }
     )
 }

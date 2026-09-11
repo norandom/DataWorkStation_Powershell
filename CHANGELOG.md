@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 4.1.0 - 2026-09-11
+
+- Add optional native Windows AI-tool declarations for Antigravity, Cursor CLI, Grok Build, and GitHub Copilot CLI with focused human inspection and reconciliation commands.
+- Resolve generic `agent` command contention by exposing Cursor as `cursor-cli`, retaining Grok's compatibility entry point, and removing only Cursor's conflicting vendor alias files after explicit reconciliation.
+- Use the official Copilot Bash installer through Git for Windows and publish a per-user command shim without changing PATH.
+- Add the default, non-privileged Audio Switcher tray-utility module with an explicit state command and `audio-switcher` launcher while preserving device preferences and startup behavior.
+
 ## 4.0.0 - 2026-08-28
 
 - Add the official `pnpm.pnpm` WinGet package alongside Node.js LTS and require its declared pnpm/pnpx shell wrappers to remain under Aikido Safe-Chain.

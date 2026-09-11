@@ -38,7 +38,7 @@ exclusions, and mode compatibility. It does not invoke a resource or resolve Pow
 | Stage | Available runtime | Gate | Modules |
 |---|---|---|---|
 | `Inbox` | Windows PowerShell 5.1 or native Windows executable | none | `Sudo`, `PowerShell7` |
-| `Core` | PowerShell 7, inbox shell when explicitly declared, or native executable | `PowerShell7` | Git/packages, test framework, Go, mpv, native text tools, Caffeine, Scoop, fonts, both terminals, and the shared PowerShell profile |
+| `Core` | PowerShell 7, inbox shell when explicitly declared, or native executable | `PowerShell7` | Git/packages, test framework, Go, mpv, native text tools, Caffeine, Audio Switcher, Scoop, fonts, both terminals, and the shared PowerShell profile |
 | `Extended` | declared runtime after Core is compliant | `PowerShell7` | Windows features and policy, WSL environments, developer tools, diagnostics, malware-analysis tooling, and optional debloat |
 
 Selecting a Core or Extended module automatically includes its stage gate. The `PowerShell7` module itself is a native WinGet operation in the Inbox stage. Therefore this fresh-host command is valid even when `pwsh.exe` is absent:
@@ -92,6 +92,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `Mpv` | yes | `PowerShell7` stage gate | official mpv Windows build with Radeon D3D11 rendering and safe hardware decode |
 | `NativeTextTools` | yes | none | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
 | `Caffeine` | yes | none | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
+| `AudioSwitcher` | yes | none | Audio Switcher tray utility for playback/recording device changes; favorites, hotkeys, and startup stay user-controlled |
 | `Scoop` | yes | `Git` | per-user Scoop with official Main and Extras buckets |
 | `TerminalFonts` | yes | `PowerShell7` | hash-pinned per-user Fira Code installation |
 | `ContourTerminal` | yes | `Sudo`, `PowerShell7`, `TerminalFonts` | official machine-wide Contour MSI, translated BlueTerm theme, local font selection, and bounded graphics-compatibility gate |
@@ -107,7 +108,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `DeveloperDocker` | no | `LinuxAutomation` | pyinfra-adopted rootful Docker daemon in Debian for Dagger |
 | `RootlessPodman` | yes | none | clean Debian-MW distro with local pyinfra and daemonless rootless Podman |
 | `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
-| `AiTools` | **no** | `Packages` | native Windows OpenCode Desktop/CLI, Claude Code, Antigravity, Cline, and Copilot CLI through reviewed channels |
+| `AiTools` | **no** | `Packages` | native Windows OpenCode Desktop/CLI, Claude Code, Antigravity, Cursor, Grok Build, Cline, and Copilot CLI through reviewed channels |
 | `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
 | `OpenCodeExtensions` | yes | none | pinned Cream Blue themes with Cobalt selected and verified OpenUltraCode 0.1.3 assets |
 | `SpecDrivenDevelopment` | yes | `Packages` | release-pinned Spec Kit EARS/TDD tool and validator |

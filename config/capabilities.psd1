@@ -252,7 +252,7 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
@@ -269,8 +269,10 @@
                 'pnpm --version'
                 'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan'
+                'pwsh -NoProfile -File .\scripts\Set-AudioSwitcherState.ps1 -Mode Test'
+                '.\Apply-Workstation.ps1 -Mode Test -Module AudioSwitcher -Plan'
             )
-            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv')
+            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv', '.\Apply-Workstation.ps1 -Mode Ensure -Module AudioSwitcher')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{
@@ -345,11 +347,15 @@
             FeatureSpec = 'specs/010-ai-tools-isolation'
             Modules = @('AiTools', 'AiNixOsWsl', 'OpenCodeExtensions', 'DeveloperEditor')
             Title = 'AI tools, OpenCode extensions, developer editor, and restricted WSL trust boundaries'
-            Triggers = @('opencode', 'opencode theme', 'cream blue', 'cobalt', 'openultracode', 'claude code', 'antigravity cli', 'cline', 'copilot cli', 'vscode', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
+            Triggers = @('opencode', 'opencode theme', 'cream blue', 'cobalt', 'openultracode', 'claude code', 'antigravity cli', 'cursor cli', 'cursor agent', 'cline', 'copilot cli', 'grok build', 'vscode', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product OpenCode'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product "Antigravity CLI"'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product "Cursor CLI"'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product "Grok Build CLI"'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Product "GitHub Copilot CLI"'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test -Json'
@@ -362,6 +368,10 @@
                 'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Ensure'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module DeveloperEditor'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product "Antigravity CLI"'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product "Cursor CLI"'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product "Grok Build CLI"'
+                'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product "GitHub Copilot CLI"'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module AiTools,AiNixOsWsl'
                 'pwsh -NoProfile -File .\scripts\Invoke-OpenCodeSandbox.ps1 -Project <path>'
                 'pwsh -NoProfile -File .\scripts\Import-MalwareCase.ps1 -Source <path> -CaseId <id>'

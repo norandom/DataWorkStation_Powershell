@@ -805,8 +805,10 @@ AI tools: drifted (opt-in)
   OpenCode CLI: absent; target=Windows; channel=NpmGlobal
   Claude Code: wrong-channel; target=Windows; channel=OfficialPowerShell
   Antigravity CLI: absent; target=Windows; channel=OfficialPowerShell
+  Cursor CLI: absent; target=Windows; channel=OfficialPowerShell
+  Grok Build CLI: absent; target=Windows; channel=OfficialPowerShell
   Cline CLI: absent; target=Windows; channel=NpmGlobal
-  GitHub Copilot CLI: absent; target=Windows; channel=NpmGlobal
+  GitHub Copilot CLI: absent; target=Windows; channel=OfficialBash
 ```
 
 The trust report is observational and leaves stopped distributions stopped:

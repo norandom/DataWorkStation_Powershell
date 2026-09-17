@@ -109,6 +109,8 @@ lint, and strict documentation build without applying workstation state.
 - **REQ-012**: When either utility interface changes, the project shall update human commands, capability routing where applicable, operator documentation, focused tests, and release notes together.
 - **REQ-013**: When automated validation runs, the project shall prove both focused module contracts and publication ownership without installing packages or changing user configuration.
 
+- **REQ-014**: The workstation shall expose Audio Switcher through a separately selectable, non-privileged default module with observational Test and an explicit application launcher.
+
 ### Key Entities
 
 - **mpv state**: Package identity, executable command, managed configuration block, graphics path,

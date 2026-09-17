@@ -93,6 +93,12 @@ ownership feature.
 7. Treat every configured Safe-Chain command wrapper as desired state on Windows and Debian rather
    than accepting an initialization file based only on its presence.
 
+## Audio Switcher ownership repair
+
+The existing Audio Switcher default module also belongs to this feature. Its focused contract
+suite covers the package declaration, observational Test, explicit launcher, and non-privileged
+module selection. This release attaches the missing ownership without changing application state.
+
 ## Complexity Tracking
 
 No constitution violations.

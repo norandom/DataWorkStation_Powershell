@@ -18,7 +18,7 @@ $adapter = @{
     }
     InvokeFinalGate = {
         param([string] $FeatureSpec)
-        $validator = Get-Command ears-sdd -CommandType Application -ErrorAction Stop
+        $validator = Get-Command ears-sdd -CommandType Application -ErrorAction Stop | Select-Object -First 1
         $output = (& $validator.Source validate --project $repositoryRoot --feature $FeatureSpec --phase final --json 2>&1 | Out-String).Trim()
         $exitCode = $LASTEXITCODE
         $parsed = $null

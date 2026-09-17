@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 4.2.0 - 2026-09-17
+
+- Declare Docker MTU 1280 for the default bridge and future custom bridges in developer WSL, preserving existing daemon settings and validating configuration before replacement.
+- Report uplink, daemon, and existing bridge MTU drift through the human and JSON workstation checks; identify custom networks requiring explicit recreation.
+- Cover Docker configuration preservation, validation order, restart behavior, and idempotence with isolated deployment tests.
+- Repair utility test-suite references and Audio Switcher feature ownership so publication governance passes; resolve only the first EARS validator on PATH.
+
 ## 4.1.0 - 2026-09-11
 
 - Add optional native Windows AI-tool declarations for Antigravity, Cursor CLI, Grok Build, and GitHub Copilot CLI with focused human inspection and reconciliation commands.

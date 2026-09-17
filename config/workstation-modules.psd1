@@ -132,6 +132,7 @@
         }
         @{
             Name = 'AudioSwitcher'
+            FeatureSpec = 'specs/013-default-workstation-utilities'
             Stage = 'Core'
             Runtime = 'PowerShell7'
             Order = 24

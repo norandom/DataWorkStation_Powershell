@@ -142,6 +142,33 @@ PATH="/home/linuxbrew/.linuxbrew/bin:$HOME/.local/bin:$PATH" \
 
 Use `--dry` instead of `-y` to inspect proposed changes. The external equivalent is `./Apply-Workstation.ps1 -Mode Ensure -Module DeveloperTools`. Both paths use the same deploy file to install Dagger with the official `dagger/tap/dagger` formula. The outer test verifies the CLI version and a minimal Dagger Engine call against the developer Docker daemon inside Debian WSL. Run either prerequisite alone with `-Module LinuxHomebrew`, `-Module LinuxAutomation`, or `-Module DeveloperDocker`, or inspect the complete order with `-Mode Test -Module DeveloperTools -Plan`.
 
+Inspect developer Docker installation and MTU drift before applying changes:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test -Json
+# Apply during planned container downtime; changed MTU settings restart Docker.
+pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Ensure
+```
+
+`config/developer-docker.psd1` declares `NetworkMtu = 1280` for the developer WSL
+uplink. The pyinfra deploy receives it as `DEVELOPER_DOCKER_MTU` and merges `mtu`
+and `default-network-opts.bridge.com.docker.network.driver.mtu` into
+`/etc/docker/daemon.json`. It preserves unrelated settings, validates the candidate
+with `dockerd --validate`, and backs up an existing configuration before replacement.
+Ensure runs as WSL root and restarts Docker when this configuration changes or the
+default bridge has the wrong MTU. Test reports the uplink, persisted settings, and
+existing bridge network MTUs; absent network MTU options are reported as Docker's
+1500 default. It rejects a declared MTU larger than the uplink.
+
+[Docker's default network options](https://docs.docker.com/reference/cli/dockerd/#default-network-options)
+only affect newly created custom networks. Existing oversized custom networks remain
+reported as drift until their owning Compose project or operator recreates them
+during planned downtime. The resource never removes networks, containers, or volumes.
+Recheck container interfaces and rerun the failing NuGet restore afterward; nested
+engines can have their own network settings, so matching the outer Docker MTU alone
+does not prove that the application failure is resolved.
+
 The separate default `RootlessPodman` module creates a clean named `Debian-MW` WSL 2 distribution, bootstraps pinned pyinfra locally, and applies `linux/rootless_podman.py`. It uses Debian's Podman package as a local, rootless, daemonless engine with user-scoped overlay storage and seccomp. The Podman API socket and services remain disabled. `config.json` keeps the developer and malware distro/user selectors separate. Test with `./Apply-Workstation.ps1 -Mode Test -Module RootlessPodman`; repair with `-Mode Ensure`. This module never exports, imports, or clones the developer distro.
 
 Migration provisions and validates Podman before stopping and removing the old Debian-MW Docker service, packages, and repository. Existing `~/.local/share/docker` and `~/.docker` data is retained and reported. Inspect it with `./scripts/Remove-LegacyDockerMwState.ps1 -Mode Test`; deletion is a separate non-default `LegacyDockerCleanup` module and requires both Ensure and `-ConfirmDestructive`.

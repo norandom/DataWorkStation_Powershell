@@ -51,6 +51,8 @@
 - [X] T019 Run focused Safe-Chain Test and pnpm interception smoke, lint, Tricky human/JSON, strict
   documentation, and the final EARS gates for REQ-009, REQ-013, and SC-006.
 
+- [X] T020 Characterize the existing Audio Switcher module and launcher using `tests/Test-AudioSwitcherState.ps1`, attach feature ownership, and verify the final governance gate for REQ-014.
+
 ## Dependencies & Execution Order
 
 - Characterization and design decisions precede reviewed implementation ownership.

@@ -705,30 +705,69 @@ function global:pcap-start {
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [ValidateRange(1, 65535)][int[]] $Port,
         [string] $Path = (Get-WorkstationTraceRoot),
-        [switch] $AllComponents
+        [switch] $AllComponents,
+        [ValidateRange(5, 600)][int] $Seconds = 90,
+        [ValidateRange(16, 1024)][int] $MaxSizeMiB = 64,
+        [ValidateRange(0, 65535)][int] $PacketSizeBytes = 256,
+        [switch] $Plan, [switch] $Json
     )
-    Invoke-ManagedPacketCapture -Action Start -Name $Name -Port $Port -WorkingDirectory $Path -AllComponents:$AllComponents
+    Invoke-ManagedPacketCapture -Action Start -Name $Name -Port $Port -WorkingDirectory $Path -AllComponents:$AllComponents -Seconds $Seconds -MaxSizeMiB $MaxSizeMiB -PacketSizeBytes $PacketSizeBytes -Plan:$Plan -Json:$Json
 }
 
 function global:pcap-stop {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
-        [string] $Path = (Get-WorkstationTraceRoot)
+        [string] $Path = (Get-WorkstationTraceRoot),
+        [switch] $Json
     )
-    Invoke-ManagedPacketCapture -Action Stop -Name $Name -WorkingDirectory $Path
+    Invoke-ManagedPacketCapture -Action Stop -Name $Name -WorkingDirectory $Path -Json:$Json
 }
 
 function global:pcap-debug-start {
     param(
         [Parameter(Mandatory = $true, Position = 0)][string] $Name,
         [ValidateRange(1, 65535)][int[]] $Port,
-        [string] $Path = (Get-WorkstationTraceRoot)
+        [string] $Path = (Get-WorkstationTraceRoot),
+        [ValidateRange(5, 600)][int] $Seconds = 90,
+        [ValidateRange(16, 1024)][int] $MaxSizeMiB = 64,
+        [ValidateRange(0, 65535)][int] $PacketSizeBytes = 256,
+        [switch] $Plan, [switch] $Json
     )
-    Invoke-ManagedPacketCapture -Action Start -Name $Name -Port $Port -WorkingDirectory $Path -AllComponents
+    Invoke-ManagedPacketCapture -Action Start -Name $Name -Port $Port -WorkingDirectory $Path -AllComponents -Seconds $Seconds -MaxSizeMiB $MaxSizeMiB -PacketSizeBytes $PacketSizeBytes -Plan:$Plan -Json:$Json
 }
 
-function global:pcap-status { Invoke-ManagedPacketCapture -Action Status }
-function global:pcap-counters { Invoke-ManagedPacketCapture -Action Counters }
+function global:pcap-status { param([switch] $Json) Invoke-ManagedPacketCapture -Action Status -Json:$Json }
+function global:pcap-counters { param([switch] $Json) Invoke-ManagedPacketCapture -Action Counters -Json:$Json }
+
+function global:http-debug-start {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Name,
+        [string] $ProcessName, [int] $ProcessId,
+        [Alias('Profile')][ValidateSet('HttpAuth', 'TlsHandshake')][string] $CaptureProfile = 'HttpAuth',
+        [ValidateRange(5, 600)][int] $Seconds = 90,
+        [ValidateRange(16, 256)][int] $MaxSizeMiB = 32,
+        [string] $WorkingDirectory = (Get-WorkstationTraceRoot),
+        [switch] $Plan, [switch] $Json
+    )
+    Invoke-ManagedHttpDiagnostics -Action Start @PSBoundParameters
+}
+function global:http-debug-stop {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $WorkingDirectory = (Get-WorkstationTraceRoot), [switch] $Json)
+    Invoke-ManagedHttpDiagnostics -Action Stop @PSBoundParameters
+}
+function global:http-debug-status {
+    param([Parameter(Mandatory = $true, Position = 0)][string] $Name, [string] $WorkingDirectory = (Get-WorkstationTraceRoot), [switch] $Json)
+    Invoke-ManagedHttpDiagnostics -Action Status @PSBoundParameters
+}
+function global:http-debug-summary {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)][string] $Name,
+        [string] $WorkingDirectory = (Get-WorkstationTraceRoot),
+        [string] $HostName, [datetime] $From, [datetime] $To,
+        [switch] $FailuresOnly, [switch] $Json
+    )
+    Invoke-ManagedHttpDiagnostics -Action Summary @PSBoundParameters
+}
 
 function global:pcap {
     param(

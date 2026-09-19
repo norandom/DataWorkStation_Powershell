@@ -9,4 +9,4 @@ resources:
     properties:
       id: Microsoft.PowerShell
       source: winget
-      useLatest: true
+      version: '7.6.6.0'

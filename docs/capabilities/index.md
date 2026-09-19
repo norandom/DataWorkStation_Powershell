@@ -17,6 +17,7 @@ debugger, changes policy, or repairs desired state.
 |---|---|---|---|
 | `memory-pressure` | RAM, commit, WSL memory, or a kernel pool is growing | `mem`, `memapps`, `memproc` | `profile-native-record CASE -Seconds 30` |
 | `network-path` | DNS, IPv6, firewall, port, or reachability fails | `ports`, `connections`, existing PCAPNG | `pcap-debug-start CASE` |
+| `http-authentication` | An HTTP operation fails, including Office Store installation | `http-debug-summary -Path EXISTING.etl -Executable WINWORD.EXE` | Review `http-debug-start -Name CASE -Executable WINWORD.EXE -Plan` before capture |
 | `crash-analysis` | A process exits, faults, freezes, or hangs | `crashes`, `problems`, existing dumps | `dump-on-crash -Name CASE -Executable PATH` |
 | `native-performance` | Native or system-wide CPU and latency matter | `profile-status`, existing ETL | `profile-native-record CASE -Seconds 30` |
 | `python-performance` | A Python process consumes CPU | `profile-view PROFILE.svg` | `profile-python -ProcessId PID -Seconds 30 -Output PROFILE.svg` |
@@ -42,6 +43,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 
 | Route | Use when | Safe first command |
 |---|---|---|
+| `razer-rgb` | Inspect optional keyboard lighting with the mouse on Bluetooth | `pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Test` |
 | `powershell-environment` | Bootstrap PowerShell 7, profiles, or Windows Terminal | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan` |
 | `powershell-testing` | Discover Pester tests, parallel execution, or 5.1 compatibility | `test-powershell` |
 | `repository-quality` | Check PowerShell, Python, Dockerfiles, Actions, YAML, JSON, TOML, and staged-file safety | `lint-repository` or `precommit-run` |

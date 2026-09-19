@@ -6,6 +6,8 @@ description: Diagnose Windows DNS, IPv6, firewall, open-port, endpoint ownership
 # Diagnose Network
 
 Follow the workstation's DNS → IPv6 → firewall → transport flow.
+For HTTP status errors, TLS negotiation or a service that opens but rejects an operation, route to
+`$diagnose-http`. A successful TCP connection does not establish HTTP success; encrypted packets do not reveal HTTP status.
 
 ## Workflow
 
@@ -15,7 +17,7 @@ Follow the workstation's DNS → IPv6 → firewall → transport flow.
 4. Add any existing PktMon folder, ETL, or PCAPNG to the Tricky case and run `tricky inspect <case> -Json`.
 5. Query existing PktMon evidence with `pcap-protocols`, `pcap-dns`, `pcap-ipv6`, `pcap-firewall`, `pcap-ports`, and `pcap-failures` as applicable.
 6. Correlate DNS answers, chosen address family, connection attempts, resets/timeouts, firewall drops, listener ownership, and timestamps. State gaps.
-7. Only if packet evidence is missing, propose `pcap-debug-start <case> -Port <ports>`, a short reproduction, and `pcap-stop <case>`. Capture is explicit and normally elevated.
+7. Only if packet evidence is missing, propose `pcap-debug-start <case> -Port <ports> -Seconds 90 -MaxSizeMiB 64 -Plan`, then an authorized capture and `pcap-stop <case>`. Capture is explicit and normally elevated; the detached timer stops recording automatically. Preserve existing filters and unrelated sessions; an ambiguous ownership check must not be bypassed.
 8. Update the Tricky report with endpoints, protocols, ports, failures, and the smallest remaining test.
 
 Do not install or require Wireshark. PCAPNG is the portable interchange artifact; the compact queries operate on the PktMon ETL.

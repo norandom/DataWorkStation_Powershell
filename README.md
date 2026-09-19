@@ -66,6 +66,15 @@ Read [Reproducible NixOS WSL tools](docs/nixos-wsl.md) for operation and [NixOS 
 
 ## Capabilities
 
+[Workload memory protection](docs/workload-memory.md) combines three automatic xdist workers
+with optional 8 GiB Windows Job Object limits for Python/.NET trees and selected AI hosts.
+Process Lasso is a separate optional CPU responsiveness tool requiring a paid license for
+commercial use. Java is not currently capped by this policy.
+
+Optional [Razer lighting](docs/razer-rgb.md) replaces Synapse lighting with portable OpenRGB:
+blue at rest, white for two seconds on each keyboard key press, with hidden user sign-in startup.
+Select `RazerRgb` explicitly; the Basilisk V3 Pro stays on Bluetooth with its lighting unmanaged.
+
 | Need | Commands and artifacts |
 |---|---|
 | Find memory owners | `mem`, `memapps`, `memproc`, `memtop`, RAMMap, PoolMon |
@@ -95,7 +104,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 |---|---|
 | `.config/configuration.winget` | Declarative WinGet package state, including Node.js LTS, pnpm, `uv`, IrfanView, and lightweight qView. |
 | `.config/git.winget` | Focused Git package state used by Scoop dependencies. |
-| `.config/powershell7.winget` | Focused PowerShell 7 package state used by Contour, package, and profile dependencies. |
+| `.config/powershell7.winget` | PowerShell 7.6.6 package state used by Contour, package, and profile dependencies. |
 | `.config/go.winget` | Focused official Go MSI-backed package state for Windows development. |
 | `.config/native-text-tools.winget` | Focused native Win32 package state for PowerShell `awk` and `sed`. |
 | `.config/caffeine.winget` | Focused Zhorn Software Caffeine package state. |
@@ -212,6 +221,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Get-EventTriage.ps1` | Normalizes operational, crash, logon, remote, and security event views. |
 | `scripts/Invoke-DevEventLogSession.ps1` | Captures scoped EVTX, ETW/WPR ETL, and WER full dumps for a development repro. |
 | `scripts/Invoke-PacketCapture.ps1` | Captures NIC traffic with in-box PktMon and converts ETL to PCAPNG. |
+| `scripts/Invoke-HttpDiagnostics.ps1` | Plans and records bounded HTTP/TLS ETW captures; emits allowlisted request summaries with process and coverage evidence. See [HTTP diagnostics](docs/workflows/http-authentication.md). |
 | `scripts/Get-PcapTriage.ps1` | Provides compact packet, failure, protocol, port, and endpoint views from PktMon ETL. |
 | `scripts/ssh-copy-id.ps1` | Installs an OpenSSH public key on a POSIX SSH target. |
 | `scripts/Set-FirewallState.ps1` | Maintains default-block profiles, named service rules, and expert-approved local application rules. |
@@ -492,3 +502,15 @@ Local pyinfra applies the state inside each distribution. `Debian` keeps a rootf
 - [Windows hardening profile and attack surface](docs/hardening.md) records the legacy-script review and compatibility costs.
 - [Opt-in Windows debloat profile](docs/debloat.md) lists removals, protected software, and rollback limits.
 - [Commands and aliases](docs/Aliases.md) is the daily command reference.
+
+## Optional Process Lasso
+
+Process Lasso is opt-in and excluded from default `All` runs. Inspect or install it explicitly:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso -Plan
+pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test -Json
+.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso
+```
+
+The `BitSum.ProcessLasso` WinGet package installs machine-wide and may require elevation. The module keeps vendor defaults and existing preferences; it does not configure watchdog termination rules or activate a paid license. `Reinitialize` reapplies the package declaration without resetting preferences.

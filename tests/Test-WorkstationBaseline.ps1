@@ -522,7 +522,7 @@ function Test-TrickyOutput {
 }
 
 function Test-DiagnosticSkills {
-    $skillNames = @('diagnose-memory', 'diagnose-network', 'diagnose-problem', 'investigate-crash', 'profile-native', 'profile-python', 'profile-dotnet')
+    $skillNames = @('diagnose-memory', 'diagnose-network', 'diagnose-http', 'diagnose-problem', 'investigate-crash', 'profile-native', 'profile-python', 'profile-dotnet')
     $skillText = @{}
     foreach ($name in $skillNames) {
         $path = Join-Path $repositoryRoot ".agents\skills\$name\SKILL.md"

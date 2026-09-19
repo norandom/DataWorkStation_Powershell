@@ -6,6 +6,8 @@ description: Investigate Windows process crashes, segfault-like access violation
 # Investigate Crash
 
 Escalate from historical evidence to targeted capture.
+An application error dialog alone is not a crash. For failed HTTP/authenticated operations with
+the process still responsive, use `diagnose-http` before considering a debugger attachment.
 
 ## Workflow
 

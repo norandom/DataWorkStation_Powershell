@@ -198,8 +198,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 54 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 32 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 56 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 34 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -230,6 +230,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 | NativeTextTools | REQ-022 |
 | Caffeine | REQ-002, REQ-007, REQ-025 |
 | AudioSwitcher | REQ-002, REQ-007, REQ-025 |
+| ProcessLasso | REQ-002, REQ-007, REQ-025 |
+| RazerRgb | REQ-002, REQ-006, REQ-007 |
 | Scoop | REQ-002, REQ-007 |
 | TerminalFonts | REQ-002, REQ-007 |
 | ContourTerminal | REQ-020, REQ-021 |
@@ -279,8 +281,10 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 | Capability route | Primary requirement coverage |
 |---|---|
+| razer-rgb | REQ-026, REQ-029 |
 | memory-pressure | REQ-026, REQ-028, REQ-033 |
 | network-path | REQ-026, REQ-028, REQ-029 |
+| http-authentication | REQ-026, REQ-028, REQ-029 |
 | crash-analysis | REQ-026, REQ-028, REQ-029 |
 | native-performance | REQ-026, REQ-033 |
 | python-performance | REQ-026, REQ-033 |

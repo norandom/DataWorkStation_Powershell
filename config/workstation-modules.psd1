@@ -22,6 +22,19 @@
     )
     Modules = @(
         @{
+            Name = 'RazerRgb'
+            FeatureSpec = 'specs/016-razer-rgb'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 26
+            Default = $false
+            DependsOn = @('PowerShell7')
+            SupportedModes = @('Test', 'Ensure')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Optional portable OpenRGB with blue Razer keyboard lighting, two-second white key effects, and per-user startup. Bluetooth mouse lighting stays unmanaged. Synapse removal is separately explicit.'
+        }
+        @{
             Name = 'Sudo'
             Stage = 'Inbox'
             Runtime = 'Inbox'
@@ -142,6 +155,19 @@
             Privileged = $false
             Destructive = $false
             Description = 'Audio Switcher tray utility for changing Windows playback and recording devices with optional hotkeys.'
+        }
+        @{
+            Name = 'ProcessLasso'
+            FeatureSpec = 'specs/014-process-lasso'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
+            Order = 24
+            Default = $false
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $true
+            Destructive = $false
+            Description = 'Optional Process Lasso installation; paid license required for commercial use. Vendor defaults; responsiveness tuning is separate and no watchdog rules are managed.'
         }
         @{
             Name = 'Scoop'

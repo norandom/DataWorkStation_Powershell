@@ -52,6 +52,8 @@ nav:
       - Review and run updates: workstation-update.md
       - Clean disk and traces: cleanup.md
   - Configure:
+      - Workload memory and optional Process Lasso: workload-memory.md
+      - Optional Razer lighting: razer-rgb.md
       - Contour Terminal and BlueTerm: contour-terminal.md
       - Terminal keys and scrolling: terminal-keybindings.md
       - Native awk and sed: native-text-tools.md
@@ -64,6 +66,7 @@ nav:
       - Something is not working: workflows/problem-not-working.md
       - Memory pressure: workflows/memory-pressure.md
       - Network path: workflows/network-path.md
+      - HTTP and authentication: workflows/http-authentication.md
       - Crash without an error: workflows/crash-without-error.md
       - Performance profiling: workflows/performance-profiling.md
       - Keep evidence in Tricky cases: tricky.md

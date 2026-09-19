@@ -1,0 +1,21 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-RazerRgb.ps1#All"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-RazerRgb.ps1#All"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-RazerRgb.ps1#All"]
+
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-RazerRgb.ps1#All"]
+
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-RazerRgb.ps1#All"]

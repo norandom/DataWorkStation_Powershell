@@ -2,12 +2,24 @@
     SchemaVersion = 1
     Capabilities = @(
         @{
+            Id = 'razer-rgb'
+            FeatureSpec = 'specs/016-razer-rgb'
+            Modules = @('RazerRgb')
+            Title = 'Optional Razer keyboard lighting; Bluetooth mouse stays unmanaged'
+            Triggers = @('razer', 'synapse', 'openrgb', 'keyboard lighting', 'mouse lighting')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @('pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Test -Json', '.\Apply-Workstation.ps1 -Mode Test -Module RazerRgb -Plan')
+            StateCommands = @('pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Ensure', 'pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Ensure -RemoveSynapse')
+            CaptureCommand = 'tricky add {case} -Path <razer-rgb-state.json>'
+        }
+        @{
             Id = 'powershell-environment'
             Title = 'Staged PowerShell bootstrap, dual-runtime grml-style profile, and Windows Terminal'
             Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile', 'mkdir', 'directory color', 'ansi color', 'grml', 'grml zsh', 'shell aliases', 'prompt style', 'git prompt')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan'
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7'
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section BootstrapStages'
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes'
                 'pwsh -NoProfile -File .\scripts\Set-PowerShellProfile.ps1 -Mode Test'
@@ -16,6 +28,7 @@
                 "Get-Command l,ll,la,lh,da,lad,lsa,lsd,lse,lsl,lsx,lsbig,lsnew,lsold,lssmall,lsnewdir,lsolddir,mkcd,cdt,'..','...','....'"
             )
             StateCommands = @(
+                'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Ensure -Module PowerShell7'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module PowerShellProfile'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module WindowsTerminal'
             )
@@ -56,9 +69,19 @@
         @{
             Id = 'memory-pressure'
             Title = 'Memory pressure'
-            Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory')
+            Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory', 'xdist', 'pytest workers', 'AI memory limits', 'process lasso license')
             EvidenceKinds = @('Snapshot', 'Native profile')
-            InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon')
+            InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon', 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test')
+            StateCommands = @(
+                'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure'
+                'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Remove'
+                'sudo pwsh -NoProfile -File .\scripts\Set-ProcessLassoResponsiveness.ps1 -Mode Ensure'
+            )
+            ValidationCommands = @(
+                'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test -Json'
+                'pwsh -NoProfile -File .\scripts\Set-ProcessLassoResponsiveness.ps1 -Mode Test -Json'
+                'pwsh -NoProfile -File .\tests\Test-WorkloadMemoryLimits.ps1'
+            )
             CaptureCommand = 'profile-native-record {case} -Seconds 30'
         }
         @{
@@ -67,7 +90,17 @@
             Triggers = @('network', 'dns', 'ipv6', 'firewall', 'port', 'connection', 'timeout', 'tcp', 'udp')
             EvidenceKinds = @('Packet capture')
             InspectCommands = @('ports', 'connections', 'pcap-protocols <capture>', 'pcap-ports <capture>', 'pcap-failures <capture>')
-            CaptureCommand = 'pcap-debug-start {case}'
+            CaptureCommand = 'pcap-debug-start {case} -Seconds 90 -MaxSizeMiB 64'
+        }
+        @{
+            Id = 'http-authentication'
+            FeatureSpec = 'specs/015-http-diagnostics'
+            Modules = @()
+            Title = 'HTTP, TLS, and application authentication failures'
+            Triggers = @('http', 'tls', '401', '403', 'unauthorized', 'office store', 'add-in', 'addin')
+            EvidenceKinds = @('HTTP diagnostic summary')
+            InspectCommands = @('http-debug-status <capture> -Json', 'http-debug-summary <capture> -Json', 'tricky inspect {case} -Json')
+            CaptureCommand = 'http-debug-start {case} -ProcessName <name> -Profile HttpAuth -Seconds 90 -MaxSizeMiB 32'
         }
         @{
             Id = 'crash-analysis'
@@ -252,7 +285,7 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher', 'process lasso', 'processlasso')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
@@ -271,8 +304,10 @@
                 '.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan'
                 'pwsh -NoProfile -File .\scripts\Set-AudioSwitcherState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module AudioSwitcher -Plan'
+                'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test -Json'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso -Plan'
             )
-            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv', '.\Apply-Workstation.ps1 -Mode Ensure -Module AudioSwitcher')
+            StateCommands = @('update -Run', 'update -Target <name> -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv', '.\Apply-Workstation.ps1 -Mode Ensure -Module AudioSwitcher', '.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{

@@ -11,22 +11,33 @@ param(
 
     [string] $WorkingDirectory,
     [string] $ConfigurationPath,
-    [switch] $AllComponents
+    [switch] $AllComponents,
+    [ValidateRange(5, 600)][int] $Seconds = 90,
+    [ValidateRange(16, 1024)][int] $MaxSizeMiB = 64,
+    [ValidateRange(0, 65535)][int] $PacketSizeBytes = 256,
+    [switch] $Plan,
+    [switch] $Json
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Import-WorkstationConfiguration.ps1')
 if ([string]::IsNullOrWhiteSpace($WorkingDirectory)) { $WorkingDirectory = (Import-WorkstationConfiguration -ConfigurationPath $ConfigurationPath).Paths.Traces }
 $principal = [Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
-if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+if (-not $Plan -and -not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     throw 'Administrator rights are required. Run this script through sudo.'
 }
 if (-not (Get-Command pktmon.exe -CommandType Application -ErrorAction Ignore)) {
     throw 'PktMon is not available on this Windows installation.'
 }
 
-if ($Action -eq 'Status') { & pktmon.exe status; exit $LASTEXITCODE }
-if ($Action -eq 'Counters') { & pktmon.exe counters; exit $LASTEXITCODE }
+if ($Plan -and $Action -ne 'Start') { throw 'Plan is only available for Start.' }
+if ($Action -in @('Status', 'Counters')) {
+    $nativeText = @(& pktmon.exe $Action.ToLowerInvariant() 2>&1)
+    $nativeCode = $LASTEXITCODE
+    if ($Json) { [pscustomobject]@{ Action = $Action; ExitCode = $nativeCode; NativeText = $nativeText } | ConvertTo-Json -Depth 3 }
+    else { $nativeText }
+    exit $nativeCode
+}
 if (-not $Name) { throw "$Action requires a capture name." }
 
 $capturePorts = @()
@@ -43,6 +54,11 @@ foreach ($value in @($Port)) {
 $capturePorts = @($capturePorts | Sort-Object -Unique)
 
 $workingRoot = [IO.Path]::GetFullPath($WorkingDirectory)
+if ($Plan) {
+    $planned = [pscustomobject]@{ Name = $Name; Directory = (Join-Path $workingRoot "pcap-$Name"); Seconds = $Seconds; MaxSizeMiB = $MaxSizeMiB; PacketSizeBytes = $PacketSizeBytes; Ports = $capturePorts; AllComponents = [bool] $AllComponents; RequiresAdministrator = $true; ExistingFilters = 'Refuse unless empty; never overwrite external filters' }
+    if ($Json) { $planned | ConvertTo-Json } else { $planned | Format-List }
+    return
+}
 if ($Action -eq 'Start' -and -not (Test-Path -LiteralPath $workingRoot)) { New-Item -ItemType Directory -Path $workingRoot -Force | Out-Null }
 if (-not (Test-Path -LiteralPath $workingRoot -PathType Container)) {
     throw "Working directory does not exist: $workingRoot"
@@ -55,6 +71,11 @@ $sessionFile = Join-Path $captureRoot 'session.json'
 $etlFile = Join-Path $captureRoot 'capture.etl'
 $pcapFile = Join-Path $captureRoot 'capture.pcapng'
 
+$captureMutex = [Threading.Mutex]::new($false, 'Global\PowerShellWorkstationPktMon')
+$lockTaken = $false
+try {
+try { $lockTaken = $captureMutex.WaitOne(30000) } catch [Threading.AbandonedMutexException] { $lockTaken = $true }
+if (-not $lockTaken) { throw 'Another managed PktMon operation is in progress.' }
 if ($Action -eq 'Start') {
     if (Test-Path -LiteralPath $captureRoot) {
         throw "Capture directory already exists; choose another name: $captureRoot"
@@ -62,13 +83,17 @@ if ($Action -eq 'Start') {
 
     $status = & pktmon.exe status 2>&1
     $statusText = $status -join [Environment]::NewLine
-    if ($LASTEXITCODE -eq 0 -and $statusText -notmatch '(?i)not running|is stopped') {
+    if ($LASTEXITCODE -ne 0 -or $statusText -notmatch '(?i)not running|is stopped') {
         throw "PktMon is already active. Stop the existing capture first.`n$($status -join [Environment]::NewLine)"
     }
 
+    $existingFilters = @(& pktmon.exe filter list 2>&1) -join [Environment]::NewLine
+    if ($LASTEXITCODE -ne 0 -or $existingFilters -notmatch '(?i)^\s*(?:No (?:packet )?filters|There are no (?:packet )?filters)') {
+        throw 'Existing or unrecognized PktMon filters; leave them intact and resolve their ownership before capturing.'
+    }
     New-Item -ItemType Directory -Path $captureRoot -Force | Out-Null
-    & pktmon.exe filter remove 2>$null | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Could not reset PktMon capture filters.' }
+    $captureStarted = $false
+    $ownedFilters = $null
 
     try {
         foreach ($number in $capturePorts) {
@@ -82,10 +107,13 @@ if ($Action -eq 'Start') {
             if ($LASTEXITCODE -ne 0) { throw 'Could not add the IPv6 ICMP diagnostic filter.' }
         }
 
-        $arguments = @('start', '--capture', '--pkt-size', '256', '--file-name', $etlFile, '--file-size', '64', '--log-mode', 'circular')
+        $ownedFilters = @(& pktmon.exe filter list 2>&1) -join [Environment]::NewLine
+        if ($LASTEXITCODE -ne 0) { throw 'Could not snapshot capture filters.' }
+        $arguments = @('start', '--capture', '--pkt-size', "$PacketSizeBytes", '--file-name', $etlFile, '--file-size', "$MaxSizeMiB", '--log-mode', 'circular')
         if (-not $AllComponents) { $arguments += @('--comp', 'nics') }
         & pktmon.exe @arguments
         if ($LASTEXITCODE -ne 0) { throw "PktMon capture failed to start with exit code $LASTEXITCODE." }
+        $captureStarted = $true
 
         [pscustomobject]@{
             Name = $Name
@@ -94,17 +122,26 @@ if ($Action -eq 'Start') {
             CaptureDirectory = $captureRoot
             Ports = $capturePorts
             Components = if ($AllComponents) { 'All' } else { 'NICs' }
-            PacketSizeBytes = 256
-            MaximumSizeMiB = 64
+            PacketSizeBytes = $PacketSizeBytes
+            MaximumSizeMiB = $MaxSizeMiB
+            Seconds = $Seconds
+            OwnedFilters = $ownedFilters
         } | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $sessionFile -Encoding UTF8
+        $worker = Join-Path $PSScriptRoot 'Stop-PacketCaptureAfterDelay.ps1'
+        $shellPath = (Get-Process -Id $PID).Path
+        Start-Process -FilePath $shellPath -ArgumentList @('-NoLogo', '-NoProfile', '-File', ('"' + $worker + '"'), '-SessionFile', ('"' + $sessionFile + '"')) -WindowStyle Hidden -ErrorAction Stop | Out-Null
     } catch {
-        & pktmon.exe filter remove 2>$null | Out-Null
+        if ($captureStarted) {
+            $failedStatus = @(& pktmon.exe status 2>&1) -join [Environment]::NewLine
+            if ($failedStatus.IndexOf($etlFile, [StringComparison]::OrdinalIgnoreCase) -ge 0) { & pktmon.exe stop 2>$null | Out-Null }
+        }
+        $failedFilters = @(& pktmon.exe filter list 2>&1) -join [Environment]::NewLine
+        if ($null -ne $ownedFilters -and $failedFilters -ceq $ownedFilters) { & pktmon.exe filter remove 2>$null | Out-Null }
         throw
     }
 
-    Write-Host "Packet capture started: $captureRoot"
-    Write-Warning 'Keep the capture short. PktMon reports a 768 MiB logger memory reservation on this Windows build while recording.'
-    Write-Host "Stop and convert it with: pcap-stop $Name"
+    if ($Json) { Get-Content -LiteralPath $sessionFile -Raw }
+    else { Write-Host "Packet capture started: $captureRoot; automatic stop in $Seconds seconds. Early stop: pcap-stop $Name" }
     exit 0
 }
 
@@ -112,22 +149,42 @@ if (-not (Test-Path -LiteralPath $sessionFile -PathType Leaf)) {
     throw "No capture session named '$Name' exists under: $workingRoot"
 }
 $session = Get-Content -LiteralPath $sessionFile -Raw | ConvertFrom-Json
-if ($session.Status -ne 'Active') { throw "Capture '$Name' is not active." }
+if ($session.Status -eq 'Completed') {
+    if ($Json) { $session | ConvertTo-Json -Depth 4 } else { Write-Host "Capture already completed: $pcapFile" }
+    return
+}
 
 try {
-    & pktmon.exe stop
-    if ($LASTEXITCODE -ne 0) { throw "PktMon failed to stop with exit code $LASTEXITCODE." }
+    if ($session.Status -eq 'Active') {
+        $activeStatus = @(& pktmon.exe status 2>&1) -join [Environment]::NewLine
+        if ($LASTEXITCODE -ne 0 -or $activeStatus.IndexOf($etlFile, [StringComparison]::OrdinalIgnoreCase) -lt 0) {
+            throw 'Cannot prove ownership of active PktMon capture; refusing to stop it.'
+        }
+        & pktmon.exe stop | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "PktMon failed to stop with exit code $LASTEXITCODE." }
+        $session.Status = 'Stopped'
+        $session | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $sessionFile -Encoding UTF8
+    }
     if (-not (Test-Path -LiteralPath $etlFile -PathType Leaf)) { throw "PktMon did not create: $etlFile" }
-    & pktmon.exe etl2pcap $etlFile --out $pcapFile
+    & pktmon.exe etl2pcap $etlFile --out $pcapFile | Out-Null
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $pcapFile -PathType Leaf)) {
         throw 'PktMon stopped, but PCAPNG conversion failed. The ETL file has been retained.'
     }
 } finally {
-    & pktmon.exe filter remove 2>$null | Out-Null
+    $currentFilters = @(& pktmon.exe filter list 2>&1) -join [Environment]::NewLine
+    $cleanupStatus = @(& pktmon.exe status 2>&1) -join [Environment]::NewLine
+    $stoppedForCleanup = $LASTEXITCODE -eq 0 -and $cleanupStatus -match '(?i)not running|is stopped'
+    if ($stoppedForCleanup -and $session.Status -ne 'Active' -and $session.PSObject.Properties['OwnedFilters'] -and $currentFilters -ceq $session.OwnedFilters) {
+        & pktmon.exe filter remove 2>$null | Out-Null
+    }
 }
 
 $session.Status = 'Completed'
 $session | Add-Member -NotePropertyName CompletedUtc -NotePropertyValue ((Get-Date).ToUniversalTime().ToString('o')) -Force
 $session | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $sessionFile -Encoding UTF8
-Write-Host "Packet capture stopped: $pcapFile"
-Write-Host "Read it with: pcap $Name"
+if ($Json) { $session | ConvertTo-Json -Depth 4 }
+else { Write-Host "Packet capture stopped: $pcapFile"; Write-Host "Read it with: pcap $Name" }
+} finally {
+    if ($lockTaken) { $captureMutex.ReleaseMutex() }
+    $captureMutex.Dispose()
+}

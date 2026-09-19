@@ -347,7 +347,12 @@ function global:Invoke-ManagedPacketCapture {
         [string] $Name,
         [int[]] $Port,
         [string] $WorkingDirectory = (Get-WorkstationTraceRoot),
-        [switch] $AllComponents
+        [switch] $AllComponents,
+        [ValidateRange(5, 600)][int] $Seconds = 90,
+        [ValidateRange(16, 1024)][int] $MaxSizeMiB = 64,
+        [ValidateRange(0, 65535)][int] $PacketSizeBytes = 256,
+        [switch] $Plan,
+        [switch] $Json
     )
 
     $script = Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-PacketCapture.ps1'
@@ -355,7 +360,33 @@ function global:Invoke-ManagedPacketCapture {
     if ($Name) { $arguments += @('-Name', $Name) }
     if ($Port) { $arguments += @('-Port', ($Port -join ',')) }
     if ($AllComponents) { $arguments += '-AllComponents' }
-    & sudo.exe powershell.exe @arguments
+    $arguments += @('-Seconds', "$Seconds", '-MaxSizeMiB', "$MaxSizeMiB", '-PacketSizeBytes', "$PacketSizeBytes")
+    if ($Json) { $arguments += '-Json' }
+    if ($Plan) { $arguments += '-Plan'; & powershell.exe @arguments }
+    else { & sudo.exe powershell.exe @arguments }
+}
+
+$script:HttpDiagnosticsScript = Join-Path (Split-Path $PSScriptRoot -Parent) 'scripts\Invoke-HttpDiagnostics.ps1'
+function global:Invoke-ManagedHttpDiagnostics {
+    param(
+        [Parameter(Mandatory = $true)][string] $Action,
+        [Parameter(Mandatory = $true)][string] $Name,
+        [string] $ProcessName, [int] $ProcessId,
+        [Alias('Profile')][string] $CaptureProfile = 'HttpAuth', [int] $Seconds = 90, [int] $MaxSizeMiB = 32,
+        [string] $WorkingDirectory = (Get-WorkstationTraceRoot),
+        [string] $HostName, [datetime] $From, [datetime] $To,
+        [switch] $FailuresOnly, [switch] $Plan, [switch] $Json
+    )
+    $arguments = @('-NoLogo', '-NoProfile', '-File', $script:HttpDiagnosticsScript, '-Action', $Action, '-Name', $Name, '-WorkingDirectory', $WorkingDirectory)
+    foreach ($key in @('ProcessName', 'ProcessId', 'CaptureProfile', 'Seconds', 'MaxSizeMiB', 'HostName')) {
+        if ($PSBoundParameters.ContainsKey($key)) { $arguments += @("-$key", [string] $PSBoundParameters[$key]) }
+    }
+    foreach ($key in @('From', 'To')) {
+        if ($PSBoundParameters.ContainsKey($key)) { $arguments += @("-$key", ([datetime] $PSBoundParameters[$key]).ToString('o')) }
+    }
+    foreach ($key in @('FailuresOnly', 'Plan', 'Json')) { if ($PSBoundParameters[$key]) { $arguments += "-$key" } }
+    if ($Plan -or $Action -eq 'Summary') { & powershell.exe @arguments }
+    else { & sudo.exe powershell.exe @arguments }
 }
 
 function global:Invoke-PcapTriage {

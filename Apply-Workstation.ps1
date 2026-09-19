@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'AudioSwitcher', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'OpenCodeExtensions', 'DeveloperEditor', 'SpecDrivenDevelopment',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'AudioSwitcher', 'ProcessLasso', 'RazerRgb', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'OpenCodeExtensions', 'DeveloperEditor', 'SpecDrivenDevelopment',
         'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'SafeChain', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -52,6 +52,7 @@ $nativeTextToolsScript = Join-Path $PSScriptRoot 'scripts\Set-NativeTextToolsSta
 $mpvScript = Join-Path $PSScriptRoot 'scripts\Set-MpvState.ps1'
 $caffeineScript = Join-Path $PSScriptRoot 'scripts\Set-CaffeineState.ps1'
 $audioSwitcherScript = Join-Path $PSScriptRoot 'scripts\Set-AudioSwitcherState.ps1'
+$processLassoScript = Join-Path $PSScriptRoot 'scripts\Set-ProcessLassoState.ps1'
 $scoopScript = Join-Path $PSScriptRoot 'scripts\Set-ScoopState.ps1'
 $terminalFontScript = Join-Path $PSScriptRoot 'scripts\Set-TerminalFontState.ps1'
 $contourTerminalScript = Join-Path $PSScriptRoot 'scripts\Set-ContourTerminalState.ps1'
@@ -261,6 +262,16 @@ function Invoke-WorkstationModule {
         'Caffeine' {
             Invoke-CheckedProcess 'Caffeine package state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $caffeineScript -Mode $Mode
+            }
+        }
+        'ProcessLasso' {
+            Invoke-CheckedProcess 'Process Lasso package state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $processLassoScript -Mode $Mode
+            }
+        }
+        'RazerRgb' {
+            Invoke-CheckedProcess 'Optional Razer reactive lighting and sign-in startup' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'scripts\Set-RazerRgbState.ps1') -Mode $Mode
             }
         }
         'AudioSwitcher' {

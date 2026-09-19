@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 4.3.0 - 2026-09-19
+
+- Add opt-in Process Lasso installation with visible commercial licensing requirements, plus separate responsiveness settings that preserve user rules and disable memory trimming.
+- Add optional 8 GiB Windows Job Object limits for Python/.NET process trees and selected AI hosts, with three automatic xdist workers, actual limit readback, and assignment-error reporting.
+- Document Windows commit exhaustion, xdist and AI concurrency, the difference between CPU responsiveness and memory containment, and the absence of a managed Java heap limit.
+- Add bounded HTTP/TLS diagnostics, credential-safe summaries, investigation notes, and evidence-first skill routing; add bounded packet-capture defaults and automatic stopping.
+- Add optional Huntsman Mini reactive lighting and user sign-in startup while leaving the Basilisk mouse on Bluetooth with its lighting unmanaged; validate the pinned Windows detector configuration.
+- Pin the declared PowerShell bootstrap package to 7.6.6 and synchronize module and capability coverage baselines.
+
 ## 4.2.0 - 2026-09-17
 
 - Declare Docker MTU 1280 for the default bridge and future custom bridges in developer WSL, preserving existing daemon settings and validating configuration before replacement.

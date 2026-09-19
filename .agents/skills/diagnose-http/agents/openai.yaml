@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnose HTTP and Authentication"
+  short_description: "Trace HTTP, TLS, and authentication failures"
+  default_prompt: "Use $diagnose-http to investigate this application's HTTP or authentication failure."

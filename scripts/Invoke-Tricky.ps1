@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('new', 'list', 'add', 'inspect', 'report', 'capabilities')]
+    [ValidateSet('new', 'list', 'add', 'note', 'inspect', 'report', 'capabilities')]
     [string] $Action,
 
     [Parameter(Position = 1)]
@@ -10,6 +10,8 @@ param(
     [string] $Problem,
     [string] $Target,
     [string] $Path,
+    [ValidateSet('Observation', 'Hypothesis', 'Contradiction', 'Change', 'Result', 'NextStep')][string] $NoteType = 'Observation',
+    [string] $Message,
     [string] $Root = (Get-Location).Path,
     [switch] $Copy,
     [switch] $Hash,
@@ -57,6 +59,7 @@ function Get-EvidenceKind {
     param([Parameter(Mandatory = $true)][IO.FileInfo] $File)
     $name = $File.Name.ToLowerInvariant()
     switch -Regex ($name) {
+        '^http-summary\.json$' { return 'HTTP diagnostic summary' }
         '\.evtx$' { return 'Event log' }
         '\.pcap(ng)?$' { return 'Packet capture' }
         '\.(dmp|mdmp)$' { return 'Crash dump' }
@@ -70,6 +73,15 @@ function Get-EvidenceKind {
         '\.(json|jsonl|csv|log|txt)$' { return 'Snapshot' }
         default { return 'Other' }
     }
+}
+
+function Get-HttpEvidenceDetail {
+    param([string] $LiteralPath)
+    try {
+        $summary = Get-Content -LiteralPath $LiteralPath -Raw | ConvertFrom-Json
+        if ($summary.Kind -ne 'HttpDiagnosticSummary' -or $summary.SchemaVersion -ne 1) { throw 'Unsupported summary' }
+        [pscustomobject]@{ Coverage = $summary.Coverage; TargetEvents = $summary.TargetEvents; LostEvents = $summary.LostEvents; LossAssessment = $summary.LossAssessment }
+    } catch { [pscustomobject]@{ Coverage = 'UnreadableOrUnsupported'; LossAssessment = 'Unknown' } }
 }
 
 function Get-EvtxSummary {
@@ -107,6 +119,7 @@ function Get-EvidenceInventory {
         $kind = Get-EvidenceKind $file
         $detail = $null
         if ($kind -eq 'Event log') { $detail = Get-EvtxSummary $file.FullName }
+        if ($kind -eq 'HTTP diagnostic summary') { $detail = Get-HttpEvidenceDetail $file.FullName }
         $sha = $null
         if ($IncludeHash) { $sha = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash }
         $items.Add([pscustomobject]@{
@@ -136,6 +149,7 @@ function Get-EvidenceInventory {
             $kind = Get-EvidenceKind $file
             $detail = $null
             if ($kind -eq 'Event log') { $detail = Get-EvtxSummary $file.FullName }
+            if ($kind -eq 'HTTP diagnostic summary') { $detail = Get-HttpEvidenceDetail $file.FullName }
             $sha = $null
             if ($IncludeHash) { $sha = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash }
             $items.Add([pscustomobject]@{ Kind = $kind; Name = $file.Name; Path = $file.FullName; RelativePath = $null; Source = 'reference'; Exists = $true; Bytes = $file.Length; ModifiedUtc = $file.LastWriteTimeUtc.ToString('o'); Sha256 = $sha; Detail = $detail })
@@ -156,15 +170,22 @@ function Get-Recommendations {
         @($capability.Triggers | Where-Object { $text.Contains($_) }).Count -gt 0
     })
     if ($matchedCapabilities.Count -eq 0) { $matchedCapabilities = @($catalog.Capabilities | Where-Object Id -eq 'event-history') }
+    if (@($matchedCapabilities | Where-Object Id -eq 'http-authentication').Count -gt 0) {
+        $matchedCapabilities = @($matchedCapabilities | Where-Object Id -ne 'event-history')
+    }
     $knownKinds = @($Evidence | Where-Object Exists | Select-Object -ExpandProperty Kind -Unique)
     $result = [Collections.Generic.List[object]]::new()
     foreach ($capability in $matchedCapabilities) {
         $missing = @($capability.EvidenceKinds | Where-Object { $_ -notin $knownKinds })
+        $coverageGap = $capability.Id -eq 'http-authentication' -and @($Evidence | Where-Object {
+            $_.Kind -eq 'HTTP diagnostic summary' -and $_.Exists -and
+            ($_.Detail.Coverage -ne 'RequestsObserved' -or $_.Detail.LostEvents -gt 0)
+        }).Count -gt 0
         $result.Add([pscustomobject]@{
             Capability = $capability.Id
             Title = $capability.Title
-            State = if ($missing.Count -eq 0) { 'evidence-present' } else { 'capture-gap' }
-            Reason = if ($missing.Count -eq 0) { 'Relevant evidence is already present; inspect it before recording more.' } else { "Missing evidence: $($missing -join ', ')." }
+            State = if ($coverageGap) { 'coverage-gap' } elseif ($missing.Count -eq 0) { 'evidence-present' } else { 'capture-gap' }
+            Reason = if ($coverageGap) { 'HTTP evidence has missing request coverage or event loss. Inspect provider and process coverage before requesting another reproduction.' } elseif ($missing.Count -eq 0) { 'Relevant artifacts are present. Verify failure-window and target coverage before drawing conclusions; unknown loss is not proof of completeness.' } else { "Missing evidence: $($missing -join ', ')." }
             Inspect = @($capability.InspectCommands)
             NextCapture = if ($missing.Count -gt 0) { $capability.CaptureCommand.Replace('{case}', $CaseData.Name) } else { $null }
         })
@@ -176,6 +197,8 @@ function Get-Inspection {
     param([Parameter(Mandatory = $true)][string] $Directory, [switch] $IncludeHash)
     $caseData = Read-Case $Directory
     $evidence = @(Get-EvidenceInventory $Directory -IncludeHash:$IncludeHash)
+    $notesPath = Join-Path $Directory 'notes.json'
+    $notes = if (Test-Path -LiteralPath $notesPath) { @(Get-Content -LiteralPath $notesPath -Raw | ConvertFrom-Json) } else { @() }
     $groups = @($evidence | Group-Object Kind | Sort-Object Name | ForEach-Object {
         [pscustomobject]@{ Kind = $_.Name; Files = $_.Count; Bytes = [long](($_.Group | Measure-Object Bytes -Sum).Sum) }
     })
@@ -188,6 +211,7 @@ function Get-Inspection {
         TotalBytes = [long](($evidence | Measure-Object Bytes -Sum).Sum)
         Kinds = $groups
         Evidence = $evidence
+        Notes = @($notes)
         Recommendations = @(Get-Recommendations $caseData $evidence)
     }
 }
@@ -267,6 +291,10 @@ function Write-Reports {
     [void]$markdown.AppendLine()
     [void]$markdown.AppendLine("Generated: $($Inspection.InspectedUtc)")
     [void]$markdown.AppendLine()
+    [void]$markdown.AppendLine('## Findings and changes')
+    [void]$markdown.AppendLine()
+    foreach ($note in $Inspection.Notes) { [void]$markdown.AppendLine("- **$($note.Type)** ($($note.TimeUtc)): $(ConvertTo-MarkdownValue $note.Message) Evidence: $(ConvertTo-MarkdownValue $note.Path)") }
+    [void]$markdown.AppendLine()
     [void]$markdown.AppendLine('## Evidence')
     [void]$markdown.AppendLine()
     [void]$markdown.AppendLine('| Type | File | Source | Size (bytes) | Modified UTC |')
@@ -300,13 +328,14 @@ function Write-Reports {
         [void]$routing.Append("<article><h3>$(ConvertTo-HtmlValue $recommendation.Title)</h3><p>$(ConvertTo-HtmlValue $recommendation.Reason)</p><p><strong>Inspect first:</strong> $commands</p>$capture</article>")
     }
     $chart = New-BarChartSvg $Inspection.Kinds
+    $notesHtml = @($Inspection.Notes | ForEach-Object { "<li><strong>$(ConvertTo-HtmlValue $_.Type)</strong> ($(ConvertTo-HtmlValue $_.TimeUtc)): $(ConvertTo-HtmlValue $_.Message) <small>$(ConvertTo-HtmlValue $_.Path)</small></li>" }) -join ''
     $timeline = New-TimelineSvg $Inspection.Evidence
     $html = @"
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tricky: $(ConvertTo-HtmlValue $caseData.Name)</title>
 <style>:root{color-scheme:dark;--bg:#101418;--panel:#182027;--ink:#e8edf2;--muted:#9fb0bf;--accent:#45b8ac}*{box-sizing:border-box}body{font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--ink);margin:0}main{max-width:1100px;margin:auto;padding:2rem}h1{margin-bottom:.2rem}header p,.muted{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}.card,section,article{background:var(--panel);border:1px solid #2a3945;border-radius:10px;padding:1rem;margin:1rem 0}.metric{font-size:1.8rem;font-weight:700;color:var(--accent)}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:.55rem;border-bottom:1px solid #30404c}code{background:#0b1014;padding:.15rem .35rem;border-radius:4px}svg{width:100%;max-height:430px}svg rect{fill:var(--accent)}svg text{fill:var(--ink);font-size:12px}</style></head>
 <body><main><header><h1>$(ConvertTo-HtmlValue $caseData.Name)</h1><p>$(ConvertTo-HtmlValue $caseData.Problem)</p><p><strong>Target:</strong> $(ConvertTo-HtmlValue $caseData.Target)</p></header>
 <div class="cards"><div class="card"><div class="metric">$($Inspection.EvidenceCount)</div>evidence files</div><div class="card"><div class="metric">$('{0:N1}' -f ($Inspection.TotalBytes / 1MB)) MiB</div>total evidence</div><div class="card"><div class="metric">$($Inspection.Kinds.Count)</div>evidence types</div></div>
-<section><h2>Evidence footprint</h2>$chart</section><section><h2>Evidence timeline</h2>$timeline</section><section><h2>Evidence inventory</h2><table><thead><tr><th>Type</th><th>File</th><th>Source</th><th>Bytes</th><th>Modified UTC</th></tr></thead><tbody>$rows</tbody></table></section>
+<section><h2>Findings and changes</h2><ul>$notesHtml</ul></section><section><h2>Evidence footprint</h2>$chart</section><section><h2>Evidence timeline</h2>$timeline</section><section><h2>Evidence inventory</h2><table><thead><tr><th>Type</th><th>File</th><th>Source</th><th>Bytes</th><th>Modified UTC</th></tr></thead><tbody>$rows</tbody></table></section>
 <section><h2>Evidence-first routing</h2>$routing</section><p class="muted">Generated $($Inspection.InspectedUtc) by Tricky schema $($Inspection.SchemaVersion).</p></main></body></html>
 "@
     $reportMd = Join-Path $directory 'report.md'
@@ -322,6 +351,7 @@ function Show-Inspection {
     param([Parameter(Mandatory = $true)] $Inspection)
     Write-Host "Case: $($Inspection.Case.Name)"
     Write-Host "Problem: $($Inspection.Case.Problem)"
+    foreach ($note in $Inspection.Notes) { Write-Host "[$($note.Type)] $($note.Message)" }
     Write-Host ("Evidence: {0} files, {1:N1} MiB" -f $Inspection.EvidenceCount, ($Inspection.TotalBytes / 1MB))
     if ($Inspection.Kinds.Count -gt 0) { $Inspection.Kinds | Format-Table Kind, Files, Bytes -AutoSize | Out-Host }
     foreach ($recommendation in $Inspection.Recommendations) {
@@ -332,6 +362,17 @@ function Show-Inspection {
 }
 
 switch ($Action.ToLowerInvariant()) {
+    'note' {
+        if (-not $Case -or -not $Message) { throw 'Usage: tricky note <case> -NoteType Observation|Hypothesis|Contradiction|Change|Result|NextStep -Message <text> [-Path <evidence>]' }
+        $directory = Resolve-CaseDirectory $Case -MustExist
+        $notePath = Join-Path $directory 'notes.json'
+        $notes = if (Test-Path -LiteralPath $notePath) { @(Get-Content -LiteralPath $notePath -Raw | ConvertFrom-Json) } else { @() }
+        $evidencePath = if ($Path) { (Resolve-Path -LiteralPath $Path -ErrorAction Stop).Path } else { $null }
+        $note = [pscustomobject]@{ TimeUtc = [datetime]::UtcNow.ToString('o'); Type = $NoteType; Message = $Message; Path = $evidencePath }
+        ConvertTo-Json -InputObject @($notes + $note) -Depth 5 | Set-Content -LiteralPath $notePath -Encoding utf8
+        Write-Case $directory (Read-Case $directory)
+        if ($Json) { $note | ConvertTo-Json } else { $note | Format-List }
+    }
     'new' {
         if (-not $Case) { throw 'Usage: tricky new <name> -Problem <description> [-Target <path-or-process>]' }
         if (-not $Problem) { throw 'New cases require -Problem so routing remains explainable.' }
@@ -343,7 +384,7 @@ switch ($Action.ToLowerInvariant()) {
         $now = [DateTime]::UtcNow.ToString('o')
         $data = [pscustomobject]@{
             SchemaVersion = 1; Name = ConvertTo-SafeName $Case; Problem = $Problem; Target = $Target; Status = 'open'; CreatedUtc = $now; UpdatedUtc = $now
-            Host = [pscustomobject]@{ ComputerName = $env:COMPUTERNAME; UserName = $env:USERNAME; OsVersion = [Environment]::OSVersion.VersionString; PowerShellVersion = $PSVersionTable.PSVersion.ToString() }
+            Host = [pscustomobject]@{ ComputerName = $env:COMPUTERNAME; UserName = $env:USERNAME; OsVersion = [Environment]::OSVersion.VersionString; PowerShellVersion = $PSVersionTable.PSVersion.ToString(); WorkingDirectory = (Get-Location).Path; Repository = $script:RepositoryRoot; UserSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value; Elevated = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) }
         }
         Write-Case $directory $data
         $result = [pscustomobject]@{ Name = $data.Name; Directory = $directory; Problem = $Problem }

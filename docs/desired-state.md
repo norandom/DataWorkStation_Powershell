@@ -46,6 +46,20 @@ privilege, restart, package-pin, and trust-boundary details.
 
 The catalog also declares a runtime boundary for every module. `Inbox` is limited to Windows PowerShell 5.1 and native Windows commands, so a fresh host can reach the `PowerShell7` prerequisite without first resolving it. `Core` and `Extended` both have an explicit `PowerShell7` stage gate. The orchestrator resolves `pwsh.exe` lazily only when a modern-runtime module is dispatched, checks the standard installation path in case the current process has a stale `PATH`, and blocks every later selected stage if an earlier stage fails.
 
+## PowerShell runtime
+
+`.config/powershell7.winget` declares PowerShell 7.6.6 using WinGet's package version
+`7.6.6.0`. Inspect and apply this focused dependency from Windows PowerShell 5.1:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Ensure -Module PowerShell7
+pwsh -NoProfile -Command '$PSVersionTable.PSVersion'
+```
+
+Open a new shell after the update. An MSIX installation may defer registration while
+PowerShell processes are running; close those sessions normally if the old version persists.
+
 ## Native development state
 
 `NativeDevelopment` is an Extended-stage aggregate over `MsvcBuildTools`, `CMake`,
@@ -61,6 +75,10 @@ user variables and paths. Versioned MSVC, SDK, and JDK paths are resolved dynami
 MSYS/MSYS2, Cygwin, and Git Bash are excluded.
 
 ## Automatically maintained
+
+The optional `RazerRgb` module is excluded from default runs. It installs portable OpenRGB and
+a local input-reactive helper with per-user sign-in startup. Synapse removal requires the direct
+resource's explicit `-RemoveSynapse` switch. See [Optional Razer lighting](razer-rgb.md).
 
 The declared package set, official Scoop buckets, Windows Terminal, Contour Terminal and its BlueTerm theme, Windows optional features, developer hardening profile, current-user hover-focus behavior, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
 
@@ -234,3 +252,22 @@ SkillOpt transcript harvesting, task approval, provider-backed optimization, and
 also remain explicit. The managed wrapper provides no scheduling or automatic adoption.
 
 MkDocs is also not a global workstation dependency. Its exact version is locked in `uv.lock` and materialized only for this repository.
+
+## Optional Process Lasso
+
+Process Lasso is opt-in and excluded from default `All` runs. Inspect or install it explicitly:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso -Plan
+pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test -Json
+.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso
+```
+
+The `BitSum.ProcessLasso` WinGet package installs machine-wide and may require elevation. The module keeps vendor defaults and existing preferences; it does not configure watchdog termination rules or activate a paid license. `Reinitialize` reapplies the package declaration without resetting preferences.
+
+For our commercial deployment, purchase and activate a paid Process Lasso license. Bitsum requires
+purchase within 30 days of commercial deployment; continued use of trial-only features such as
+Process Watchdog requires Pro. Package `Test` verifies installation, not license activation.
+See [Bitsum's licensing terms](https://bitsum.com/howfree/) and
+[Windows workload memory limits and optional Process Lasso](workload-memory.md) for how CPU
+responsiveness, xdist worker settings, and the separate 8 GiB memory service complement each other.

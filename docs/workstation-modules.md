@@ -1,5 +1,9 @@
 # Workstation modules and dependency order
 
+`RazerRgb` is an optional Extended-stage module supporting `Test` and `Ensure`, with a
+`PowerShell7` dependency. It is excluded from default selections. See
+[Optional Razer lighting](razer-rgb.md) for blue/white effects and per-user sign-in startup.
+
 `Apply-Workstation.ps1` can run the complete default desired state or selected modules. Each module
 maps to one focused resource or package stage.
 
@@ -93,6 +97,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `NativeTextTools` | yes | none | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
 | `Caffeine` | yes | none | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
 | `AudioSwitcher` | yes | none | Audio Switcher tray utility for playback/recording device changes; favorites, hotkeys, and startup stay user-controlled |
+| `ProcessLasso` | no | none | Optional machine-wide Process Lasso package; paid license for commercial use; watchdog rules remain user-controlled |
 | `Scoop` | yes | `Git` | per-user Scoop with official Main and Extras buckets |
 | `TerminalFonts` | yes | `PowerShell7` | hash-pinned per-user Fira Code installation |
 | `ContourTerminal` | yes | `Sudo`, `PowerShell7`, `TerminalFonts` | official machine-wide Contour MSI, translated BlueTerm theme, local font selection, and bounded graphics-compatibility gate |

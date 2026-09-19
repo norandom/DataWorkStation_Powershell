@@ -59,7 +59,8 @@ existing jobs) are reported in `%ProgramData%\DataWorkStationMemoryLimits\status
 `Test -Json` includes actual job limit readback, process IDs, heartbeat, and assignment errors.
 
 The allocation limits do not terminate or trim processes. The separately configured early-OOM
-guard can terminate selected workers under system pressure; see
+guard can terminate any eligible user application under system pressure, independently of the
+allocation-limit target list. Windows, services, desktop and recovery tools are excluded; see
 [its policy and audit logs](../workload-memory.md#early-oom-recovery-and-audit-logs).
 Applications may handle allocation failure, raise
 `MemoryError`/`OutOfMemoryException`, or crash if they cannot handle it. Stopping the service does not

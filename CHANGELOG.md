@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Add an early-OOM guard alongside Process Lasso: live RAM/page-file/commit readings, sustained-pressure decisions, scoped worker termination, cooldowns and rotated diagnostic logs.
+- Add an early-OOM guard alongside Process Lasso: live RAM/page-file/commit readings, sustained-pressure decisions, exclusion-based application termination independent of per-process limits, cooldowns and rotated diagnostic logs.
+- Add read-only early-OOM candidate inspection with private-byte ranking and exclusion counts; protect Windows, services, desktop and recovery tools.
 - Add read-only guard planning, status and event queries, plus memory/crash skill guidance that distinguishes intervention from allocation denial.
 
 ## 4.3.0 - 2026-09-19

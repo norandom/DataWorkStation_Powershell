@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Status', 'Plan', 'Events')][string] $Action = 'Status',
+    [ValidateSet('Status', 'Plan', 'Events', 'Candidates')][string] $Action = 'Status',
     [ValidateRange(1, 2000)][int] $Last = 100,
     [datetimeoffset] $SinceUtc = [datetimeoffset]::MinValue,
     [string] $Directory = (Join-Path $env:ProgramData 'DataWorkStationMemoryLimits'),
@@ -8,6 +8,22 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $policy = Import-PowerShellDataFile (Join-Path (Split-Path -Parent $PSScriptRoot) 'config\workload-memory-limits.psd1')
+if ($Action -eq 'Candidates') {
+    $installDirectory = Join-Path $env:ProgramFiles $policy.ServiceName
+    $executable = Join-Path $installDirectory 'MemoryLimits.exe'
+    $installedPolicy = Join-Path $installDirectory 'policy.json'
+    if (-not (Test-Path -LiteralPath $executable) -or -not (Test-Path -LiteralPath $installedPolicy)) { throw 'Install the declared memory service before inspecting candidates.' }
+    $result = (& $executable --guard-candidates $installedPolicy) | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0 -or -not $result.observationOnly) { throw 'Candidate inspection failed; reconcile the installed memory service.' }
+    if ($Json) { $result | ConvertTo-Json -Depth 8 }
+    else {
+        Write-Host 'Read-only candidates under the installed policy, ranked by private bytes. No action is requested.'
+        Write-Host 'Run this command with sudo for the service account visibility; inaccessible processes are excluded.'
+        $result.candidates | Select-Object pid,name,session,@{n='Private GiB';e={[math]::Round($_.privateBytes / 1GB, 2)}},creationFileTimeUtc | Format-Table | Out-Host
+        $result.excludedCounts | Format-List | Out-Host
+    }
+    return
+}
 if ($Action -eq 'Events') {
     $events = [Collections.Generic.List[object]]::new()
     $malformed = 0

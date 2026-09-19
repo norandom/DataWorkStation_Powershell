@@ -73,7 +73,7 @@
             Title = 'Memory pressure'
             Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory', 'xdist', 'pytest workers', 'AI memory limits', 'process lasso license')
             EvidenceKinds = @('Snapshot', 'Native profile')
-            InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon', 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Plan', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100')
+            InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon', 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Plan', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Candidates', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100')
             StateCommands = @(
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure'
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Remove'

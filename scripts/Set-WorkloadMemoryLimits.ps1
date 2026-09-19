@@ -28,7 +28,7 @@ $desiredPolicy = [ordered]@{
         SustainSeconds = $policy.EarlyOom.SustainSeconds
         CooldownSeconds = $policy.EarlyOom.CooldownSeconds
         MinimumCandidateMiB = $policy.EarlyOom.MinimumCandidateMiB
-        TerminationExecutables = $policy.EarlyOom.TerminationExecutables
+        ExcludedExecutables = $policy.EarlyOom.ExcludedExecutables
     }
 }
 $serializedPolicy = $desiredPolicy | ConvertTo-Json -Depth 5

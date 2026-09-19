@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Web.Script.Serialization;
 
 namespace DataWorkStation
@@ -18,18 +19,27 @@ namespace DataWorkStation
         public int SustainSeconds { get; set; }
         public int CooldownSeconds { get; set; }
         public int MinimumCandidateMiB { get; set; }
-        public string[] TerminationExecutables { get; set; }
+        public string[] ExcludedExecutables { get; set; }
         public void Validate()
         {
             if (Mode != "Observe" && Mode != "Enforce" && Mode != "Disabled") throw new InvalidDataException("Invalid early-OOM mode.");
             if (AvailablePhysicalPercent <= 0 || AvailablePhysicalPercent > 25 || CommitHeadroomPercent <= 0 || CommitHeadroomPercent > 25 || EmergencyCommitHeadroomPercent <= 0 || EmergencyCommitHeadroomPercent >= CommitHeadroomPercent)
                 throw new InvalidDataException("Invalid early-OOM thresholds.");
-            if (SustainSeconds < 1 || SustainSeconds > 60 || CooldownSeconds < 5 || CooldownSeconds > 300 || MinimumCandidateMiB < 64 || TerminationExecutables == null)
+            if (SustainSeconds < 1 || SustainSeconds > 60 || CooldownSeconds < 5 || CooldownSeconds > 300 || MinimumCandidateMiB < 64 || ExcludedExecutables == null)
                 throw new InvalidDataException("Invalid early-OOM timing or candidates.");
-            // Destructive scope stays narrower than the broader AI-host allocation policy.
-            string[] allowed = { "python.exe", "pythonw.exe", "python3.exe", "python3.12.exe", "python3.13.exe", "python3.14.exe", "dotnet.exe" };
-            if (TerminationExecutables.Any(x => !allowed.Contains(x, StringComparer.OrdinalIgnoreCase))) throw new InvalidDataException("Termination is restricted to managed Python/.NET workers.");
+            if (ExcludedExecutables.Any(x => String.IsNullOrWhiteSpace(x) || x.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || !x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidDataException("Exclusions must be exact executable filenames.");
         }
+    }
+    public sealed class CandidateFacts
+    {
+        public int Pid { get; set; }
+        public long Created { get; set; }
+        public string ImagePath { get; set; }
+        public string OwnerSid { get; set; }
+        public uint Session { get; set; }
+        public bool Critical { get; set; }
+        public ulong PrivateBytes { get; set; }
     }
     public sealed class MemoryPressureSnapshot
     {
@@ -97,7 +107,7 @@ namespace DataWorkStation
                 return true;
             } catch (IOException) { return false; } catch (UnauthorizedAccessException) { return false; }
         }
-        public void Tick(Dictionary<string, IntPtr> jobs)
+        public void Tick()
         {
             if (policy.Mode == "Disabled") { Status = new { mode = policy.Mode }; return; }
             MemoryPressureSnapshot sample = ReadMemory();
@@ -111,17 +121,17 @@ namespace DataWorkStation
             if (state != "Ready") return;
             // Rate-limit observe mode, failed attempts and no-candidate decisions too.
             decision.ActionTaken(clock.Elapsed.TotalSeconds);
-            using (Candidate victim = FindCandidate(jobs)) {
-                if (victim == null) { Write("no-candidate", sample, null, "No eligible managed Python/.NET worker above minimum size."); return; }
-                var identity = new { pid = victim.Pid, creationFileTimeUtc = victim.Created, name = victim.Name, privateBytes = victim.PrivateBytes, job = victim.Job };
+            using (Candidate victim = FindCandidate()) {
+                if (victim == null) { Write("no-candidate", sample, null, "No eligible user application above minimum size; selection is independent of managed jobs."); return; }
+                var identity = Identity(victim.Facts);
                 if (policy.Mode == "Observe") { Write("would-terminate", sample, identity, "Observation only; no process was stopped."); return; }
                 // Recheck global pressure and the held process identity immediately before action.
                 sample = ReadMemory();
-                bool critical;
-                if (!decision.UnderPressure(sample) || !Native.IsProcessCritical(victim.Handle, out critical) || critical || Native.Creation(victim.Handle) != victim.Created) {
+                CandidateFacts current = ReadCandidate(victim.Handle, victim.Facts.Pid);
+                if (!decision.UnderPressure(sample) || ExclusionReason(policy, current, Process.GetCurrentProcess().Id, WindowsDirectory) != null || current.Created != victim.Facts.Created) {
                     Write("cancelled", sample, identity, "Pressure recovered or candidate no longer eligible."); return;
                 }
-                if (!Write("terminate-requested", sample, identity, "Force-terminate one managed worker; unsaved worker state can be lost."))
+                if (!Write("terminate-requested", sample, identity, "Force-terminate one user application; unsaved work can be lost."))
                     throw new IOException("Early-OOM action cancelled because its audit record could not be written.");
                 bool stopped = TerminateProcess(victim.Handle, 0xE0000001);
                 int error = stopped ? 0 : Marshal.GetLastWin32Error();
@@ -131,31 +141,87 @@ namespace DataWorkStation
         }
         sealed class Candidate : IDisposable
         {
-            public IntPtr Handle; public int Pid; public long Created; public string Name, Job; public ulong PrivateBytes;
+            public IntPtr Handle; public CandidateFacts Facts;
             public void Dispose() { if (Handle != IntPtr.Zero) { Native.CloseHandle(Handle); Handle = IntPtr.Zero; } }
         }
-        Candidate FindCandidate(Dictionary<string, IntPtr> jobs)
+        static readonly string WindowsDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        // Pure exclusion rule shared by selection, final revalidation and read-only inspection.
+        // No executable inclusion list, parent classification or job membership is consulted.
+        public static string ExclusionReason(EarlyOomPolicy settings, CandidateFacts facts, int ownPid, string windowsDirectory)
+        {
+            if (facts == null) return "unqueryable";
+            if (facts.Pid < 5 || facts.Pid == ownPid) return "system-or-self";
+            if (facts.Session == 0) return "service-session";
+            if (facts.Critical) return "critical";
+            if (String.IsNullOrWhiteSpace(facts.OwnerSid) || facts.Created <= 0 || String.IsNullOrWhiteSpace(facts.ImagePath) || String.IsNullOrWhiteSpace(windowsDirectory)) return "unqueryable";
+            // LocalSystem, LocalService, NetworkService and virtual Windows service/window accounts.
+            string sid = facts.OwnerSid;
+            if (sid == "S-1-5-18" || sid == "S-1-5-19" || sid == "S-1-5-20" || sid.StartsWith("S-1-5-80-", StringComparison.Ordinal) || sid.StartsWith("S-1-5-90-", StringComparison.Ordinal) || sid.StartsWith("S-1-5-96-", StringComparison.Ordinal)) return "service-account";
+            string image = Path.GetFullPath(facts.ImagePath);
+            string windows = Path.GetFullPath(windowsDirectory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (image.StartsWith(windows, StringComparison.OrdinalIgnoreCase)) return "windows-image";
+            if (settings.ExcludedExecutables.Contains(Path.GetFileName(image), StringComparer.OrdinalIgnoreCase)) return "excluded-executable";
+            if (facts.PrivateBytes < (ulong)settings.MinimumCandidateMiB * 1024 * 1024) return "below-minimum";
+            return null;
+        }
+        static object Identity(CandidateFacts facts)
+        { return new { pid = facts.Pid, creationFileTimeUtc = facts.Created, name = Path.GetFileName(facts.ImagePath), privateBytes = facts.PrivateBytes, session = facts.Session, selectionScope = "user-applications" }; }
+        static CandidateFacts ReadCandidate(IntPtr handle, int pid)
+        {
+            // A process can exit or change accessibility during enumeration.
+            // Skip that candidate rather than resetting pressure for the entire machine.
+            try { return ReadCandidateUnchecked(handle, pid); }
+            catch (Win32Exception) { return null; }
+            catch (ArgumentException) { return null; }
+            catch (System.Security.SecurityException) { return null; }
+        }
+        static CandidateFacts ReadCandidateUnchecked(IntPtr handle, int pid)
+        {
+            uint session; bool critical;
+            if (!ProcessIdToSessionId((uint)pid, out session) || !Native.IsProcessCritical(handle, out critical)) return null;
+            if (session == 0 || critical) return new CandidateFacts { Pid = pid, Session = session, Critical = critical };
+            var path = new System.Text.StringBuilder(32768); uint length = (uint)path.Capacity;
+            if (!QueryFullProcessImageName(handle, 0, path, ref length)) return null;
+            IntPtr token;
+            if (!OpenProcessToken(handle, 8, out token)) return null;
+            string sid;
+            try { using (var identity = new WindowsIdentity(token)) { sid = identity.User == null ? null : identity.User.Value; } }
+            catch (System.Security.SecurityException) { return null; }
+            finally { Native.CloseHandle(token); }
+            var counters = new ProcessCounters(); counters.Size = (uint)Marshal.SizeOf(typeof(ProcessCounters));
+            if (!GetProcessMemoryInfo(handle, ref counters, counters.Size)) return null;
+            return new CandidateFacts { Pid = pid, Created = Native.Creation(handle), ImagePath = path.ToString(), OwnerSid = sid, Session = session, Critical = critical, PrivateBytes = counters.PrivateUsage.ToUInt64() };
+        }
+        public static object InspectCandidates(EarlyOomPolicy settings)
+        {
+            settings.Validate();
+            var eligible = new List<CandidateFacts>(); var excluded = new Dictionary<string, int>();
+            foreach (var entry in Native.Snapshot()) {
+                IntPtr handle = Native.OpenProcess(0x101410, false, entry.Pid);
+                try {
+                    CandidateFacts facts = handle == IntPtr.Zero ? null : ReadCandidate(handle, entry.Pid);
+                    string reason = ExclusionReason(settings, facts, Process.GetCurrentProcess().Id, WindowsDirectory);
+                    if (reason == null) eligible.Add(facts);
+                    else { if (!excluded.ContainsKey(reason)) excluded[reason] = 0; excluded[reason]++; }
+                } finally { if (handle != IntPtr.Zero) Native.CloseHandle(handle); }
+            }
+            return new { utc = DateTime.UtcNow.ToString("o"), selectionScope = "user-applications", observationOnly = true, candidates = eligible.OrderByDescending(x => x.PrivateBytes).Select(Identity).ToArray(), excludedCounts = excluded };
+        }
+        Candidate FindCandidate()
         {
             Candidate best = null;
             try {
-                foreach (var job in jobs) foreach (int pid in Native.JobPids(job.Value)) {
+                foreach (var entry in Native.Snapshot()) {
+                    int pid = entry.Pid;
                     if (pid < 5 || pid == Process.GetCurrentProcess().Id) continue;
-                    IntPtr handle = Native.OpenProcess(0x101411, false, pid);
+                    IntPtr handle = Native.OpenProcess(policy.Mode == "Enforce" ? 0x101411u : 0x101410u, false, pid);
                     if (handle == IntPtr.Zero) continue;
                     try {
-                        uint session; bool critical, member;
-                        if (!ProcessIdToSessionId((uint)pid, out session) || session == 0 || !Native.IsProcessCritical(handle, out critical) || critical || !Native.IsProcessInJob(handle, job.Value, out member) || !member) continue;
-                        var path = new System.Text.StringBuilder(32768); uint length = (uint)path.Capacity;
-                        if (!QueryFullProcessImageName(handle, 0, path, ref length)) continue;
-                        string name = Path.GetFileName(path.ToString());
-                        if (!policy.TerminationExecutables.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
-                        var counters = new ProcessCounters(); counters.Size = (uint)Marshal.SizeOf(typeof(ProcessCounters));
-                        if (!GetProcessMemoryInfo(handle, ref counters, counters.Size)) continue;
-                        ulong bytes = counters.PrivateUsage.ToUInt64();
-                        if (bytes < (ulong)policy.MinimumCandidateMiB * 1024 * 1024 || (best != null && bytes <= best.PrivateBytes)) continue;
-                        long created = Native.Creation(handle);
+                        CandidateFacts facts = ReadCandidate(handle, pid);
+                        if (ExclusionReason(policy, facts, Process.GetCurrentProcess().Id, WindowsDirectory) != null) continue;
+                        if (best != null && facts.PrivateBytes <= best.Facts.PrivateBytes) continue;
                         if (best != null) best.Dispose();
-                        best = new Candidate { Handle = handle, Pid = pid, Created = created, Name = name, Job = job.Key, PrivateBytes = bytes }; handle = IntPtr.Zero;
+                        best = new Candidate { Handle = handle, Facts = facts }; handle = IntPtr.Zero;
                     } finally { if (handle != IntPtr.Zero) Native.CloseHandle(handle); }
                 }
                 return best;
@@ -191,6 +257,7 @@ namespace DataWorkStation
         [DllImport("psapi.dll", SetLastError = true)] static extern bool GetPerformanceInfo(ref PerformanceInfo data, uint size);
         [DllImport("psapi.dll", SetLastError = true)] static extern bool GetProcessMemoryInfo(IntPtr process, ref ProcessCounters data, uint size);
         [DllImport("kernel32.dll", SetLastError = true)] static extern bool ProcessIdToSessionId(uint pid, out uint session);
+        [DllImport("advapi32.dll", SetLastError = true)] static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool QueryFullProcessImageName(IntPtr process, uint flags, System.Text.StringBuilder path, ref uint size);
         [DllImport("kernel32.dll", SetLastError = true)] static extern bool TerminateProcess(IntPtr process, uint exitCode);
         [DllImport("kernel32.dll", SetLastError = true)] static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);

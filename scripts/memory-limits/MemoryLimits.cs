@@ -99,7 +99,7 @@ namespace DataWorkStation
                 try
                 {
                     if (guard != null) {
-                        try { guard.Tick(jobs); }
+                        try { guard.Tick(); }
                         catch (Exception e) { guard.RecordFailure(e.Message); Log("earlyoom-error", "", 0, e.GetType().Name + ": " + e.Message); }
                     }
                     Scan();
@@ -255,6 +255,12 @@ namespace DataWorkStation
         }
         static int Main(string[] args)
         {
+            if (args.Length == 2 && args[0] == "--guard-candidates") {
+                var serializer = new JavaScriptSerializer();
+                var settings = serializer.Deserialize<Policy>(File.ReadAllText(args[1]));
+                Console.WriteLine(serializer.Serialize(EarlyOomGuard.InspectCandidates(settings.EarlyOom)));
+                return 0;
+            }
             if (args.Length > 0 && args[0] == "--self-test") return SelfTest();
             if (args.Length > 0 && args[0] == "--probe")
             {

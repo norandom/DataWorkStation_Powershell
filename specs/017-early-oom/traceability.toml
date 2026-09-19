@@ -19,3 +19,11 @@ tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
 [requirements.REQ-005]
 verification = "automated"
 tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-006]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-007]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]

@@ -12,8 +12,15 @@
         SustainSeconds = 3
         CooldownSeconds = 15
         MinimumCandidateMiB = 256
-        # Only existing managed Python/.NET workers; AI hosts, Java and desktop apps survive.
-        TerminationExecutables = @('python.exe', 'pythonw.exe', 'python3.exe', 'python3.12.exe', 'python3.13.exe', 'python3.14.exe', 'dotnet.exe')
+        # Layer 2 considers all user applications, independently of layer 1 targets below.
+        # Windows images, critical processes, session zero and service accounts are always protected.
+        ExcludedExecutables = @(
+            'explorer.exe', 'dwm.exe', 'sihost.exe', 'ShellExperienceHost.exe'
+            'StartMenuExperienceHost.exe', 'SearchHost.exe', 'RuntimeBroker.exe'
+            'TextInputHost.exe', 'ApplicationFrameHost.exe', 'ctfmon.exe', 'LockApp.exe'
+            'taskmgr.exe', 'conhost.exe', 'OpenConsole.exe', 'WindowsTerminal.exe'
+            'pwsh.exe', 'powershell.exe', 'ProcessGovernor.exe', 'ProcessLasso.exe', 'MemoryLimits.exe'
+        )
     }
     Executables = @(
         'python.exe', 'pythonw.exe', 'python3.exe', 'python3.12.exe', 'python3.13.exe', 'python3.14.exe'

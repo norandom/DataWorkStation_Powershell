@@ -142,16 +142,28 @@ performs the repeated sampling and action. It runs independently of Process Lass
 [Watchdog](https://bitsum.com/apps/process-lasso/docs/rules/watchdog/) provides per-process usage
 thresholds, not the combined system-pressure decision used here.
 
+There are two layers. **Layer 1** controls selected workloads: our 8 GiB Job Object limits and
+xdist concurrency setting, plus optional Process Lasso rules and CPU responsiveness controls.
+**Layer 2** watches total system pressure and considers all ordinary user applications, including
+Java, browsers, AI hosts and previously unknown executables. It does not depend on layer 1's
+executable list or Job Object membership. This catches aggregate exhaustion from parallel agents
+even when each individual process stays below its own limit.
+
 Inspect current capacities and the calculated thresholds before applying the policy:
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Plan
 pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Status -Json
+pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Candidates
 pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100
 pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -SinceUtc '2026-09-19T00:00:00Z' -Json
 ```
 
-`Plan`, `Status` and `Events` are read-only. Edit the `EarlyOom` block in
+`Plan`, `Status`, `Candidates` and `Events` are read-only. `Candidates` uses the installed executable
+and policy to list eligible processes by private bytes and count exclusion reasons. Use `sudo`
+for elevated visibility; an ordinary invocation cannot inspect every process the service can see.
+It previews eligibility even without current pressure and never requests termination access.
+Edit the `EarlyOom` block in
 `config/workload-memory-limits.psd1`, then explicitly apply it:
 
 ```powershell
@@ -160,7 +172,7 @@ pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test
 ```
 
 `Ensure` rebuilds and restarts the service. The declared mode is **Enforce**, which can forcibly
-terminate selected workers and lose their in-progress work. Choose **Observe** in the declaration
+terminate eligible applications and lose their in-progress work. Choose **Observe** in the declaration
 to record `would-terminate` decisions without stopping anything, or **Disabled** to retain only
 the allocation limits. These modes take effect after `Ensure`.
 
@@ -183,14 +195,21 @@ as unknown; the authoritative decision uses
 [current commit headroom](https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-performance_information).
 This is a Windows adaptation, not a literal comparison against Linux free swap.
 
-Under sustained pressure it chooses the largest eligible private-byte consumer among processes
-already assigned to our managed jobs. Only the declared Python/.NET executable names qualify;
-session-zero services, critical processes, AI hosts, Java and desktop apps are excluded. A held
-process handle and creation-time check prevent acting on a reused PID. The service rechecks pressure
-immediately before acting and refuses an action if the pre-action audit record cannot be written.
+Under sustained pressure it enumerates all processes and chooses the largest eligible private-byte
+consumer. Mandatory exclusions protect the guard itself, system PIDs, session-zero services,
+critical processes, Windows-directory images, Windows service/window accounts and processes whose
+identity or memory cannot be queried. `EarlyOom.ExcludedExecutables` adds exact, case-insensitive
+names for the desktop shell, Task Manager, terminals, PowerShell and Process Lasso. There is no
+inclusion list. An excluded shell does not exempt its child applications. Other applications,
+including foreground apps and AI hosts, may be stopped. These exclusions deliberately leave
+Windows and recovery tools outside the recovery scope.
 
-One worker process is terminated at a time, not its entire tree. Windows does not supply a generic
-SIGTERM equivalent for these CLI workers, so this is forced termination with exit code `0xE0000001`.
+A held process handle and creation-time check prevent acting on a reused PID. The service rechecks
+pressure and all candidate exclusions immediately before acting and refuses an action if the
+pre-action audit record cannot be written.
+
+One application process is terminated at a time, not its entire tree. The recovery action is
+forced termination with exit code `0xE0000001`.
 Remaining workers or AI retries can allocate again. Use `pytest --max-worker-restart=0 -n 3` when
 automatic worker replacement would defeat recovery. There is no guaranteed OOM protection if
 pressure grows faster than the polling loop or no eligible candidate exists.
@@ -199,7 +218,8 @@ The service writes `earlyoom.jsonl` under `%ProgramData%\DataWorkStationMemoryLi
 previous file retained after rotation at approximately 4 MiB. It records periodic health samples,
 pressure transitions, `would-terminate`, `no-candidate`, pre-action requests, termination outcome
 and recovery. Records include UTC, mode, thresholds, RAM/commit/page-file readings and candidate
-PID, creation time, executable name, private bytes and managed-job identity. It does not log
+PID, creation time, executable name, private bytes, session and selection scope. Older records
+instead include managed-job identity from the former worker-only policy. The guard does not log
 command lines, environment values or process contents.
 
 `terminated` means the process exit was observed; `termination-pending` means the asynchronous

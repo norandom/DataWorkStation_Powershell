@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param()
 
+function Test-ProcessLassoState {
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $runtime = (Get-Command pwsh.exe -ErrorAction Stop).Source
@@ -47,3 +48,5 @@ try {
     Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
 }
 Write-Host 'Process Lasso opt-in planning and installation-state checks passed.'
+}
+Test-ProcessLassoState

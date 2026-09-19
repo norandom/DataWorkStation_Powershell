@@ -6,10 +6,10 @@ Use a focused WinGet declaration, configuration data file, and PowerShell state 
 
 | Requirement | Implementation | Verification |
 | --- | --- | --- |
-| REQ-001 | Default false in module catalog | tests/Test-ProcessLassoState.ps1#All |
-| REQ-002 | Apply-Workstation dispatch and catalog | tests/Test-ProcessLassoState.ps1#All |
-| REQ-003 | Get-ProcessLassoState | tests/Test-ProcessLassoState.ps1#All |
-| REQ-004 | Structured resource output | tests/Test-ProcessLassoState.ps1#All |
+| REQ-001 | Default false in module catalog | tests/Test-ProcessLassoState.ps1#Test-ProcessLassoState |
+| REQ-002 | Apply-Workstation dispatch and catalog | tests/Test-ProcessLassoState.ps1#Test-ProcessLassoState |
+| REQ-003 | Get-ProcessLassoState | tests/Test-ProcessLassoState.ps1#Test-ProcessLassoState |
+| REQ-004 | Structured resource output | tests/Test-ProcessLassoState.ps1#Test-ProcessLassoState |
 
 ## Validation
 

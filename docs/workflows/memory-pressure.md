@@ -58,7 +58,10 @@ There is a detection window before assignment, and assignment errors (including 
 existing jobs) are reported in `%ProgramData%\DataWorkStationMemoryLimits\status.json` and `events.jsonl`.
 `Test -Json` includes actual job limit readback, process IDs, heartbeat, and assignment errors.
 
-No termination or working-set trimming is used. Applications may handle allocation failure, raise
+The allocation limits do not terminate or trim processes. The separately configured early-OOM
+guard can terminate selected workers under system pressure; see
+[its policy and audit logs](../workload-memory.md#early-oom-recovery-and-audit-logs).
+Applications may handle allocation failure, raise
 `MemoryError`/`OutOfMemoryException`, or crash if they cannot handle it. Stopping the service does not
 terminate jobs; existing limits persist. `Remove` releases tracked limits without killing applications.
 Several independent 8 GiB trees can still exhaust total system commit: this is workload containment,

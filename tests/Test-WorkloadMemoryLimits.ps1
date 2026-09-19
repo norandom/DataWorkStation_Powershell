@@ -21,7 +21,7 @@ $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 $buildDirectory = Join-Path ([IO.Path]::GetTempPath()) ('dws-memory-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $buildDirectory | Out-Null
 $executable = Join-Path $buildDirectory 'MemoryLimits.exe'
-& $compiler /nologo /platform:x64 /target:exe /r:System.ServiceProcess.dll /r:System.Management.dll /r:System.Web.Extensions.dll "/out:$executable" (Join-Path $root 'scripts\memory-limits\MemoryLimits.cs')
+& $compiler /nologo /platform:x64 /target:exe /r:System.ServiceProcess.dll /r:System.Management.dll /r:System.Web.Extensions.dll "/out:$executable" (Join-Path $root 'scripts\memory-limits\MemoryLimits.cs') (Join-Path $root 'scripts\memory-limits\EarlyOom.cs')
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
 & $executable --self-test
 if ($LASTEXITCODE -ne 0) { throw 'Kernel allocation-denial test failed.' }

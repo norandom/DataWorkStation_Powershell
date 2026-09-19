@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add an early-OOM guard alongside Process Lasso: live RAM/page-file/commit readings, sustained-pressure decisions, scoped worker termination, cooldowns and rotated diagnostic logs.
+- Add read-only guard planning, status and event queries, plus memory/crash skill guidance that distinguishes intervention from allocation denial.
+
 ## 4.3.0 - 2026-09-19
 
 - Add opt-in Process Lasso installation with visible commercial licensing requirements, plus separate responsiveness settings that preserve user rules and disable memory trimming.

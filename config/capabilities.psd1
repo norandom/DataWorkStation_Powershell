@@ -68,10 +68,12 @@
         }
         @{
             Id = 'memory-pressure'
+            FeatureSpec = 'specs/017-early-oom'
+            Modules = @()
             Title = 'Memory pressure'
             Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory', 'xdist', 'pytest workers', 'AI memory limits', 'process lasso license')
             EvidenceKinds = @('Snapshot', 'Native profile')
-            InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon', 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test')
+            InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon', 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Plan', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100')
             StateCommands = @(
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure'
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Remove'
@@ -81,6 +83,7 @@
                 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoResponsiveness.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\tests\Test-WorkloadMemoryLimits.ps1'
+                'pwsh -NoProfile -File .\tests\Test-EarlyOom.ps1'
             )
             CaptureCommand = 'profile-native-record {case} -Seconds 30'
         }

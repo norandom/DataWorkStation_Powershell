@@ -4,6 +4,17 @@
     LimitGiB = 8
     PollMilliseconds = 500
     MachineEnvironment = @{ PYTEST_XDIST_AUTO_NUM_WORKERS = '3' }
+    EarlyOom = @{
+        Mode = 'Enforce'
+        AvailablePhysicalPercent = 10
+        CommitHeadroomPercent = 10
+        EmergencyCommitHeadroomPercent = 3
+        SustainSeconds = 3
+        CooldownSeconds = 15
+        MinimumCandidateMiB = 256
+        # Only existing managed Python/.NET workers; AI hosts, Java and desktop apps survive.
+        TerminationExecutables = @('python.exe', 'pythonw.exe', 'python3.exe', 'python3.12.exe', 'python3.13.exe', 'python3.14.exe', 'dotnet.exe')
+    }
     Executables = @(
         'python.exe', 'pythonw.exe', 'python3.exe', 'python3.12.exe', 'python3.13.exe', 'python3.14.exe'
         'dotnet.exe'

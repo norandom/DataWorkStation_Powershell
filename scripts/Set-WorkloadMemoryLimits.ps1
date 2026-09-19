@@ -11,6 +11,8 @@ $stateDirectory = Join-Path $env:ProgramData $policy.ServiceName
 $executable = Join-Path $installDirectory 'MemoryLimits.exe'
 $policyPath = Join-Path $installDirectory 'policy.json'
 $source = Join-Path $PSScriptRoot 'memory-limits\MemoryLimits.cs'
+$guardSource = Join-Path $PSScriptRoot 'memory-limits\EarlyOom.cs'
+$sourceHash = ((Get-FileHash -LiteralPath $source, $guardSource -Algorithm SHA256).Hash -join ':')
 $desiredPolicy = [ordered]@{
     LimitGiB = $policy.LimitGiB
     PollMilliseconds = $policy.PollMilliseconds
@@ -18,6 +20,16 @@ $desiredPolicy = [ordered]@{
     RuntimeExecutables = $policy.RuntimeExecutables
     ProcessOnlyExecutables = $policy.ProcessOnlyExecutables
     RuntimeMarkers = $policy.RuntimeMarkers
+    EarlyOom = [ordered]@{
+        Mode = $policy.EarlyOom.Mode
+        AvailablePhysicalPercent = $policy.EarlyOom.AvailablePhysicalPercent
+        CommitHeadroomPercent = $policy.EarlyOom.CommitHeadroomPercent
+        EmergencyCommitHeadroomPercent = $policy.EarlyOom.EmergencyCommitHeadroomPercent
+        SustainSeconds = $policy.EarlyOom.SustainSeconds
+        CooldownSeconds = $policy.EarlyOom.CooldownSeconds
+        MinimumCandidateMiB = $policy.EarlyOom.MinimumCandidateMiB
+        TerminationExecutables = $policy.EarlyOom.TerminationExecutables
+    }
 }
 $serializedPolicy = $desiredPolicy | ConvertTo-Json -Depth 5
 $service = Get-Service -Name $policy.ServiceName -ErrorAction SilentlyContinue
@@ -34,7 +46,7 @@ if ($Mode -eq 'Ensure') {
     $buildDirectory = Join-Path ([IO.Path]::GetTempPath()) ('dws-memory-limits-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $buildDirectory | Out-Null
     $builtExecutable = Join-Path $buildDirectory 'MemoryLimits.exe'
-    & $compiler /nologo /platform:x64 /target:exe /optimize+ /r:System.ServiceProcess.dll /r:System.Management.dll /r:System.Web.Extensions.dll "/out:$builtExecutable" $source
+    & $compiler /nologo /platform:x64 /target:exe /optimize+ /r:System.ServiceProcess.dll /r:System.Management.dll /r:System.Web.Extensions.dll "/out:$builtExecutable" $source $guardSource
     if ($LASTEXITCODE -ne 0) { throw 'Memory service build failed.' }
     & $builtExecutable --self-test
     if ($LASTEXITCODE -ne 0) { throw 'Kernel memory-limit test failed; service not installed.' }
@@ -48,7 +60,7 @@ if ($Mode -eq 'Ensure') {
     if (Test-Path -LiteralPath $executable) { Copy-Item -LiteralPath $executable -Destination ($executable + '.previous') -Force }
     Copy-Item -LiteralPath $builtExecutable -Destination $executable -Force
     $serializedPolicy | Set-Content -LiteralPath $policyPath -Encoding UTF8
-    (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash | Set-Content -LiteralPath (Join-Path $installDirectory 'source.sha256')
+    $sourceHash | Set-Content -LiteralPath (Join-Path $installDirectory 'source.sha256')
     if (-not $service) {
         New-Service -Name $policy.ServiceName -BinaryPathName ('"' + $executable + '"') -DisplayName 'DataWorkStation workload memory limits' -StartupType Automatic | Out-Null
     } else { Set-Service -Name $policy.ServiceName -StartupType Automatic }
@@ -77,18 +89,18 @@ $serviceState = Get-CimInstance Win32_Service -Filter "Name='$($policy.ServiceNa
 $installedPolicy = if (Test-Path -LiteralPath $policyPath) { Get-Content -LiteralPath $policyPath -Raw | ConvertFrom-Json } else { $null }
 $runtimePath = Join-Path $stateDirectory 'status.json'
 $runtime = if (Test-Path -LiteralPath $runtimePath) { Get-Content -LiteralPath $runtimePath -Raw | ConvertFrom-Json } else { $null }
-$sourceHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash
 $installedHashPath = Join-Path $installDirectory 'source.sha256'
 $sourceMatches = (Test-Path -LiteralPath $installedHashPath) -and (Get-Content -LiteralPath $installedHashPath -Raw).Trim() -eq $sourceHash
 $policyMatches = $installedPolicy -and (($installedPolicy | ConvertTo-Json -Depth 5 -Compress) -ceq ($desiredPolicy | ConvertTo-Json -Depth 5 -Compress))
 $runtimeHealthy = $runtime -and ([datetime]::UtcNow - [datetime]$runtime.utc).TotalSeconds -lt 20 -and @($runtime.errors).Count -eq 0
+$guardHealthy = $runtime -and $runtime.earlyOom -and $runtime.earlyOom.mode -eq $policy.EarlyOom.Mode -and $runtime.earlyOom.state -ne 'Faulted'
 $environmentState = foreach ($name in $policy.MachineEnvironment.Keys) {
     [pscustomobject]@{ Name = $name; Expected = $policy.MachineEnvironment[$name]; Machine = [Environment]::GetEnvironmentVariable($name, 'Machine') }
 }
 $environmentMatches = @($environmentState | Where-Object { $_.Machine -cne $_.Expected }).Count -eq 0
 $result = [pscustomobject]@{
     Service = $policy.ServiceName
-    State = if ($Mode -eq 'Remove' -and -not $serviceState) { 'removed' } elseif ($serviceState.State -eq 'Running' -and $serviceState.StartMode -eq 'Auto' -and $serviceState.StartName -eq 'LocalSystem' -and $policyMatches -and $sourceMatches -and $runtimeHealthy -and $environmentMatches) { 'compliant' } else { 'drift detected' }
+    State = if ($Mode -eq 'Remove' -and -not $serviceState) { 'removed' } elseif ($serviceState.State -eq 'Running' -and $serviceState.StartMode -eq 'Auto' -and $serviceState.StartName -eq 'LocalSystem' -and $policyMatches -and $sourceMatches -and $runtimeHealthy -and $guardHealthy -and $environmentMatches) { 'compliant' } else { 'drift detected' }
     StartMode = $serviceState.StartMode
     Account = $serviceState.StartName
     LimitGiB = $policy.LimitGiB
@@ -97,6 +109,8 @@ $result = [pscustomobject]@{
     PolicyMatches = [bool]$policyMatches
     SourceMatches = [bool]$sourceMatches
     RuntimeHealthy = [bool]$runtimeHealthy
+    EarlyOomHealthy = [bool]$guardHealthy
+    EarlyOom = $policy.EarlyOom
     MachineEnvironment = @($environmentState)
     Runtime = $runtime
     Log = Join-Path $stateDirectory 'events.jsonl'

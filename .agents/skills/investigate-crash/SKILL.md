@@ -5,6 +5,12 @@ description: Investigate Windows process crashes, segfault-like access violation
 
 # Investigate Crash
 
+For a managed Python/.NET worker that disappeared, inspect existing early-OOM events with
+`pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100 -Json`
+before attaching a debugger or starting capture. Match UTC, PID and process creation time.
+An observed `terminated` event explains deliberate memory-pressure recovery; a request or
+pending event alone does not establish exit. See `../../../docs/workload-memory.md#early-oom-recovery-and-audit-logs`.
+
 Escalate from historical evidence to targeted capture.
 An application error dialog alone is not a crash. For failed HTTP/authenticated operations with
 the process still responsive, use `diagnose-http` before considering a debugger attachment.

@@ -15,7 +15,7 @@ debugger, changes policy, or repairs desired state.
 
 | Route | Use when | Inspect first | Explicit next action |
 |---|---|---|---|
-| `memory-pressure` | RAM, commit, WSL memory, or a kernel pool is growing | `mem`, `memapps`, `memproc` | `profile-native-record CASE -Seconds 30` |
+| `memory-pressure` | RAM, commit, WSL memory, a kernel pool, or an early-OOM intervention | `mem`, `memapps`, `memproc`, `Get-WorkloadMemoryDiagnostics.ps1 -Action Events` | `profile-native-record CASE -Seconds 30` |
 | `network-path` | DNS, IPv6, firewall, port, or reachability fails | `ports`, `connections`, existing PCAPNG | `pcap-debug-start CASE` |
 | `http-authentication` | An HTTP operation fails, including Office Store installation | `http-debug-summary -Path EXISTING.etl -Executable WINWORD.EXE` | Review `http-debug-start -Name CASE -Executable WINWORD.EXE -Plan` before capture |
 | `crash-analysis` | A process exits, faults, freezes, or hangs | `crashes`, `problems`, existing dumps | `dump-on-crash -Name CASE -Executable PATH` |

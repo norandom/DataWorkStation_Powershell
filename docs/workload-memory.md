@@ -121,3 +121,91 @@ sudo pwsh -NoProfile -File .\scripts\Set-ProcessLassoResponsiveness.ps1 -Mode En
 `Ensure` backs up the INI, preserves unrelated settings, and restarts the governor. For the
 independent memory-service install/remove commands, precise target selection, detection gaps,
 and surviving job limits, see [Memory pressure](workflows/memory-pressure.md#optional-workload-commit-limits).
+
+### ProBalance and Processor Group Extender
+
+Keep [ProBalance](https://bitsum.com/apps/process-lasso/docs/algorithms/probalance/) for temporary
+background priority adjustments under CPU contention. Its restraint/restoration logs help separate
+CPU scheduling effects from memory-pressure interventions. Foreground boosting and Efficiency Mode
+are not needed for our baseline.
+
+[Processor Group Extender](https://bitsum.com/apps/process-lasso/docs/algorithms/group-extender/)
+is intended for applications confined to one processor group on large systems. Bitsum says it is
+unnecessary on Windows 11, which spans groups by default. A machine with 24 logical processors
+does not need this feature. Neither algorithm performs early-OOM recovery.
+
+## Early-OOM recovery and audit logs
+
+The Windows companion to [earlyoom](https://github.com/rfjakob/earlyoom) is implemented inside our
+existing memory-limit service. PowerShell provides the human commands; a small compiled service
+performs the repeated sampling and action. It runs independently of Process Lasso. Lasso's
+[Watchdog](https://bitsum.com/apps/process-lasso/docs/rules/watchdog/) provides per-process usage
+thresholds, not the combined system-pressure decision used here.
+
+Inspect current capacities and the calculated thresholds before applying the policy:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Plan
+pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Status -Json
+pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100
+pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -SinceUtc '2026-09-19T00:00:00Z' -Json
+```
+
+`Plan`, `Status` and `Events` are read-only. Edit the `EarlyOom` block in
+`config/workload-memory-limits.psd1`, then explicitly apply it:
+
+```powershell
+sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure
+pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test
+```
+
+`Ensure` rebuilds and restarts the service. The declared mode is **Enforce**, which can forcibly
+terminate selected workers and lose their in-progress work. Choose **Observe** in the declaration
+to record `would-terminate` decisions without stopping anything, or **Disabled** to retain only
+the allocation limits. These modes take effect after `Ensure`.
+
+The default decision uses:
+
+| Parameter | Default | Meaning |
+|---|---|---|
+| Available physical memory | 10% | Includes immediately reusable memory, not just empty pages |
+| Commit headroom | 10% | Both this and the physical-memory threshold must be crossed |
+| Emergency commit headroom | 3% | Independent trigger even if physical RAM is still available |
+| Sustained pressure | 3 seconds | Pressure must persist before selecting a process |
+| Cooldown | 15 seconds | At most one attempted intervention per interval |
+| Candidate minimum | 256 MiB private bytes | Skip small processes unlikely to provide useful recovery |
+
+The service samples at the configured 500 ms loop interval plus processing time. It reads physical
+capacity, available RAM, current commit limit/usage and page-file allocation/usage from Windows.
+Threshold bytes are recomputed from current capacity; RAM/page-file changes need no fixed-size
+rule rewrite. It does **not** resize the page file. Missing page-file statistics are represented
+as unknown; the authoritative decision uses
+[current commit headroom](https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-performance_information).
+This is a Windows adaptation, not a literal comparison against Linux free swap.
+
+Under sustained pressure it chooses the largest eligible private-byte consumer among processes
+already assigned to our managed jobs. Only the declared Python/.NET executable names qualify;
+session-zero services, critical processes, AI hosts, Java and desktop apps are excluded. A held
+process handle and creation-time check prevent acting on a reused PID. The service rechecks pressure
+immediately before acting and refuses an action if the pre-action audit record cannot be written.
+
+One worker process is terminated at a time, not its entire tree. Windows does not supply a generic
+SIGTERM equivalent for these CLI workers, so this is forced termination with exit code `0xE0000001`.
+Remaining workers or AI retries can allocate again. Use `pytest --max-worker-restart=0 -n 3` when
+automatic worker replacement would defeat recovery. There is no guaranteed OOM protection if
+pressure grows faster than the polling loop or no eligible candidate exists.
+
+The service writes `earlyoom.jsonl` under `%ProgramData%\DataWorkStationMemoryLimits`, with one
+previous file retained after rotation at approximately 4 MiB. It records periodic health samples,
+pressure transitions, `would-terminate`, `no-candidate`, pre-action requests, termination outcome
+and recovery. Records include UTC, mode, thresholds, RAM/commit/page-file readings and candidate
+PID, creation time, executable name, private bytes and managed-job identity. It does not log
+command lines, environment values or process contents.
+
+`terminated` means the process exit was observed; `termination-pending` means the asynchronous
+request has not yet been observed to finish. Match PID **and creation time**, not PID alone.
+`status.json` includes the latest guard state; a fault or stale heartbeat is a coverage gap.
+The event command reads a bounded tail across both log files and reports malformed/incomplete
+records rather than silently treating them as no activity. Copy relevant evidence to a Tricky
+case before rotation removes it. Memory/crash skills inspect these existing records before new
+capture, and distinguish deliberate recovery from allocation denial or an ordinary crash.

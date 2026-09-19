@@ -1,0 +1,21 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-004]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-005]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]

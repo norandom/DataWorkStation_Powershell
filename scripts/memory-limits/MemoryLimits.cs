@@ -20,6 +20,7 @@ namespace DataWorkStation
         public string[] Executables { get; set; }
         public string[] RuntimeExecutables { get; set; }
         public string[] ProcessOnlyExecutables { get; set; }
+        public EarlyOomPolicy EarlyOom { get; set; }
         public string[] RuntimeMarkers { get; set; }
     }
     public sealed class MemoryLimits : ServiceBase
@@ -35,6 +36,7 @@ namespace DataWorkStation
         Thread worker;
         Policy policy;
         ulong limit;
+        EarlyOomGuard guard;
         int ownPid = Process.GetCurrentProcess().Id;
 
         public MemoryLimits() { ServiceName = NameOfService; }
@@ -45,6 +47,7 @@ namespace DataWorkStation
                 throw new InvalidDataException("Invalid memory policy.");
             limit = (ulong)policy.LimitGiB * 1024 * 1024 * 1024;
             Directory.CreateDirectory(StatePath);
+            if (policy.EarlyOom != null) guard = new EarlyOomGuard(policy.EarlyOom, StatePath);
             RecoverJobs();
             worker = new Thread(Loop) { IsBackground = true, Name = "Workload memory limits" };
             worker.Start();
@@ -95,6 +98,10 @@ namespace DataWorkStation
             {
                 try
                 {
+                    if (guard != null) {
+                        try { guard.Tick(jobs); }
+                        catch (Exception e) { guard.RecordFailure(e.Message); Log("earlyoom-error", "", 0, e.GetType().Name + ": " + e.Message); }
+                    }
                     Scan();
                     if (ticks++ % 10 == 0) SaveStatus();
                 }
@@ -243,7 +250,7 @@ namespace DataWorkStation
             File.WriteAllLines(Path.Combine(StatePath, "jobs.txt"), jobs.Keys.ToArray());
             string destination = Path.Combine(StatePath, "status.json");
             string temp = destination + ".new";
-            File.WriteAllText(temp, Json.Serialize(new { utc = DateTime.UtcNow.ToString("o"), limitGiB = policy.LimitGiB, pollMilliseconds = policy.PollMilliseconds, jobs = rows, errors = errors.Select(x => new { pid = x.Key, error = x.Value }).ToArray() }));
+            File.WriteAllText(temp, Json.Serialize(new { utc = DateTime.UtcNow.ToString("o"), limitGiB = policy.LimitGiB, pollMilliseconds = policy.PollMilliseconds, earlyOom = guard == null ? null : guard.Status, jobs = rows, errors = errors.Select(x => new { pid = x.Key, error = x.Value }).ToArray() }));
             if (File.Exists(destination)) File.Replace(temp, destination, null); else File.Move(temp, destination);
         }
         static int Main(string[] args)

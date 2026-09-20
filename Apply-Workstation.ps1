@@ -3,7 +3,7 @@ param(
     [ValidateSet('Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
     [ValidateSet(
-        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'AudioSwitcher', 'ProcessLasso', 'RazerRgb', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'OpenCodeExtensions', 'DeveloperEditor', 'SpecDrivenDevelopment',
+        'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'AudioSwitcher', 'SublimeText', 'ProcessLasso', 'RazerRgb', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'OpenCodeExtensions', 'DeveloperEditor', 'SpecDrivenDevelopment',
         'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'SafeChain', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
@@ -262,6 +262,11 @@ function Invoke-WorkstationModule {
         'Caffeine' {
             Invoke-CheckedProcess 'Caffeine package state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $caffeineScript -Mode $Mode
+            }
+        }
+        'SublimeText' {
+            Invoke-CheckedProcess 'Optional Sublime Text user PATH state' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'scripts\Set-SublimeTextState.ps1') -Mode $Mode
             }
         }
         'ProcessLasso' {

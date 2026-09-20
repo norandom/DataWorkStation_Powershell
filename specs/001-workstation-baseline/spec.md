@@ -198,7 +198,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 56 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-001**: All 57 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
 - **SC-002**: All 34 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
@@ -230,6 +230,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | NativeTextTools | REQ-022 |
 | Caffeine | REQ-002, REQ-007, REQ-025 |
 | AudioSwitcher | REQ-002, REQ-007, REQ-025 |
+| SublimeText | governed by `specs/018-sublime-text` |
 | ProcessLasso | REQ-002, REQ-007, REQ-025 |
 | RazerRgb | REQ-002, REQ-006, REQ-007 |
 | Scoop | REQ-002, REQ-007 |

@@ -22,6 +22,19 @@
     )
     Modules = @(
         @{
+            Name = 'SublimeText'
+            FeatureSpec = 'specs/018-sublime-text'
+            Stage = 'Core'
+            Runtime = 'PowerShell7'
+            Order = 26
+            Default = $false
+            DependsOn = @()
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            Description = 'Optional user PATH integration for an existing Sublime Text installation.'
+        }
+        @{
             Name = 'RazerRgb'
             FeatureSpec = 'specs/016-razer-rgb'
             Stage = 'Extended'

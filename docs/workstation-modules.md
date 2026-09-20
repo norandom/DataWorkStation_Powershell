@@ -97,6 +97,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `NativeTextTools` | yes | none | focused native Win32 `awk.exe` and `sed.exe` package, shims, and smoke tests |
 | `Caffeine` | yes | none | Zhorn Software Caffeine package with enabled, active-at-launch per-user startup |
 | `AudioSwitcher` | yes | none | Audio Switcher tray utility for playback/recording device changes; favorites, hotkeys, and startup stay user-controlled |
+| `SublimeText` | no | none | Add an existing Sublime Text installation to the user PATH |
 | `ProcessLasso` | no | none | Optional machine-wide Process Lasso package; paid license for commercial use; watchdog rules remain user-controlled |
 | `Scoop` | yes | `Git` | per-user Scoop with official Main and Extras buckets |
 | `TerminalFonts` | yes | `PowerShell7` | hash-pinned per-user Fira Code installation |
@@ -174,3 +175,25 @@ Removal still requires the extra destructive acknowledgement:
 The existing `-Skip...` switches remain available for a default `All` run. A skipped dependency is treated as already satisfied outside the current invocation, matching the old behavior. Do not combine explicit module names with skip switches; the orchestrator rejects ambiguous selection.
 
 Direct resource commands remain supported when their more specialized parameters are needed.
+
+## Optional Sublime Text
+
+Enable `subl` for an existing Sublime Text installation:
+
+```powershell
+.\Apply-Workstation.ps1 -Mode Ensure -Module SublimeText -Plan
+pwsh -NoProfile -File .\scripts\Set-SublimeTextState.ps1 -Mode Test
+.\Apply-Workstation.ps1 -Mode Ensure -Module SublimeText
+```
+
+`SublimeText` is excluded from default runs and `-Module All`. It requires the standard
+PowerShell 7 stage prerequisite. `Test` only inspects the executable and persistent user PATH;
+`Ensure` and `Reinitialize` add the configured directory once, preserving unrelated PATH entries.
+The module uses the existing installation at `%ProgramFiles%\Sublime Text`; edit
+`config/sublime-text.psd1` for a custom location. A missing installation produces an actionable
+error without changing PATH. It does not install, upgrade, launch, or license the editor.
+
+Restart your terminal application after enabling the module so new shells inherit the user PATH.
+Then use `subl .`, `subl README.md`, or `subl --version` in PowerShell 5.1 or 7.
+To undo the integration, remove only the configured Sublime directory from your user PATH in
+Windows Environment Variables. Omitting the module from later runs leaves an existing opt-in intact.

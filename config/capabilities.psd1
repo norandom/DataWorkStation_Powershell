@@ -15,13 +15,17 @@
         @{
             Id = 'powershell-environment'
             Title = 'Staged PowerShell bootstrap, dual-runtime grml-style profile, and Windows Terminal'
-            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile', 'mkdir', 'directory color', 'ansi color', 'grml', 'grml zsh', 'shell aliases', 'prompt style', 'git prompt')
+            Triggers = @('powershell 5.1', 'powershell core', 'pwsh', 'bootstrap stage', 'dependency stage', 'windows terminal', 'default terminal', 'terminal profile', 'mkdir', 'directory color', 'ansi color', 'grml', 'grml zsh', 'shell aliases', 'subl', 'sublime text', 'prompt style', 'git prompt')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7 -Plan'
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7'
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section BootstrapStages'
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-WorkstationBaseline.ps1 -Section PowerShellRuntimes'
+                'Get-Command subl'
+                'subl --version'
+                'pwsh -NoProfile -File .\scripts\Set-SublimeTextState.ps1 -Mode Test -Json'
+                '.\Apply-Workstation.ps1 -Mode Test -Module SublimeText -Plan'
                 'pwsh -NoProfile -File .\scripts\Set-PowerShellProfile.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-WindowsTerminalState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module WindowsTerminal -Plan'
@@ -30,6 +34,7 @@
             StateCommands = @(
                 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Ensure -Module PowerShell7'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module PowerShellProfile'
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module SublimeText'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module WindowsTerminal'
             )
             CaptureCommand = 'tricky add {case} <powershell-environment-state.json>'

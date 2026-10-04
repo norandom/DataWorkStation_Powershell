@@ -6,10 +6,11 @@
             FeatureSpec = 'specs/016-razer-rgb'
             Modules = @('RazerRgb')
             Title = 'Optional Razer keyboard lighting; Bluetooth mouse stays unmanaged'
-            Triggers = @('razer', 'synapse', 'openrgb', 'keyboard lighting', 'mouse lighting')
+            Triggers = @('razer', 'synapse', 'openrgb', 'keyboard lighting', 'mouse lighting', 'pawnio', 'RGB startup terminal')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @('pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Test -Json', '.\Apply-Workstation.ps1 -Mode Test -Module RazerRgb -Plan')
             StateCommands = @('pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Ensure', 'pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Ensure -RemoveSynapse')
+            ValidationCommands = @('pwsh -NoProfile -File .\tests\Test-RazerRgb.ps1')
             CaptureCommand = 'tricky add {case} -Path <razer-rgb-state.json>'
         }
         @{

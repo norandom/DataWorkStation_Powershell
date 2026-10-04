@@ -2,6 +2,7 @@
 param()
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+& (Join-Path $PSScriptRoot 'Test-RazerStartup.ps1')
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('razer-rgb-test-' + [guid]::NewGuid().ToString('N') + '.dll')
 $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 & $compiler /nologo /target:library /reference:System.Windows.Forms.dll ('/out:' + $temp) (Join-Path $root 'scripts\razer-rgb\RazerReactive.cs')

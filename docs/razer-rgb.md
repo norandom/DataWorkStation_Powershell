@@ -16,10 +16,21 @@ pwsh -NoProfile -File .\scripts\Set-RazerRgbState.ps1 -Mode Ensure -RemoveSynaps
 
 OpenRGB 1.0 runs privately under `%LOCALAPPDATA%\DataWorkStation\RazerRgb`.
 Its portable archive is SHA-256 pinned; no motherboard driver or system service is installed.
+Sign-in runs the compiled GUI-subsystem `RazerStartup.exe`, which creates PowerShell without a
+console. The PowerShell launcher also creates OpenRGB without a console; hiding a console window
+alone is insufficient with Windows Terminal. Launcher failures go to `startup.log` in the private
+installation directory, and OpenRGB retains its rotating logs under `config\logs`.
+
+OpenRGB 1.0 initializes SMBus interfaces even when all motherboard device detectors are disabled.
+It has no separate bus-disable setting in this release. PawnIO permission warnings may therefore
+remain in the logs during ordinary user startup; USB keyboard lighting does not need this access.
+The module does not elevate OpenRGB or change PawnIO permissions to suppress those warnings.
+
 The module is excluded from default runs. `Test` observes state; it never installs, starts,
 captures input, or removes anything. `Ensure` updates the private configuration and restarts
 only the module's own OpenRGB and lighting-helper processes, compiles the helper when its source changes, and enables
-the `DataWorkStation Razer RGB` HKCU Run entry. It requires PowerShell 7.
+the `DataWorkStation Razer RGB` HKCU Run entry. Before repair, it backs up startup files, theme,
+OpenRGB settings, and the previous Run value under `backups`. It requires PowerShell 7.
 
 The Huntsman Mini stays blue (`0000FF`). Each pressed key turns white (`FFFFFF`) for
 2,000 milliseconds after its latest key-down event, then returns to blue. Other keys retain
@@ -46,7 +57,7 @@ macro-generated names and exact capitalization). Revisit it when upgrading OpenR
 `Test` permits omitted disabled detectors that are not built for Windows, but rejects
 any enabled detector outside the declared keyboard list.
 
-`Test` compares the deployed helper source receipt, launcher, theme, detector settings, local
+`Test` compares the deployed helper and startup source receipts, launcher, theme, detector settings, local
 SDK endpoint, and startup registration. Configuration compliance does not imply that the
 keyboard is connected. `runtime-status.txt` reports connection health and device names,
 including an explicit message when no supported keyboard is detected, not input activity. To stop

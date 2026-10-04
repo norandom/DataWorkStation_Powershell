@@ -13,6 +13,9 @@ $helper = Join-Path $root 'RazerReactive.exe'
 $source = Join-Path $PSScriptRoot 'razer-rgb\RazerReactive.cs'
 $launcher = Join-Path $root 'Start-RazerRgb.ps1'
 $launcherSource = Join-Path $PSScriptRoot 'Start-RazerRgb.ps1'
+$startupExe = Join-Path $root 'RazerStartup.exe'
+$startupSource = Join-Path $PSScriptRoot 'razer-rgb\RazerStartup.cs'
+$startupReceipt = Join-Path $root 'startup-source.sha256'
 $configPath = Join-Path $root 'config\OpenRGB.json'
 # OpenRGB detector names are case-sensitive, including distinct GPU spelling variants.
 $detectors = [Collections.Generic.Dictionary[string,bool]]::new([StringComparer]::Ordinal)
@@ -23,7 +26,7 @@ foreach ($name in $configuration.Detectors) {
 }
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $startupName = 'DataWorkStation Razer RGB'
-$startup = '"' + (Join-Path $PSHOME 'pwsh.exe') + '" -NoLogo -NoProfile -WindowStyle Hidden -File "' + $launcher + '"'
+$startup = '"' + $startupExe + '" "' + (Join-Path $PSHOME 'pwsh.exe') + '"'
 $uninstallKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
 $uninstallKey32 = 'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*'
 function Get-SynapseRegistration {
@@ -32,6 +35,23 @@ function Get-SynapseRegistration {
 if ($Mode -eq 'Test' -and $RemoveSynapse) { throw '-RemoveSynapse requires -Mode Ensure.' }
 if ($Mode -eq 'Ensure') {
     New-Item -ItemType Directory -Path $root -Force | Out-Null
+    # Preserve the managed files and startup registration before each repair.
+    $backup = Join-Path $root ('backups\' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+    New-Item -ItemType Directory -Path $backup -Force | Out-Null
+    foreach ($name in @('Start-RazerRgb.ps1', 'RazerStartup.exe', 'startup-source.sha256', 'theme.json')) {
+        $path = Join-Path $root $name
+        if (Test-Path -LiteralPath $path) { Copy-Item -LiteralPath $path -Destination $backup }
+    }
+    if (Test-Path -LiteralPath $configPath) { Copy-Item -LiteralPath $configPath -Destination $backup }
+    @{ Name = $startupName; Value = (Get-ItemProperty -LiteralPath $runKey -Name $startupName -ErrorAction Ignore).$startupName } |
+        ConvertTo-Json | Set-Content -LiteralPath (Join-Path $backup 'startup-registration.json')
+    $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+    $startupHash = (Get-FileHash -LiteralPath $startupSource -Algorithm SHA256).Hash
+    if (-not (Test-Path $startupExe) -or -not (Test-Path $startupReceipt) -or (Get-Content $startupReceipt -Raw).Trim() -ne $startupHash) {
+        & $compiler /nologo /target:winexe ('/out:' + $startupExe) $startupSource | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw 'Consoleless startup compilation failed.' }
+        Set-Content -LiteralPath $startupReceipt -Value $startupHash
+    }
     if (-not (Test-Path -LiteralPath $openRgb)) {
         $archive = Join-Path $root 'OpenRGB-1.0.zip'
         if (-not (Test-Path -LiteralPath $archive)) { Invoke-WebRequest $configuration.ArchiveUrl -OutFile $archive }
@@ -72,16 +92,19 @@ if ($Mode -eq 'Ensure') {
         }
         if (Get-SynapseRegistration) { throw 'Synapse remains registered; finish its uninstaller before continuing.' }
     }
-    & $launcher
+    $startupProcess = Start-Process -FilePath $startupExe -ArgumentList ('"' + (Join-Path $PSHOME 'pwsh.exe') + '"') -WindowStyle Hidden -PassThru
+    if (-not $startupProcess.WaitForExit(30000)) { throw "Lighting launcher timed out; inspect $(Join-Path $root 'startup.log')." }
+    if ($startupProcess.ExitCode -ne 0) { throw "Lighting startup failed; inspect $(Join-Path $root 'startup.log')." }
 }
 $registration = @(Get-SynapseRegistration)
 $actualStartup = (Get-ItemProperty -LiteralPath $runKey -Name $startupName -ErrorAction Ignore).$startupName
-$installed = (Test-Path -LiteralPath $openRgb) -and (Test-Path -LiteralPath $helper) -and (Test-Path -LiteralPath $launcher)
+$installed = (Test-Path -LiteralPath $openRgb) -and (Test-Path -LiteralPath $helper) -and (Test-Path -LiteralPath $launcher) -and (Test-Path -LiteralPath $startupExe)
 $startupApproval = (Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run' -Name $startupName -ErrorAction Ignore).$startupName
 $startupEnabled = $actualStartup -eq $startup -and -not ($startupApproval -and $startupApproval[0] -eq 3)
 $sourceReceipt = Join-Path $root 'helper-source.sha256'
 $sourceCurrent = (Test-Path $sourceReceipt) -and ((Get-Content $sourceReceipt -Raw).Trim() -eq (Get-FileHash $source -Algorithm SHA256).Hash)
 $launcherCurrent = (Test-Path $launcher) -and ((Get-FileHash $launcher -Algorithm SHA256).Hash -eq (Get-FileHash $launcherSource -Algorithm SHA256).Hash)
+$startupCurrent = (Test-Path $startupReceipt) -and ((Get-Content $startupReceipt -Raw).Trim() -eq (Get-FileHash $startupSource -Algorithm SHA256).Hash)
 $detectorsCurrent = $false
 if (Test-Path -LiteralPath $configPath) {
     try {
@@ -112,7 +135,7 @@ if (Test-Path $themePath) {
 $running = @(Get-Process RazerReactive -ErrorAction Ignore | Where-Object Path -EQ $helper).Count -gt 0
 $result = [pscustomobject]@{
     Resource = 'RazerRgb'; Optional = $true
-    State = if ($installed -and $startupEnabled -and $sourceCurrent -and $launcherCurrent -and $themeCurrent -and $detectorsCurrent) { 'compliant' } else { 'drift detected' }
+    State = if ($installed -and $startupEnabled -and $sourceCurrent -and $launcherCurrent -and $startupCurrent -and $themeCurrent -and $detectorsCurrent) { 'compliant' } else { 'drift detected' }
     Version = $configuration.Version
     Startup = if ($startupEnabled) { 'user sign-in' } else { 'missing or disabled' }
     Synapse = if ($registration.Count) { 'installed' } else { 'absent' }

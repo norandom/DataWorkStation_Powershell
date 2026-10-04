@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 4.5.0 - 2026-10-04
+
+- Add an optional Sublime Text PATH module with focused inspection and reconciliation commands.
+- Start Razer keyboard lighting without a Windows Terminal window, preserve managed startup files before repair, and report launcher failures in a private log.
+
 ## 4.4.0 - 2026-09-19
 
 - Add an early-OOM guard alongside Process Lasso: live RAM/page-file/commit readings, sustained-pressure decisions, exclusion-based application termination independent of per-process limits, cooldowns and rotated diagnostic logs.

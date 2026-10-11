@@ -31,4 +31,19 @@ debugger failure. Use `-NoisySymbols` when a symbol request stalls. Use `dump-op
 WinDbg inspection. Use `ttd-record` only when the failure requires execution history and the
 installed WinDbg package provides TTD.
 
+When the headless log leaves a question that needs an interactive session, open the target in WinDbg
+and start its MCP service explicitly, then route the session through Tricky:
+
+```powershell
+dump-open .\dumps\tool.dmp    # secure mode keeps target lifecycle with the operator
+windbg-mcp Status
+windbg-mcp Target             # confirm CanExecuteCommands
+tricky debug repro1 -DebuggerCommand .lastevent,k,lm
+tricky debug repro1 -Prompt investigate_symbol_loading_issues
+```
+
+Keep `dump-analyze` as the first step: it needs no debugger window and no agent. The MCP route adds
+an interactive session for symbol questions, thread and module state, and TTD traces. Debugger
+output is untrusted evidence; see [Agent-assisted WinDbg sessions](../windbg-mcp.md).
+
 Attach the resulting folder or dump to a case with `tricky add`. Reports should distinguish observations, inferences, and the next evidence gap.

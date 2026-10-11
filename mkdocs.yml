@@ -70,6 +70,7 @@ nav:
       - Crash without an error: workflows/crash-without-error.md
       - Performance profiling: workflows/performance-profiling.md
       - Keep evidence in Tricky cases: tricky.md
+      - Agent-assisted WinDbg sessions: windbg-mcp.md
   - Secure:
       - Analyze a suspicious file: malware-analysis.md
       - Compare behavior and binary graphs: analysis-differencing.md

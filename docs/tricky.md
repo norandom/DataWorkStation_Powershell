@@ -33,6 +33,19 @@ The HTML report is self-contained and has no runtime dependencies. It shows evid
 every artifact, and separates retained evidence from capture gaps. A suggested capture command does
 not run automatically.
 
+`tricky debug` reads a live WinDbg session over its MCP server, stores the untrusted debugger output
+under `evidence/snapshots`, and adds one observation note:
+
+```powershell
+dump-open ./dumps/tool.dmp
+tricky debug api-timeout -DebuggerCommand .lastevent,k,lm
+tricky debug api-timeout -Prompt investigate_symbol_loading_issues
+```
+
+It needs a WinDbg session whose MCP service the operator started, with the target already loaded:
+secure mode withholds the debugger's target-lifecycle tools. See
+[Agent-assisted WinDbg sessions](windbg-mcp.md).
+
 `tricky note` maintains the case journal. `-NoteType` accepts `Observation`, `Hypothesis`,
 `Contradiction`, `Change`, `Result` and `NextStep`; `-Message` is required and `-Path` can link
 existing evidence. Record backups and rollback decisions for changes, and keep credentials out

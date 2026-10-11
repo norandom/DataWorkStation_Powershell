@@ -524,6 +524,19 @@
             Description = 'WPT, py-spy, dotnet-trace, and Speedscope.'
         }
         @{
+            Name = 'WinDbgMcp'
+            Stage = 'Extended'
+            Runtime = 'PowerShell7'
+            Order = 61
+            Default = $false
+            DependsOn = @('Packages')
+            SupportedModes = @('Test', 'Ensure', 'Reinitialize')
+            Privileged = $false
+            Destructive = $false
+            FeatureSpec = 'specs/019-windbg-mcp'
+            Description = 'Opt-in WinDbg MCP server state for Windows host agents, driven through tricky rather than per-client registration.'
+        }
+        @{
             Name = 'SkillOpt'
             Stage = 'Extended'
             Runtime = 'PowerShell7'

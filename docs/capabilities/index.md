@@ -19,6 +19,7 @@ debugger, changes policy, or repairs desired state.
 | `network-path` | DNS, IPv6, firewall, port, or reachability fails | `ports`, `connections`, existing PCAPNG | `pcap-debug-start CASE` |
 | `http-authentication` | An HTTP operation fails, including Office Store installation | `http-debug-summary -Path EXISTING.etl -Executable WINWORD.EXE` | Review `http-debug-start -Name CASE -Executable WINWORD.EXE -Plan` before capture |
 | `crash-analysis` | A process exits, faults, freezes, or hangs | `crashes`, `problems`, existing dumps | `dump-on-crash -Name CASE -Executable PATH` |
+| `windbg-mcp` | A Windows host agent should read a live WinDbg session or a loaded dump | `windbg-mcp Status`, `windbg-mcp Sessions -Json` | `dump-open DUMP` in the MCP session, then `tricky debug CASE -DebuggerCommand .lastevent,k,lm` |
 | `native-performance` | Native or system-wide CPU and latency matter | `profile-status`, existing ETL | `profile-native-record CASE -Seconds 30` |
 | `python-performance` | A Python process consumes CPU | `profile-view PROFILE.svg` | `profile-python -ProcessId PID -Seconds 30 -Output PROFILE.svg` |
 | `dotnet-performance` | A .NET process needs EventPipe evidence | `profile-dotnet-ps`, existing Speedscope output | `profile-dotnet -ProcessId PID -Seconds 30 -OutputBase CASE` |

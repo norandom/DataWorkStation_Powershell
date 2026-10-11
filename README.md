@@ -78,7 +78,7 @@ Select `RazerRgb` explicitly; the Basilisk V3 Pro stays on Bluetooth with its li
 | Need | Commands and artifacts |
 |---|---|
 | Find memory owners | `mem`, `memapps`, `memproc`, `memtop`, RAMMap, PoolMon |
-| Explain a crash or silent exit | event triage, scoped EVTX/ETL, WER dumps, WinDbg, optional TTD |
+| Explain a crash or silent exit | event triage, scoped EVTX/ETL, WER dumps, WinDbg with its MCP server, optional TTD |
 | Trace DNS, IPv6, firewall, and ports | socket/process maps plus PktMon ETL and PCAPNG queries |
 | Render flame graphs | WPR/WPA for native/system, py-spy SVG for Python, EventPipe/Speedscope for .NET |
 | Reproduce workstation state | WinGet Configuration plus focused idempotent PowerShell resources |
@@ -178,6 +178,8 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Invoke-PowerShellTests.ps1` | Runs standard test files through one human/JSON Pester command with bounded parallel and compatibility lanes. |
 | `linux/developer_tools.py` | Human-runnable pyinfra desired state for Debian developer packages. |
 | `scripts/Set-ProfilingToolsState.ps1` | Maintains WPT/WPA, py-spy, dotnet-trace, and the local Speedscope viewer. |
+| `scripts/Set-WinDbgMcpState.ps1` | Maintains the opt-in WinDbg MCP server state and keeps a copy of the previous WinDbg settings. |
+| `scripts/Invoke-WinDbgMcp.ps1` | Speaks MCP to one WinDbg session through `DbgX.Mcp.Proxy.exe`, including the sampling bridge for protected output. |
 | `scripts/Invoke-NativeCpuProfile.ps1` | Records native/system CPU traces with WPR, staging elevated stop output before the user-context move. |
 | `scripts/Export-NativeCpuFlameGraph.ps1` | Headlessly converts sampled ETW stacks to collapsed stacks and a qView-compatible SVG. |
 | `tools/NativeCpuStacks` | Uses Microsoft's typed TraceProcessor API to preserve the sample-to-stack association while decoding ETL. |
@@ -371,6 +373,13 @@ The Windows feature resource enables Hyper-V, Windows Sandbox, and their parent 
 dependency order. It does not restart Windows. DeveloperTools installs the verified CodeQL CLI,
 public Trail of Bits query packs, Semgrep CE in an isolated uv environment, Dagger through Homebrew
 in Debian WSL, standalone TTD, Debian rsync, and the official PoolMon tag database.
+
+WinDbgMcp is opt-in and manages only the MCP side of the WinDbg package that `Packages` installs: the
+minimum MCP-capable version, the proxy, and the `EnableMcpServerFeature` setting. Starting the MCP
+service, secure mode, and cross-prompt-injection mitigation stay operator decisions in WinDbg. Host
+agents read the session through `windbg-mcp` and `tricky debug` instead of a per-client MCP
+registration, and no WSL distribution gains a debugger route. See
+[Agent-assisted WinDbg sessions](docs/windbg-mcp.md).
 
 ProfilingTools installs only the Windows Performance Toolkit feature from the ADK. It also installs
 py-spy in an isolated environment, dotnet-trace as a global .NET tool, and the local Speedscope

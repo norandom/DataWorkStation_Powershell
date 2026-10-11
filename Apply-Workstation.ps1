@@ -4,7 +4,7 @@ param(
     [string] $Mode = 'Ensure',
     [ValidateSet(
         'All', 'Sudo', 'Git', 'PowerShell7', 'PowerShellTesting', 'Go', 'Packages', 'Mpv', 'NativeTextTools', 'Caffeine', 'AudioSwitcher', 'SublimeText', 'ProcessLasso', 'RazerRgb', 'Scoop', 'TerminalFonts', 'ContourTerminal', 'WindowsTerminal', 'WindowsFeatures', 'Hardening', 'ExploitProtection', 'LinuxHomebrew', 'LinuxAutomation', 'NixOsWsl', 'AiNixOsWsl', 'SharedSshConfig', 'DeveloperDocker', 'RootlessPodman', 'DeveloperTools', 'AiTools', 'OpenCodeExtensions', 'DeveloperEditor', 'SpecDrivenDevelopment',
-        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'SkillOpt', 'PowerShellProfile', 'SafeChain', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
+        'MalwareHashes', 'MalwareAnalysisTools', 'SleuthKitCli', 'Autopsy', 'NativeForensicTools', 'MalwareContainerImage', 'LegacyDockerCleanup', 'ProfilingTools', 'WinDbgMcp', 'SkillOpt', 'PowerShellProfile', 'SafeChain', 'QuantResearchEnvironment', 'MsvcBuildTools', 'CMake', 'RustToolchain', 'JavaToolchain', 'NativeDevelopment', 'FocusFollowsMouse',
         'DefenderExclusions', 'SmartScreen', 'WslMemory', 'Pagefile', 'EventLogs',
         'Firewall', 'Debloat'
     )]
@@ -84,6 +84,7 @@ $rootlessPodmanScript = Join-Path $PSScriptRoot 'scripts\Set-RootlessPodmanState
 $legacyDockerCleanupScript = Join-Path $PSScriptRoot 'scripts\Remove-LegacyDockerMwState.ps1'
 $developerDockerScript = Join-Path $PSScriptRoot 'scripts\Set-DeveloperDockerState.ps1'
 $profilingToolsScript = Join-Path $PSScriptRoot 'scripts\Set-ProfilingToolsState.ps1'
+$winDbgMcpScript = Join-Path $PSScriptRoot 'scripts\Set-WinDbgMcpState.ps1'
 $skillOptScript = Join-Path $PSScriptRoot 'scripts\Set-SkillOptState.ps1'
 $safeChainScript = Join-Path $PSScriptRoot 'scripts\Set-SafeChainState.ps1'
 $sudoScript = Join-Path $PSScriptRoot 'scripts\Set-SudoState.ps1'
@@ -510,6 +511,11 @@ function Invoke-WorkstationModule {
         'ProfilingTools' {
             Invoke-CheckedProcess 'Profiling tool state' {
                 & (Get-PowerShell7Path) -NoLogo -NoProfile -File $profilingToolsScript -Mode $Mode
+            }
+        }
+        'WinDbgMcp' {
+            Invoke-CheckedProcess 'WinDbg MCP server state for Windows host agents' {
+                & (Get-PowerShell7Path) -NoLogo -NoProfile -File $winDbgMcpScript -Mode $Mode
             }
         }
         'SkillOpt' {

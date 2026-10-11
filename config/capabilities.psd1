@@ -116,8 +116,30 @@
             Title = 'Crash, hang, and silent process exit'
             Triggers = @('crash', 'segfault', 'fault', 'hang', 'freeze', 'exit', 'exception')
             EvidenceKinds = @('Event log', 'Crash dump')
-            InspectCommands = @('crashes', 'problems', 'dump-analyze <dump>', 'dump-open <dump>')
+            InspectCommands = @('crashes', 'problems', 'dump-analyze <dump>', 'dump-open <dump>', 'windbg-mcp Status')
             CaptureCommand = 'dump-on-crash -Name {case} -Executable <path>'
+        }
+        @{
+            Id = 'windbg-mcp'
+            FeatureSpec = 'specs/019-windbg-mcp'
+            Modules = @('WinDbgMcp')
+            Title = 'Agent-assisted WinDbg session for Windows host agents'
+            Triggers = @('windbg', 'mcp', 'debugger', 'live debugging', 'symbol loading', 'breakpoint', 'ttd trace', 'dump analysis agent')
+            EvidenceKinds = @('Snapshot', 'Crash dump')
+            InspectCommands = @(
+                'windbg-mcp Status'
+                'windbg-mcp Sessions -Json'
+                'windbg-mcp Tools'
+                'windbg-mcp Target -Json'
+                'pwsh -NoProfile -File .\scripts\Set-WinDbgMcpState.ps1 -Mode Test -Json'
+                '.\Apply-Workstation.ps1 -Mode Test -Module WinDbgMcp -Plan'
+            )
+            StateCommands = @(
+                '.\Apply-Workstation.ps1 -Mode Ensure -Module WinDbgMcp'
+                'pwsh -NoProfile -File .\scripts\Set-WinDbgMcpState.ps1 -Mode Ensure'
+            )
+            ValidationCommands = @('pwsh -NoProfile -File .\tests\Test-WinDbgMcpState.ps1')
+            CaptureCommand = 'tricky debug {case} -DebuggerCommand .lastevent,k,lm'
         }
         @{
             Id = 'native-performance'

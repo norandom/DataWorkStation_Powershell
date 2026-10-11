@@ -126,6 +126,7 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `MalwareContainerImage` | **no** | `RootlessPodman` | opt-in local build of the pinned rootless static-parser image |
 | `LegacyDockerCleanup` | **no** | `RootlessPodman` | destructive removal of retained Debian-MW Docker data after explicit confirmation |
 | `ProfilingTools` | yes | `Packages` | WPT, py-spy, dotnet-trace, and Speedscope |
+| `WinDbgMcp` | **no** | `Packages` | opt-in WinDbg MCP server state for Windows host agents, read through `windbg-mcp` and `tricky debug` |
 | `SkillOpt` | yes | `Packages` | pinned SkillOpt and conservative defaults |
 | `PowerShellProfile` | yes | `PowerShell7` | managed profile components |
 | `SafeChain` | yes | `PowerShellProfile` | hash-pinned npm/Python package-manager protection on Windows and trusted Debian |

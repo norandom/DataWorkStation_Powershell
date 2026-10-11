@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 4.6.0 - 2026-10-11
+
+- Add an opt-in WinDbgMcp module that reports and reconciles the official WinDbg MCP server state: minimum MCP-capable version, resolved proxy, and the `EnableMcpServerFeature` setting with a settings backup, while leaving MCP service start, secure mode, and cross-prompt-injection mitigation to the operator.
+- Add `windbg-mcp` and `tricky debug` so Windows host agents read one WinDbg session through a reviewed PowerShell MCP client instead of a per-client registration; store the untrusted debugger output as case evidence with one observation note.
+- Answer WinDbg cross-prompt-injection classification with one non-interactive agent call, so protected operations keep returning output while secure mode stays on, and warn when no sampling agent resolves.
+- Guard the secure-mode boundary verified against a live session: the connected server exposes 15 tools and withholds `open_dump`, `launch_process`, `stop_debugging`, and `wait_for_break`, so the route names the operator step instead of calling a tool that does not exist, and checks `get_target_state` before any command.
+- Reuse the session the proxy auto-connects to instead of reconnecting it, and read the live session descriptor fields.
+- Prefer a sampling client at its declared installation path, use any other working copy otherwise, and run a command-script client through the command processor.
+- Answer the cross-prompt-injection classifier with its literal `=== FALSE`/`=== TRUE` contract, extracting the verdict from agent output, preferring the blocking verdict, and failing the request rather than implying "no injection" when an agent returns none.
+- Extend a pending request deadline by the time the debugger spends waiting for a classification, and release the WinDbg session on every client teardown so an abandoned connection stops blocking later clients.
+- Pass work-block data explicitly instead of through scope capture, and reject an empty debugger command before it reaches the server.
+- Declare the verified primary classifier and the slow fallback, and warn when only the fallback resolves instead of reporting a state that implies protected operations will work. Verified end to end: two protected commands returned debugger output after classification in 11.8 and 6.3 seconds.
+- Document the debugger trust boundary: no WSL distribution gains a route, and MCP proxy logs and stored output stay sensitive.
+
 ## 4.5.0 - 2026-10-04
 
 - Add an optional Sublime Text PATH module with focused inspection and reconciliation commands.

@@ -174,6 +174,11 @@ Semgrep is installed by `uv tool` into its own environment. It does not share th
 | `dump-on-crash -ProcessId PID` | Attach ProcDump to an existing process. |
 | `dump-analyze FILE.dmp [-Module NAME] [-NoisySymbols]` | Analyze a dump headlessly with `cdbX64`, CLI symbol downloads, a bounded timeout, and a retained text log. |
 | `dump-open FILE.dmp` | Open a dump in WinDbg. |
+| `windbg-mcp Status` | Report WinDbg MCP install state and the sessions that expose an MCP service. |
+| `windbg-mcp Sessions\|Tools\|Target` | List MCP sessions, the server tools and prompts, or the connected target state. |
+| `windbg-mcp Command -Command k,lm` | Run reviewed debugger commands in the connected WinDbg session and return their untrusted output. |
+| `windbg-mcp Open -Dump FILE.dmp` | Load a dump through MCP; available only in a session started without secure mode, which withholds target lifecycle. |
+| `windbg-mcp Prompt [-Prompt NAME]` | List the built-in MCP prompts, or read one prompt text for an ad hoc agent call. |
 | `ttd-record TOOL.exe [-Argument ...]` | Record a timestamped 2 GiB ring-buffer TTD trace under `./ttd`; elevation is inline. |
 | `ttd-record -ProcessId PID` | Attach the TTD recorder to an existing process. |
 | `ttd-open FILE.run` | Open a TTD recording in WinDbg. |
@@ -546,6 +551,7 @@ firewall-restore .\state\firewall-backups\firewall-before-reinitialize-YYYYMMDD-
 | `tricky add NAME -Path PATH [-Copy]` | Reference existing evidence, or copy it into the case. |
 | `tricky inspect NAME [-Hash] [-Json\|-AsObject]` | Inventory evidence and route explicit evidence gaps. |
 | `tricky report NAME [-Hash] [-Open]` | Write Markdown, JSON, and standalone visual HTML reports. |
+| `tricky debug NAME [-DebuggerCommand k,lm] [-Prompt NAME]` | Read a live WinDbg session over MCP, store its untrusted output as case evidence, and add one observation note. |
 | `tricky list` | List cases under the current directory. |
 | `tricky capabilities [-Json]` | Show the machine-readable capability catalog. |
 | `docs-serve` | Serve the locked MkDocs site locally. |

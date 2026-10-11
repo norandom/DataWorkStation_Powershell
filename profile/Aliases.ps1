@@ -386,6 +386,9 @@ function global:dump-open {
 function global:dump-analyze {
     & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-HeadlessDumpAnalysis.ps1') @args
 }
+function global:windbg-mcp {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-WinDbgMcp.ps1') @args
+}
 function global:debug-run { Start-WinDbgSession @args }
 function global:dump-on-crash { Invoke-CrashDumpCapture @args }
 function global:ttd-record { Invoke-TtdRecord @args }

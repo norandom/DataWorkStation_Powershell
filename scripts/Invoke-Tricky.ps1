@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('new', 'list', 'add', 'note', 'inspect', 'report', 'capabilities')]
+    [ValidateSet('new', 'list', 'add', 'note', 'inspect', 'report', 'capabilities', 'debug')]
     [string] $Action,
 
     [Parameter(Position = 1)]
@@ -12,6 +12,9 @@ param(
     [string] $Path,
     [ValidateSet('Observation', 'Hypothesis', 'Contradiction', 'Change', 'Result', 'NextStep')][string] $NoteType = 'Observation',
     [string] $Message,
+    [string[]] $DebuggerCommand,
+    [string] $Prompt,
+    [int] $SessionProcessId = 0,
     [string] $Root = (Get-Location).Path,
     [switch] $Copy,
     [switch] $Hash,
@@ -437,6 +440,70 @@ switch ($Action.ToLowerInvariant()) {
         $result = Write-Reports $inspection
         if ($Open) { Start-Process $result.Html }
         if ($Json) { $result | ConvertTo-Json } else { $result | Format-List }
+    }
+    'debug' {
+        if (-not $Case) { throw 'Usage: tricky debug <case> [-Path <dump>] [-DebuggerCommand k,lm] [-Prompt <name>] [-SessionProcessId <pid>] [-Json]' }
+        $directory = Resolve-CaseDirectory $Case -MustExist
+        # TRICKY_WINDBG_MCP_TOOL keeps the route testable without a live debugger session.
+        $tool = if ($env:TRICKY_WINDBG_MCP_TOOL) { $env:TRICKY_WINDBG_MCP_TOOL } else { Join-Path $script:RepositoryRoot 'scripts\Invoke-WinDbgMcp.ps1' }
+        if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "The WinDbg MCP tool is missing: $tool" }
+        $stamp = [DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss')
+        $snapshots = Join-Path $directory 'evidence\snapshots'
+        New-Item -ItemType Directory -Path $snapshots -Force | Out-Null
+        $steps = [Collections.Generic.List[object]]::new()
+        $shared = @{}
+        if ($SessionProcessId -gt 0) { $shared['SessionProcessId'] = $SessionProcessId }
+        if ($Path) {
+            $evidence = Join-Path $snapshots "windbg-mcp-open-$stamp.json"
+            $steps.Add((& $tool -Action Open -Dump $Path -OutputPath $evidence -AsObject @shared))
+        }
+        if ($Prompt) {
+            $evidence = Join-Path $snapshots "windbg-mcp-prompt-$stamp.json"
+            $steps.Add((& $tool -Action Prompt -Prompt $Prompt -OutputPath $evidence -AsObject @shared))
+        }
+        if ($DebuggerCommand -or (-not $Path -and -not $Prompt)) {
+            $evidence = Join-Path $snapshots "windbg-mcp-commands-$stamp.json"
+            $commandParameters = @{ Action = 'Command'; OutputPath = $evidence; AsObject = $true } + $shared
+            if ($DebuggerCommand) {
+                $commandParameters['Command'] = $DebuggerCommand
+            } else {
+                $defaults = @((Import-PowerShellDataFile -LiteralPath (Join-Path $script:RepositoryRoot 'config\windbg-mcp.psd1')).DefaultCommands)
+                $commandParameters['Command'] = @($defaults | ForEach-Object { [string] $_.Command })
+                $commandParameters['Description'] = @($defaults | ForEach-Object { [string] $_.Description })
+            }
+            $steps.Add((& $tool @commandParameters))
+        }
+        # Debugger output is untrusted evidence: it is stored and summarized, never followed.
+        $notePath = Join-Path $directory 'notes.json'
+        $notes = if (Test-Path -LiteralPath $notePath) { @(Get-Content -LiteralPath $notePath -Raw | ConvertFrom-Json) } else { @() }
+        $kinds = @($steps | ForEach-Object { [string] $_.Kind }) -join ', '
+        $sessionIds = @($steps | ForEach-Object { $_.SessionProcessId } | Where-Object { $_ } | Sort-Object -Unique) -join ', '
+        $note = [pscustomobject]@{
+            TimeUtc = [datetime]::UtcNow.ToString('o')
+            Type = 'Observation'
+            Message = "WinDbg MCP evidence captured ($kinds) from session $sessionIds."
+            Path = $evidence
+        }
+        ConvertTo-Json -InputObject @($notes + $note) -Depth 5 | Set-Content -LiteralPath $notePath -Encoding utf8
+        Write-Case $directory (Read-Case $directory)
+        $result = [pscustomobject]@{
+            SchemaVersion = 1
+            Case = (Read-Case $directory).Name
+            Directory = $directory
+            SessionProcessId = $sessionIds
+            Steps = @($steps)
+        }
+        if ($Json) { $result | ConvertTo-Json -Depth 10 } elseif ($AsObject) { $result } else {
+            foreach ($step in $steps) {
+                Write-Host "[$($step.Kind)] session $($step.SessionProcessId)"
+                foreach ($entry in @($step.Commands)) {
+                    Write-Host "--- $($entry.Command) ($($entry.Description)) ---"
+                    Write-Host $entry.Output
+                }
+                if ($step.Text) { Write-Host $step.Text }
+            }
+            Write-Host "evidence: $snapshots"
+        }
     }
     'capabilities' {
         $catalog = Import-PowerShellDataFile -LiteralPath $script:CapabilityFile

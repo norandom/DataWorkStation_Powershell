@@ -198,8 +198,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 
 ### Measurable Outcomes
 
-- **SC-001**: All 57 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 34 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-001**: All 58 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
+- **SC-002**: All 35 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -261,6 +261,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | MalwareContainerImage | REQ-023, REQ-026, REQ-029 |
 | LegacyDockerCleanup | REQ-010, REQ-023 |
 | ProfilingTools | REQ-033 |
+| WinDbgMcp | governed by `specs/019-windbg-mcp` |
 | SkillOpt | REQ-041 |
 | PowerShellProfile | REQ-012, REQ-025, REQ-048, REQ-052 |
 | SafeChain | REQ-002, REQ-006, REQ-007, REQ-012, REQ-023, REQ-024 |
@@ -287,6 +288,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 | network-path | REQ-026, REQ-028, REQ-029 |
 | http-authentication | REQ-026, REQ-028, REQ-029 |
 | crash-analysis | REQ-026, REQ-028, REQ-029 |
+| windbg-mcp | REQ-026, REQ-028, REQ-029 |
 | native-performance | REQ-026, REQ-033 |
 | python-performance | REQ-026, REQ-033 |
 | dotnet-performance | REQ-026, REQ-033 |

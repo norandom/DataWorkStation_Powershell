@@ -180,8 +180,8 @@ The default decision uses:
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| Available physical memory | 10% | Includes immediately reusable memory, not just empty pages |
-| Commit headroom | 10% | Both this and the physical-memory threshold must be crossed |
+| Available physical memory | 7% | Includes immediately reusable memory, not just empty pages |
+| Commit headroom | 7% | Both this and the physical-memory threshold must be crossed |
 | Emergency commit headroom | 3% | Independent trigger even if physical RAM is still available |
 | Sustained pressure | 3 seconds | Pressure must persist before selecting a process |
 | Cooldown | 15 seconds | At most one attempted intervention per interval |
@@ -199,7 +199,7 @@ Under sustained pressure it enumerates all processes and chooses the largest eli
 consumer. Mandatory exclusions protect the guard itself, system PIDs, session-zero services,
 critical processes, Windows-directory images, Windows service/window accounts and processes whose
 identity or memory cannot be queried. `EarlyOom.ExcludedExecutables` adds exact, case-insensitive
-names for the desktop shell, Task Manager, terminals, PowerShell and Process Lasso. There is no
+names for Royal TS, the desktop shell, Task Manager, terminals, PowerShell and Process Lasso. There is no
 inclusion list. An excluded shell does not exempt its child applications. Other applications,
 including foreground apps and AI hosts, may be stopped. These exclusions deliberately leave
 Windows and recovery tools outside the recovery scope.

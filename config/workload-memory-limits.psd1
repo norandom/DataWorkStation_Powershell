@@ -6,8 +6,8 @@
     MachineEnvironment = @{ PYTEST_XDIST_AUTO_NUM_WORKERS = '3' }
     EarlyOom = @{
         Mode = 'Enforce'
-        AvailablePhysicalPercent = 10
-        CommitHeadroomPercent = 10
+        AvailablePhysicalPercent = 7
+        CommitHeadroomPercent = 7
         EmergencyCommitHeadroomPercent = 3
         SustainSeconds = 3
         CooldownSeconds = 15
@@ -15,6 +15,7 @@
         # Layer 2 considers all user applications, independently of layer 1 targets below.
         # Windows images, critical processes, session zero and service accounts are always protected.
         ExcludedExecutables = @(
+            'RoyalTS.exe'
             'explorer.exe', 'dwm.exe', 'sihost.exe', 'ShellExperienceHost.exe'
             'StartMenuExperienceHost.exe', 'SearchHost.exe', 'RuntimeBroker.exe'
             'TextInputHost.exe', 'ApplicationFrameHost.exe', 'ctfmon.exe', 'LockApp.exe'

@@ -22,7 +22,7 @@ $sample = [DataWorkStation.MemoryPressureSnapshot]::new()
 $sample.PhysicalTotalBytes = 32GB
 $sample.PhysicalAvailableBytes = 2GB
 $sample.CommitLimitBytes = 48GB
-$sample.CommitUsedBytes = 44GB
+$sample.CommitUsedBytes = 45GB
 if ($decision.Evaluate($sample, 0) -ne 'Pressure' -or $decision.Evaluate($sample, 2) -ne 'Pressure' -or $decision.Evaluate($sample, 3) -ne 'Ready') { throw 'Pressure must persist for three seconds before action.' }
 $decision.ActionTaken(3)
 if ($decision.Evaluate($sample, 4) -ne 'Cooldown' -or $decision.Evaluate($sample, 17) -ne 'Cooldown' -or $decision.Evaluate($sample, 18) -ne 'Ready') { throw 'Repeated actions must respect the cooldown.' }

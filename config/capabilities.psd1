@@ -77,10 +77,13 @@
             FeatureSpec = 'specs/017-early-oom'
             Modules = @()
             Title = 'Memory pressure'
-            Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory', 'xdist', 'pytest workers', 'AI memory limits', 'process lasso license')
+            Triggers = @('memory', 'ram', 'commit', 'leak', 'pool', 'oom', 'out of memory', 'xdist', 'pytest workers', 'AI memory limits', 'process lasso license', 'MemoryOptimize', 'WinMemoryCleaner', 'memory cleanup')
             EvidenceKinds = @('Snapshot', 'Native profile')
             InspectCommands = @('mem', 'memapps', 'memproc', 'memtop', 'wslmem', 'poolmon', 'pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Plan', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Candidates', 'pwsh -NoProfile -File .\scripts\Get-WorkloadMemoryDiagnostics.ps1 -Action Events -Last 100')
             StateCommands = @(
+                'MemoryOptimize --now'
+                'MemoryOptimize --now -Json'
+                'MemoryOptimize --run'
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure'
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Remove'
                 'sudo pwsh -NoProfile -File .\scripts\Set-ProcessLassoResponsiveness.ps1 -Mode Ensure'

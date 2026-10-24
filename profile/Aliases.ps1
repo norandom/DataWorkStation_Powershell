@@ -1,4 +1,5 @@
 # Short, user-facing command wrappers and Linux-style tool mappings.
+Set-Alias -Name MemoryOptimize -Value Invoke-MemoryOptimization -Scope Global
 
 function global:Get-WorkstationHelp {
     [CmdletBinding()]

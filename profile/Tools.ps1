@@ -440,6 +440,66 @@ function global:btop {
             @{ Name = 'Private_MiB'; Expression = { [math]::Round($_.PrivateMemorySize64 / 1MB, 1) } }
 }
 
+function global:Invoke-MemoryOptimization {
+    <#
+    .SYNOPSIS
+    Clean memory once without a tray process, or open Windows Memory Cleaner.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true)]
+    param(
+        [switch] $Now,
+        [switch] $Run,
+        [switch] $Json,
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [ValidateSet('--now', '--run')][string[]] $Option
+    )
+
+    if ('--now' -in $Option) { $Now = $true }
+    if ('--run' -in $Option) { $Run = $true }
+    if ($Now -and $Run) { throw 'Choose either MemoryOptimize --now or MemoryOptimize --run.' }
+    if (-not $Now -and -not $Run) {
+        Write-Output 'MemoryOptimize --now  Clean once (administrator/UAC), show before and after, then exit.'
+        Write-Output 'MemoryOptimize --run  Open the Windows Memory Cleaner app.'
+        return
+    }
+    if ($Run -and $Json) { throw '-Json is supported only with --now.' }
+    $executable = Find-NativeTool -Name WinMemoryCleaner.exe -WinGetId 'IgorMundstein.WinMemoryCleaner'
+    if (-not $executable) {
+        throw 'Windows Memory Cleaner is missing. Install with: winget install --exact --id IgorMundstein.WinMemoryCleaner --source winget'
+    }
+    if ($Run) {
+        if ($PSCmdlet.ShouldProcess($executable, 'Open Windows Memory Cleaner (administrator/UAC)')) {
+            Start-Process -FilePath $executable -Verb RunAs -ErrorAction Stop
+        }
+        return
+    }
+    if (-not $PSCmdlet.ShouldProcess($executable, 'Clean modified file cache, standby list and working sets once (administrator/UAC; no tray)')) { return }
+
+    $before = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+    # Explicit memory-area arguments select the upstream silent startup path.
+    $process = Start-Process -FilePath $executable -ArgumentList '/ModifiedFileCache', '/StandbyList', '/WorkingSet' -Verb RunAs -WindowStyle Hidden -Wait -PassThru -ErrorAction Stop
+    if ($process.ExitCode -ne 0) { throw "Windows Memory Cleaner exited with code $($process.ExitCode)." }
+    $after = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+    $result = [pscustomobject]@{
+        Before = [pscustomobject]@{
+            UsedGiB = [math]::Round(($before.TotalVisibleMemorySize - $before.FreePhysicalMemory) / 1MB, 3)
+            AvailableGiB = [math]::Round($before.FreePhysicalMemory / 1MB, 3)
+        }
+        After = [pscustomobject]@{
+            UsedGiB = [math]::Round(($after.TotalVisibleMemorySize - $after.FreePhysicalMemory) / 1MB, 3)
+            AvailableGiB = [math]::Round($after.FreePhysicalMemory / 1MB, 3)
+        }
+        AvailableChangeGiB = [math]::Round(($after.FreePhysicalMemory - $before.FreePhysicalMemory) / 1MB, 3)
+        ExitCode = $process.ExitCode
+    }
+    if ($Json) { $result | ConvertTo-Json -Depth 3; return }
+    @(
+        [pscustomobject]@{ Snapshot = 'Before'; UsedGiB = $result.Before.UsedGiB; AvailableGiB = $result.Before.AvailableGiB }
+        [pscustomobject]@{ Snapshot = 'After'; UsedGiB = $result.After.UsedGiB; AvailableGiB = $result.After.AvailableGiB }
+    ) | Format-Table -AutoSize | Out-Host
+    Write-Host ('Available RAM change: {0:+0.000;-0.000;0.000} GiB (system-wide measurement).' -f $result.AvailableChangeGiB)
+}
+
 function global:mem {
     $os = Get-CimInstance Win32_OperatingSystem
     $memory = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory

@@ -4,6 +4,12 @@ metadata:
     processor:
       identifier: dscv3
 resources:
+  - name: Windows Memory Cleaner
+    type: Microsoft.WinGet/Package
+    properties:
+      id: IgorMundstein.WinMemoryCleaner
+      source: winget
+      useLatest: true
   - name: Microsoft Coreutils
     type: Microsoft.WinGet/Package
     properties:

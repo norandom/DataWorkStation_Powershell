@@ -278,6 +278,8 @@ GitHub CLI is managed separately from GitHub Desktop through the official WinGet
 | `btop` / `top` | btop4win with its process pane sorted by RAM. |
 | `memtop` | Run btop4win elevated so it can see more system-process data. |
 | `memmap` | Open Sysinternals RAMMap for kernel, driver, cache, and standby memory. |
+| `MemoryOptimize --now` | Run Windows Memory Cleaner once, without a tray process; show RAM used and available before/after and the signed change in GiB. Requests administrator privileges through UAC. |
+| `MemoryOptimize --run` | Open the normal Windows Memory Cleaner app. |
 | `mem` | Show physical RAM, Windows commit, commit headroom, pagefile, pools, cache, and WSL usage. |
 | `memapps` | Aggregate private and working-set memory across multi-process applications. |
 | `memproc` | Show the 30 individual processes with the largest private allocation. |
@@ -288,6 +290,17 @@ GitHub CLI is managed separately from GitHub Desktop through the official WinGet
 
 To find what is consuming RAM, including system memory, use `memtop` for the live overview and
 `memmap` for the Windows kernel/cache breakdown.
+
+Windows Memory Cleaner is included in the Windows package declaration. To install it directly:
+`winget install --exact --id IgorMundstein.WinMemoryCleaner --source winget`.
+`MemoryOptimize` without flags shows usage; `-Now` and `-Run` also work.
+Use `MemoryOptimize --now -Json` for structured before/after measurements, or `--now -WhatIf` to preview.
+The one-shot command uses the upstream `/ModifiedFileCache /StandbyList /WorkingSet`
+[console mode](https://github.com/IgorMundstein/WinMemoryCleaner#-automation--deployment), waits for exit,
+and does not create a tray icon. An already-running tray app is left alone.
+`--run` follows the app's saved settings, including start-minimized if enabled.
+The RAM change includes concurrent system activity and may be negative; it is not a measurement of
+resolved memory leaks or reduced commit. Trimmed working sets and caches can fill again as applications run.
 
 Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicates allocation pressure even if some physical RAM remains available. Use `memapps` to identify browsers and Electron applications whose consumption is split across many processes, then `killapp NAME` only after reviewing the group.
 

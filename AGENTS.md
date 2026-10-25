@@ -1,5 +1,6 @@
 # Repository operating contract
 
+- Use `main` as the repository branch. Publish releases with version tags; do not create stable branches.
 - Preserve human/AI parity: add a human-readable command before documenting AI orchestration around it.
 - Inspect existing EVTX, ETL, PCAPNG, dump, profile, and snapshot evidence before starting another capture.
 - Keep privileged and state-changing operations explicit. Do not silently capture, attach, kill, disable protection, or reinitialize policy.

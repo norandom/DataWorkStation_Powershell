@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 4.8.0 - 2026-10-25
+
+- Add PowerShell, Windows PowerShell, Command Prompt, Debian, Debian-MW, NixOS DevOps, and NixOS AI to Contour's new-tab profile menu, retaining the blue-dark palette profile.
+- Render WSL distribution names from local workstation configuration and keep PowerShell-only arguments out of inherited shell profiles.
+- Verify profile rendering and keep the bounded Contour graphics check hidden.
+
 ## 4.7.0 - 2026-10-25
 
 - Add one-shot memory optimization and bounded reclaim-first memory recovery, with Windows and WSL memory internals documentation.

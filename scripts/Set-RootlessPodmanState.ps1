@@ -40,11 +40,14 @@ function Invoke-MalwareUserCommand {
 function Send-BytesToMalwareGuest {
     param(
         [Parameter(Mandatory = $true)][byte[]] $Bytes,
-        [Parameter(Mandatory = $true)][string] $Destination,
-        [string] $Mode = '0644'
+        [Parameter(Mandatory = $true)][ValidatePattern('^/[A-Za-z0-9/_.-]+$')][string] $Destination,
+        [ValidatePattern('^0[0-7]{3}$')][string] $Mode = '0644'
     )
     $base64 = [Convert]::ToBase64String($Bytes)
-    $base64 | & wsl.exe -d $distribution --user root --exec sh -c "umask 022; base64 --decode > '$Destination' && chmod '$Mode' '$Destination'"
+    # PowerShell's native pipeline appends CRLF. Decode into a sibling temporary file
+    # so a transport/decoder failure cannot truncate an existing guest policy.
+    $command = 'umask 022; tmp=$(mktemp ''{0}.XXXXXX'') || exit 1; trap ''rm -f -- "$tmp"'' EXIT; tr -d ''\r'' | base64 --decode > "$tmp" && chmod ''{1}'' "$tmp" && mv -f -- "$tmp" ''{0}''' -f $Destination, $Mode
+    $base64 | & wsl.exe -d $distribution --user root --exec sh -c $command
     if ($LASTEXITCODE -ne 0) { throw "Failed to stream '$Destination' into '$distribution' through StandardInput." }
 }
 

@@ -1,0 +1,5 @@
+# Debian WSL: preserve responsiveness while allowing disk swap to absorb bursts.
+# SIGTERM: available RAM < 10% of user memory AND swap free < 50%.
+# SIGKILL: available RAM < 5% of user memory AND swap free < 25%.
+# Avoid is a selection bias, not immunity. comm names are limited to 15 bytes.
+EARLYOOM_ARGS="-m 10,5 -s 50,25 -r 60 --avoid '^(systemd|init|dockerd|containerd|containerd-shim|sshd)$'"

@@ -332,7 +332,7 @@ uses low priority, targets 15% average CPU, and skips missed-scan catch-up jobs.
 SmartScreen supports `Off`, `Medium` (`Warn` with override), and `Full` (`Block` without bypass).
 SaveZone controls Mark-of-the-Web separately. This project does not change Smart App Control.
 
-WSL is capped at 10 GiB RAM with 4 GiB swap and gradual memory reclamation. Windows uses a 16 GiB initial and 32 GiB maximum pagefile; changing that policy requires a Windows restart.
+WSL is capped at 6 GiB RAM with 6 GiB disk swap and gradual memory reclamation. Trusted Debian adds compressed swap and emergency recovery; see [WSL memory, zram and earlyoom](docs/wsl-memory.md). Windows uses a 16 GiB initial and 32 GiB maximum pagefile; changing that policy requires a Windows restart.
 
 The event-log template keeps the selected live logs circular and increases their size. A scheduled
 task exports the latest 48 hours to EVTX each day. It stores ZIP archives under the configured

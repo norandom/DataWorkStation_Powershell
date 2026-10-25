@@ -301,6 +301,8 @@ and does not create a tray icon. An already-running tray app is left alone.
 `--run` follows the app's saved settings, including start-minimized if enabled.
 The RAM change includes concurrent system activity and may be negative; it is not a measurement of
 resolved memory leaks or reduced commit. Trimmed working sets and caches can fill again as applications run.
+See [Windows memory reclamation internals](windows-memory-reclamation.md) for the source trace,
+page-state explanation and automatic earlyoom recovery policy.
 
 Use `mem` first when Windows reports low memory. Low `CommitHeadroomGiB` indicates allocation pressure even if some physical RAM remains available. Use `memapps` to identify browsers and Electron applications whose consumption is split across many processes, then `killapp NAME` only after reviewing the group.
 

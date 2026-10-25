@@ -11,6 +11,9 @@
         EmergencyCommitHeadroomPercent = 3
         SustainSeconds = 3
         CooldownSeconds = 15
+        MemoryOptimizeEnabled = $true
+        MemoryOptimizeCooldownMinutes = 15
+        MemoryOptimizeTimeoutSeconds = 10
         MinimumCandidateMiB = 256
         # Layer 2 considers all user applications, independently of layer 1 targets below.
         # Windows images, critical processes, session zero and service accounts are always protected.

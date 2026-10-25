@@ -1,0 +1,13 @@
+schema_version = "1.0"
+
+[requirements.REQ-001]
+verification = "automated"
+tests = ["tests/Test-WslMemoryPolicy.ps1#Test-WslMemoryPolicy"]
+
+[requirements.REQ-002]
+verification = "automated"
+tests = ["tests/Test-WslMemoryPolicy.ps1#Test-WslMemoryPolicy"]
+
+[requirements.REQ-003]
+verification = "automated"
+tests = ["tests/Test-WslMemoryPolicy.ps1#Test-WslMemoryPolicy"]

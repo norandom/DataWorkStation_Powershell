@@ -1,11 +1,16 @@
 [CmdletBinding()]
 param(
     [ValidateSet('Test', 'Ensure', 'Remove')][string] $Mode = 'Test',
-    [switch] $Json
+    [switch] $Json,
+    [ValidateRange(1, 1440)][int] $MemoryOptimizeCooldownMinutes,
+    [string] $MemoryOptimizerPath
 )
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $policy = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\workload-memory-limits.psd1')
+if ($PSBoundParameters.ContainsKey('MemoryOptimizeCooldownMinutes')) {
+    $policy.EarlyOom.MemoryOptimizeCooldownMinutes = $MemoryOptimizeCooldownMinutes
+}
 $installDirectory = Join-Path $env:ProgramFiles $policy.ServiceName
 $stateDirectory = Join-Path $env:ProgramData $policy.ServiceName
 $executable = Join-Path $installDirectory 'MemoryLimits.exe'
@@ -27,6 +32,9 @@ $desiredPolicy = [ordered]@{
         EmergencyCommitHeadroomPercent = $policy.EarlyOom.EmergencyCommitHeadroomPercent
         SustainSeconds = $policy.EarlyOom.SustainSeconds
         CooldownSeconds = $policy.EarlyOom.CooldownSeconds
+        MemoryOptimizeEnabled = $policy.EarlyOom.MemoryOptimizeEnabled
+        MemoryOptimizeCooldownMinutes = $policy.EarlyOom.MemoryOptimizeCooldownMinutes
+        MemoryOptimizeTimeoutSeconds = $policy.EarlyOom.MemoryOptimizeTimeoutSeconds
         MinimumCandidateMiB = $policy.EarlyOom.MinimumCandidateMiB
         ExcludedExecutables = $policy.EarlyOom.ExcludedExecutables
     }
@@ -42,9 +50,35 @@ if ($Mode -ne 'Test') {
     }
 }
 if ($Mode -eq 'Ensure') {
+    # The service cannot execute a user-writable WinGet shim or load an interactive profile.
+    # Stage and validate the installed tool before touching the running service.
+    if ($policy.EarlyOom.MemoryOptimizeEnabled) {
+        if (-not $MemoryOptimizerPath) {
+            $command = Get-Command WinMemoryCleaner.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+            if ($command) { $MemoryOptimizerPath = $command.Source }
+            else {
+                $packageRoot = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Packages'
+                $package = Get-ChildItem -LiteralPath $packageRoot -Directory -Filter 'IgorMundstein.WinMemoryCleaner_*' -ErrorAction Ignore |
+                    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+                if ($package) {
+                    $MemoryOptimizerPath = Get-ChildItem -LiteralPath $package.FullName -Recurse -Filter WinMemoryCleaner.exe -File |
+                        Select-Object -First 1 -ExpandProperty FullName
+                }
+            }
+        }
+        if (-not $MemoryOptimizerPath -or -not (Test-Path -LiteralPath $MemoryOptimizerPath -PathType Leaf)) {
+            throw 'Install IgorMundstein.WinMemoryCleaner with winget, or provide -MemoryOptimizerPath to the installed signed executable.'
+        }
+    }
     $compiler = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
     $buildDirectory = Join-Path ([IO.Path]::GetTempPath()) ('dws-memory-limits-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $buildDirectory | Out-Null
+    $stagedCleaner = Join-Path $buildDirectory 'WinMemoryCleaner.exe'
+    if ($policy.EarlyOom.MemoryOptimizeEnabled) {
+        Copy-Item -LiteralPath $MemoryOptimizerPath -Destination $stagedCleaner
+        $signature = Get-AuthenticodeSignature -LiteralPath $stagedCleaner
+        if ($signature.Status -ne 'Valid') { throw 'WinMemoryCleaner must have a valid Authenticode signature before installation for LocalSystem.' }
+    }
     $builtExecutable = Join-Path $buildDirectory 'MemoryLimits.exe'
     & $compiler /nologo /platform:x64 /target:exe /optimize+ /r:System.ServiceProcess.dll /r:System.Management.dll /r:System.Web.Extensions.dll "/out:$builtExecutable" $source $guardSource
     if ($LASTEXITCODE -ne 0) { throw 'Memory service build failed.' }
@@ -56,6 +90,12 @@ if ($Mode -eq 'Ensure') {
     foreach ($directory in @($installDirectory, $stateDirectory)) {
         & icacls.exe $directory /inheritance:r /grant:r '*S-1-5-18:(OI)(CI)F' '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-32-545:(OI)(CI)RX' | Out-Null
         if ($LASTEXITCODE -ne 0) { throw "Cannot secure service directory: $directory" }
+    }
+    if ($policy.EarlyOom.MemoryOptimizeEnabled) {
+        $protectedCleaner = Join-Path $installDirectory 'WinMemoryCleaner.exe'
+        Copy-Item -LiteralPath $stagedCleaner -Destination $protectedCleaner -Force
+        (Get-FileHash -LiteralPath $protectedCleaner -Algorithm SHA256).Hash |
+            Set-Content -LiteralPath (Join-Path $installDirectory 'cleaner.sha256')
     }
     if (Test-Path -LiteralPath $executable) { Copy-Item -LiteralPath $executable -Destination ($executable + '.previous') -Force }
     Copy-Item -LiteralPath $builtExecutable -Destination $executable -Force
@@ -94,13 +134,20 @@ $sourceMatches = (Test-Path -LiteralPath $installedHashPath) -and (Get-Content -
 $policyMatches = $installedPolicy -and (($installedPolicy | ConvertTo-Json -Depth 5 -Compress) -ceq ($desiredPolicy | ConvertTo-Json -Depth 5 -Compress))
 $runtimeHealthy = $runtime -and ([datetime]::UtcNow - [datetime]$runtime.utc).TotalSeconds -lt 20 -and @($runtime.errors).Count -eq 0
 $guardHealthy = $runtime -and $runtime.earlyOom -and $runtime.earlyOom.mode -eq $policy.EarlyOom.Mode -and $runtime.earlyOom.state -ne 'Faulted'
+$protectedCleaner = Join-Path $installDirectory 'WinMemoryCleaner.exe'
+$cleanerHashPath = Join-Path $installDirectory 'cleaner.sha256'
+$cleanerMatches = -not $policy.EarlyOom.MemoryOptimizeEnabled -or (
+    (Test-Path -LiteralPath $protectedCleaner -PathType Leaf) -and
+    (Test-Path -LiteralPath $cleanerHashPath -PathType Leaf) -and
+    (Get-FileHash -LiteralPath $protectedCleaner -Algorithm SHA256).Hash -eq (Get-Content -LiteralPath $cleanerHashPath -Raw).Trim()
+)
 $environmentState = foreach ($name in $policy.MachineEnvironment.Keys) {
     [pscustomobject]@{ Name = $name; Expected = $policy.MachineEnvironment[$name]; Machine = [Environment]::GetEnvironmentVariable($name, 'Machine') }
 }
 $environmentMatches = @($environmentState | Where-Object { $_.Machine -cne $_.Expected }).Count -eq 0
 $result = [pscustomobject]@{
     Service = $policy.ServiceName
-    State = if ($Mode -eq 'Remove' -and -not $serviceState) { 'removed' } elseif ($serviceState.State -eq 'Running' -and $serviceState.StartMode -eq 'Auto' -and $serviceState.StartName -eq 'LocalSystem' -and $policyMatches -and $sourceMatches -and $runtimeHealthy -and $guardHealthy -and $environmentMatches) { 'compliant' } else { 'drift detected' }
+    State = if ($Mode -eq 'Remove' -and -not $serviceState) { 'removed' } elseif ($serviceState.State -eq 'Running' -and $serviceState.StartMode -eq 'Auto' -and $serviceState.StartName -eq 'LocalSystem' -and $policyMatches -and $sourceMatches -and $runtimeHealthy -and $guardHealthy -and $environmentMatches -and $cleanerMatches) { 'compliant' } else { 'drift detected' }
     StartMode = $serviceState.StartMode
     Account = $serviceState.StartName
     LimitGiB = $policy.LimitGiB
@@ -110,6 +157,8 @@ $result = [pscustomobject]@{
     SourceMatches = [bool]$sourceMatches
     RuntimeHealthy = [bool]$runtimeHealthy
     EarlyOomHealthy = [bool]$guardHealthy
+    MemoryOptimizerMatches = [bool]$cleanerMatches
+    MemoryOptimizerPath = $protectedCleaner
     EarlyOom = $policy.EarlyOom
     MachineEnvironment = @($environmentState)
     Runtime = $runtime

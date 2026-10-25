@@ -2,6 +2,10 @@
 
 Start with Windows commit and kernel memory, then decide whether the pressure belongs to an application, WSL, containers, or a kernel pool.
 
+For the source-level explanation of `MemoryOptimize --now`, working sets, standby pages,
+commit and reclaim-before-kill recovery, read
+[Windows memory reclamation internals](../windows-memory-reclamation.md).
+
 For prevention and the limits of each control, see
 [Windows workload memory limits and optional Process Lasso](../workload-memory.md).
 It explains xdist and AI test concurrency, the 8 GiB Job Object budgets, Java's current exclusion,
@@ -94,3 +98,5 @@ not add watchdog termination rules, hard CPU affinity, real-time priority, or po
 The governor runs automatically as LocalSystem with 5/15/60-second recovery delays. Ensure backs
 up the INI and preserves unrelated settings. This is a responsiveness baseline, not a benchmarked
 claim of optimal performance or a solution to driver crashes.
+
+See [WSL memory, zram and earlyoom](../wsl-memory.md) for compressed-swap accounting, thresholds and explicit configuration commands.

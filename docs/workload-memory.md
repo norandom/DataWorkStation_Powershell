@@ -184,8 +184,24 @@ The default decision uses:
 | Commit headroom | 7% | Both this and the physical-memory threshold must be crossed |
 | Emergency commit headroom | 3% | Independent trigger even if physical RAM is still available |
 | Sustained pressure | 3 seconds | Pressure must persist before selecting a process |
-| Cooldown | 15 seconds | At most one attempted intervention per interval |
+| Intervention cooldown | 15 seconds | At most one attempted intervention per interval |
+| Memory optimization cooldown | 15 minutes | Automatic attempts, including failures; persisted across service restarts |
+| Memory optimization timeout | 10 seconds | Bound the helper wait before rechecking pressure |
 | Candidate minimum | 256 MiB private bytes | Skip small processes unlikely to provide useful recovery |
+
+The `-MemoryOptimizeCooldownMinutes 15` flag on `Set-WorkloadMemoryLimits.ps1 -Mode Ensure`
+sets the automatic cleanup interval. Use the same flag with `-Mode Test` to verify an override,
+or change `EarlyOom.MemoryOptimizeCooldownMinutes` in the declaration for future Ensure runs.
+`MemoryOptimizeEnabled = $false` disables only reclamation. Ensure stages a signature-validated
+WinMemoryCleaner copy in protected Program Files; install the WinGet package first, or pass
+`-MemoryOptimizerPath` to its installed signed executable. The service runs the same switches
+as the alias directly, without loading a user profile or creating a tray icon.
+
+Failures, missing tools, timeouts and active cleanup cooldowns retain the pressure-based
+termination fallback. A successful process exit still requires fresh telemetry. Observe and
+Disabled modes never clean memory. Manual alias invocations are outside the automatic cooldown.
+See [Windows memory reclamation internals](windows-memory-reclamation.md) for the source trace,
+page lists, commit accounting, measurement limits and an explicit performance hypothesis.
 
 The service samples at the configured 500 ms loop interval plus processing time. It reads physical
 capacity, available RAM, current commit limit/usage and page-file allocation/usage from Windows.
@@ -195,7 +211,9 @@ as unknown; the authoritative decision uses
 [current commit headroom](https://learn.microsoft.com/en-us/windows/win32/api/psapi/ns-psapi-performance_information).
 This is a Windows adaptation, not a literal comparison against Linux free swap.
 
-Under sustained pressure it enumerates all processes and chooses the largest eligible private-byte
+Under sustained pressure it first attempts the same headless cleanup as `MemoryOptimize --now`,
+if enabled and outside its own cooldown. It rechecks physical RAM and commit afterwards.
+If pressure persists, it enumerates all processes and chooses the largest eligible private-byte
 consumer. Mandatory exclusions protect the guard itself, system PIDs, session-zero services,
 critical processes, Windows-directory images, Windows service/window accounts and processes whose
 identity or memory cannot be queried. `EarlyOom.ExcludedExecutables` adds exact, case-insensitive

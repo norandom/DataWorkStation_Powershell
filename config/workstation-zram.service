@@ -1,0 +1,12 @@
+[Unit]
+Description=Workstation WSL compressed swap
+After=systemd-modules-load.service
+Before=earlyoom.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/workstation-zram
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

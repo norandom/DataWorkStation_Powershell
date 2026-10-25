@@ -24,6 +24,48 @@ Run only one declared part with `-Module`, and inspect dependency order first wi
 
 `config/workstation-modules.psd1` declares the module catalog, default selection, supported modes, and dependencies. Dependencies are included automatically in topological order. `-Module All` preserves the complete default run but excludes the destructive Debloat module. See [Workstation modules and dependency order](workstation-modules.md) and [Sample outputs](sample-outputs.md).
 
+## Debian WSL earlyoom
+
+From the repository in the trusted Debian guest, inspect or apply the focused policy:
+
+```sh
+sh linux/earlyoom.sh Test
+sudo sh linux/earlyoom.sh Ensure
+```
+
+`config/earlyoom.default` sets SIGTERM thresholds of 10% available user memory and
+50% free swap, and SIGKILL thresholds of 5% and 25% free swap. Earlyoom 1.8 defines
+user memory as MemAvailable + AnonPages, so these are not fixed MiB thresholds. Both conditions
+must be met at each level. Infrastructure process names receive an avoidance bias,
+not immunity. Container workloads remain eligible; this is a guest-wide emergency
+fallback, not a substitute for container memory limits. Ensure installs Debian's
+earlyoom package and enables/restarts only its service. It does not restart WSL or
+Docker. Existing configuration is backed up before replacement. This is an explicit
+standalone command, not part of the default workstation modules.
+
+## Debian WSL compressed swap
+
+From the repository directory inside trusted Debian:
+
+```sh
+sh linux/zram.sh Test
+sudo sh linux/zram.sh Ensure
+```
+
+`config/workstation-zram.service` runs `linux/start-zram.sh` to provide 2 GiB
+logical zram swap using LZO-RLE at priority 100, ahead of the existing 6 GiB WSL
+disk swap. Compressed pages consume RAM on demand. Ensure installs and enables
+the helper and service without restarting WSL or Docker. The service recreates
+the device at subsequent boots. Debian's zram generator skips WSL as container
+virtualization, so this service uses the kernel interface directly.
+Existing active zram drift is reported without
+resetting the device or swapping it off. This command is standalone and explicit.
+
+The inspected Microsoft WSL kernel 6.18.33.2 provides zram but not zswap. This
+policy uses zram plus disk swap, with no custom kernel or zswap boot arguments.
+Earlyoom's free-swap percentages cover both swap devices (8 GiB logical total);
+they do not measure the physical RAM occupied by compressed pages.
+
 ## Update installed systems
 
 `update` is a separate plan-first servicing workflow. It does not replace the desired-state module
@@ -271,3 +313,5 @@ Process Watchdog requires Pro. Package `Test` verifies installation, not license
 See [Bitsum's licensing terms](https://bitsum.com/howfree/) and
 [Windows workload memory limits and optional Process Lasso](workload-memory.md) for how CPU
 responsiveness, xdist worker settings, and the separate 8 GiB memory service complement each other.
+
+See [WSL memory, zram and earlyoom](wsl-memory.md) for compressed-swap accounting, thresholds and explicit configuration commands.

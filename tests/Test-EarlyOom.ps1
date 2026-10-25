@@ -88,6 +88,109 @@ if ($observed.PhysicalTotalBytes -eq 0 -or $observed.CommitLimitBytes -eq 0) { t
 $fixture = Join-Path ([IO.Path]::GetTempPath()) ('earlyoom-events-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $fixture | Out-Null
 try {
+    # Reclaim-first decisions use injected cleanup/telemetry, never live reclamation or termination.
+    $reclaimPolicy = [DataWorkStation.EarlyOomPolicy]::new()
+    foreach ($name in $declaration.EarlyOom.Keys) { $reclaimPolicy.$name = $declaration.EarlyOom[$name] }
+    $pressure = [DataWorkStation.PressureDecision]::new($reclaimPolicy)
+    $low = [DataWorkStation.MemoryPressureSnapshot]::new()
+    $low.PhysicalTotalBytes = 32GB; $low.PhysicalAvailableBytes = 1GB
+    $low.CommitLimitBytes = 48GB; $low.CommitUsedBytes = 45GB
+    $recovered = [DataWorkStation.MemoryPressureSnapshot]::new()
+    $recovered.PhysicalTotalBytes = 32GB; $recovered.PhysicalAvailableBytes = 8GB
+    $recovered.CommitLimitBytes = 48GB; $recovered.CommitUsedBytes = 45GB
+    $script:cleanupCalls = 0
+    $script:reclaimEvents = [Collections.Generic.List[string]]::new()
+    $audit = [Action[string,DataWorkStation.MemoryPressureSnapshot,string]] { param($action, $memory, $detail)
+        $script:reclaimEvents.Add($action)
+        if (-not $memory -or -not $detail) { throw 'Reclaim events need memory and detail.' }
+    }
+    $cleanup = [Func[int]] { $script:cleanupCalls++; return 0 }
+    $measure = [Func[DataWorkStation.MemoryPressureSnapshot]] { return $recovered }
+    $now = [datetime]::SpecifyKind([datetime]'2026-01-01', [DateTimeKind]::Utc)
+    $reclaimer = [DataWorkStation.MemoryReclaimer]::new($reclaimPolicy, $fixture)
+    $after = $reclaimer.BeforeTermination($low, $now, $cleanup, $measure, $audit)
+    if ($pressure.UnderPressure($after) -or $script:cleanupCalls -ne 1) { throw 'Reclaimed RAM must cancel ordinary-pressure termination.' }
+    if (($script:reclaimEvents -join ',') -ne 'reclaim-requested,reclaim-completed') { throw 'Cleanup must be audited before and after execution.' }
+    $restarted = [DataWorkStation.MemoryReclaimer]::new($reclaimPolicy, $fixture)
+    $after = $restarted.BeforeTermination($low, $now.AddSeconds(899), $cleanup, $measure, $audit)
+    if ($script:cleanupCalls -ne 1 -or -not $pressure.UnderPressure($after)) { throw 'Restart must preserve the 15-minute cooldown without delaying kill fallback.' }
+    $recovered.CommitUsedBytes = 47GB
+    $after = $restarted.BeforeTermination($low, $now.AddMinutes(15), $cleanup, $measure, $audit)
+    if ($script:cleanupCalls -ne 2 -or -not $pressure.UnderPressure($after)) { throw 'Critical commit exhaustion must survive RAM recovery; cleanup must run at cooldown expiry.' }
+    $failed = [Func[int]] { $script:cleanupCalls++; return 2 }
+    $after = $restarted.BeforeTermination($low, $now.AddMinutes(30), $failed, $measure, $audit)
+    if (-not $pressure.UnderPressure($after) -or $script:reclaimEvents[-1] -ne 'reclaim-failed') { throw 'Nonzero exit must retain the pressure-based fallback.' }
+    [void]$restarted.BeforeTermination($low, $now.AddMinutes(31), $cleanup, $measure, $audit)
+    if ($script:cleanupCalls -ne 3) { throw 'Failed cleanup attempts must consume cooldown.' }
+    $timedOut = [Func[int]] { throw [TimeoutException]::new('synthetic timeout') }
+    [void]$restarted.BeforeTermination($low, $now.AddMinutes(45), $timedOut, $measure, $audit)
+    # PowerShell wraps delegate exceptions, so any failure still records and falls back.
+    if ($script:reclaimEvents[-1] -notin @('reclaim-timeout','reclaim-failed')) { throw 'Cleanup timeout must be reported.' }
+    $missing = [Func[int]] { throw [IO.FileNotFoundException]::new('missing cleaner') }
+    [void]$restarted.BeforeTermination($low, $now.AddMinutes(60), $missing, $measure, $audit)
+    if ($script:reclaimEvents[-1] -ne 'reclaim-failed') { throw 'Missing cleaner must allow pressure-based fallback.' }
+    $invalid = [Func[DataWorkStation.MemoryPressureSnapshot]] { return [DataWorkStation.MemoryPressureSnapshot]::new() }
+    $rejected = $false
+    try { [void]$restarted.BeforeTermination($low, $now.AddMinutes(75), $cleanup, $invalid, $audit) } catch { $rejected = $true }
+    if (-not $rejected) { throw 'Invalid post-cleanup telemetry must prevent termination.' }
+    $callsBefore = $script:cleanupCalls
+    $badAudit = [Action[string,DataWorkStation.MemoryPressureSnapshot,string]] { throw 'audit unavailable' }
+    $rejected = $false
+    try { [void]$restarted.BeforeTermination($low, $now.AddMinutes(90), $cleanup, $measure, $badAudit) } catch { $rejected = $true }
+    if (-not $rejected -or $script:cleanupCalls -ne $callsBefore) { throw 'Audit failure must prevent cleanup and termination.' }
+    foreach ($mode in @('Observe','Disabled')) {
+        $reclaimPolicy.Mode = $mode
+        [void]$restarted.BeforeTermination($low, $now.AddMinutes(90), $cleanup, $measure, $audit)
+    }
+    $reclaimPolicy.Mode = 'Enforce'; $reclaimPolicy.MemoryOptimizeEnabled = $false
+    [void]$restarted.BeforeTermination($low, $now.AddMinutes(90), $cleanup, $measure, $audit)
+    if ($script:cleanupCalls -ne $callsBefore) { throw 'Disabled or observation-only policies must never reclaim.' }
+    $reclaimPolicy.MemoryOptimizeEnabled = $true
+    'broken' | Set-Content (Join-Path $fixture 'memory-optimize-last-attempt.txt')
+    $broken = [DataWorkStation.MemoryReclaimer]::new($reclaimPolicy, $fixture)
+    [void]$broken.BeforeTermination($low, $now.AddDays(1), $cleanup, $measure, $audit)
+    if ($script:cleanupCalls -ne $callsBefore) { throw 'Unreadable cooldown record must suppress automatic cleanup.' }
+    Remove-Item -LiteralPath (Join-Path $fixture 'memory-optimize-last-attempt.txt')
+    $reclaimPolicy.MemoryOptimizeCooldownMinutes = 30
+    $custom = [DataWorkStation.MemoryReclaimer]::new($reclaimPolicy, $fixture)
+    [void]$custom.BeforeTermination($low, $now, $cleanup, $measure, $audit)
+    [void]$custom.BeforeTermination($low, $now.AddMinutes(15), $cleanup, $measure, $audit)
+    if ($script:cleanupCalls -ne $callsBefore + 1) { throw 'Custom cooldown must be honored.' }
+    foreach ($property in @('MemoryOptimizeCooldownMinutes','MemoryOptimizeTimeoutSeconds')) {
+        $saved = $reclaimPolicy.$property; $reclaimPolicy.$property = 0
+        $rejected = $false
+        try { $reclaimPolicy.Validate() } catch { $rejected = $true }
+        if (-not $rejected) { throw "Invalid reclaim setting accepted: $property" }
+        $reclaimPolicy.$property = $saved
+    }
+    # Enforce parity with the user-facing alias without running WinMemoryCleaner.
+    $profileText = Get-Content (Join-Path $root 'profile\Tools.ps1') -Raw
+    if ($profileText -notmatch "-ArgumentList '/ModifiedFileCache', '/StandbyList', '/WorkingSet'" -or
+        [DataWorkStation.MemoryReclaimer]::Arguments -ne '/ModifiedFileCache /StandbyList /WorkingSet') { throw 'Service and MemoryOptimize --now areas diverged.' }
+    # Exercise native process startup and timeout using only a small disposable test helper.
+    $runnerSource = Join-Path $fixture 'ReclaimProbe.cs'
+    $runnerExe = Join-Path $fixture 'ReclaimProbe.exe'
+    @'
+using System;
+using System.Diagnostics;
+using System.IO;
+class ReclaimProbe {
+    static int Main(string[] args) {
+        string own = Process.GetCurrentProcess().MainModule.FileName;
+        if (File.Exists(own + ".slow")) System.Threading.Thread.Sleep(5000);
+        return String.Join(" ", args) == "/ModifiedFileCache /StandbyList /WorkingSet" ? 23 : 24;
+    }
+}
+'@ | Set-Content -LiteralPath $runnerSource
+    & $compiler /nologo /target:exe ('/out:' + $runnerExe) $runnerSource
+    if ($LASTEXITCODE -ne 0) { throw 'Reclaim probe compilation failed.' }
+    if ([DataWorkStation.MemoryReclaimer]::RunTool($runnerExe, 2) -ne 23) { throw 'Native helper must receive exact headless arguments and propagate exit code.' }
+    New-Item -ItemType File -Path ($runnerExe + '.slow') | Out-Null
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    $rejected = $false
+    try { [void][DataWorkStation.MemoryReclaimer]::RunTool($runnerExe, 1) } catch { $rejected = $_.Exception.ToString() -match 'TimeoutException' }
+    if (-not $rejected -or $timer.Elapsed.TotalSeconds -gt 4) { throw 'Native helper timeout must bound the wait.' }
+    if (Get-Process ReclaimProbe -ErrorAction Ignore) { throw 'Timed-out helper must not remain running.' }
     $guard = [DataWorkStation.EarlyOomGuard]::new($policy, $fixture)
     $guard.Tick()
     $log = Join-Path $fixture 'earlyoom.jsonl'
@@ -139,7 +242,7 @@ class UnmanagedGuardProbe {
         if (-not $inspection.observationOnly) { throw 'Candidate inspection must be observation only.' }
     } finally { $probe.WaitForExit(); $probe.Dispose() }
 } finally {
-    foreach ($name in @('earlyoom.jsonl', 'earlyoom.jsonl.previous', 'UnmanagedGuardProbe.cs', 'UnmanagedGuardProbe.exe')) { $path = Join-Path $fixture $name; if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path } }
+    foreach ($name in @('earlyoom.jsonl', 'earlyoom.jsonl.previous', 'UnmanagedGuardProbe.cs', 'UnmanagedGuardProbe.exe', 'ReclaimProbe.cs', 'ReclaimProbe.exe', 'ReclaimProbe.exe.slow', 'memory-optimize-last-attempt.txt', 'memory-optimize-last-attempt.txt.tmp')) { $path = Join-Path $fixture $name; if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path } }
     [IO.Directory]::Delete($fixture)
 }
 Write-Output 'PASS: dynamic thresholds, commit emergency, cooldown, recovery, fail-closed telemetry, candidate restrictions and rotated event queries. No workloads were terminated.'

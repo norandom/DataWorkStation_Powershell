@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
@@ -18,6 +19,9 @@ namespace DataWorkStation
         public double EmergencyCommitHeadroomPercent { get; set; }
         public int SustainSeconds { get; set; }
         public int CooldownSeconds { get; set; }
+        public bool MemoryOptimizeEnabled { get; set; }
+        public int MemoryOptimizeCooldownMinutes { get; set; }
+        public int MemoryOptimizeTimeoutSeconds { get; set; }
         public int MinimumCandidateMiB { get; set; }
         public string[] ExcludedExecutables { get; set; }
         public void Validate()
@@ -29,6 +33,8 @@ namespace DataWorkStation
                 throw new InvalidDataException("Invalid early-OOM timing or candidates.");
             if (ExcludedExecutables.Any(x => String.IsNullOrWhiteSpace(x) || x.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || !x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidDataException("Exclusions must be exact executable filenames.");
+            if (MemoryOptimizeEnabled && (MemoryOptimizeCooldownMinutes < 1 || MemoryOptimizeCooldownMinutes > 1440 || MemoryOptimizeTimeoutSeconds < 1 || MemoryOptimizeTimeoutSeconds > 10))
+                throw new InvalidDataException("Invalid memory optimization cooldown or timeout.");
         }
     }
     public sealed class CandidateFacts
@@ -81,10 +87,81 @@ namespace DataWorkStation
         public void ActionTaken(double seconds) { lastAction = seconds; pressureSince = -1; }
         public void ResetPressure() { pressureSince = -1; }
     }
+    // The service and the interactive MemoryOptimize --now command use these same areas.
+    // Call the protected executable directly: LocalSystem must never load a user's profile.
+    public sealed class MemoryReclaimer
+    {
+        public const string Arguments = "/ModifiedFileCache /StandbyList /WorkingSet";
+        readonly EarlyOomPolicy policy;
+        readonly string stampPath;
+        DateTime lastAttempt = DateTime.MinValue;
+        bool invalidStamp;
+        public MemoryReclaimer(EarlyOomPolicy settings, string statePath)
+        {
+            settings.Validate(); policy = settings;
+            stampPath = Path.Combine(statePath, "memory-optimize-last-attempt.txt");
+            try {
+                if (File.Exists(stampPath)) {
+                    DateTime parsed;
+                    if (!DateTime.TryParseExact(File.ReadAllText(stampPath).Trim(), "o", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out parsed) || parsed.Kind != DateTimeKind.Utc)
+                        invalidStamp = true;
+                    else lastAttempt = parsed;
+                }
+            } catch (IOException) { invalidStamp = true; } catch (UnauthorizedAccessException) { invalidStamp = true; }
+        }
+        // Delegates let tests prove recovery/failure/cooldown behavior without cleaning or killing.
+        public MemoryPressureSnapshot BeforeTermination(MemoryPressureSnapshot before, DateTime utcNow,
+            Func<int> optimize, Func<MemoryPressureSnapshot> measure, Action<string, MemoryPressureSnapshot, string> audit)
+        {
+            before.Validate();
+            if (policy.Mode != "Enforce" || !policy.MemoryOptimizeEnabled) return before;
+            if (invalidStamp || utcNow - lastAttempt < TimeSpan.FromMinutes(policy.MemoryOptimizeCooldownMinutes)) {
+                audit("reclaim-skipped", before, invalidStamp ? "Cooldown record unreadable; automatic cleanup suppressed." : "Automatic cleanup cooldown active.");
+                return before;
+            }
+            audit("reclaim-requested", before, "MemoryOptimize --now equivalent; headless; timeout seconds=" + policy.MemoryOptimizeTimeoutSeconds);
+            // Persist before launch. Failed launches count too; restarting the service cannot retry early.
+            try {
+                string temporary = stampPath + ".tmp";
+                File.WriteAllText(temporary, utcNow.ToString("o", CultureInfo.InvariantCulture));
+                if (File.Exists(stampPath)) File.Replace(temporary, stampPath, null);
+                else File.Move(temporary, stampPath);
+                lastAttempt = utcNow;
+            } catch (IOException e) { invalidStamp = true; audit("reclaim-skipped", before, e.Message); return before; }
+              catch (UnauthorizedAccessException e) { invalidStamp = true; audit("reclaim-skipped", before, e.Message); return before; }
+            string outcome, detail;
+            try { int code = optimize(); outcome = code == 0 ? "reclaim-completed" : "reclaim-failed"; detail = "ExitCode=" + code; }
+            catch (TimeoutException e) { outcome = "reclaim-timeout"; detail = e.Message; }
+            catch (Exception e) { outcome = "reclaim-failed"; detail = e.GetType().Name + ": " + e.Message; }
+            // Exit success is not a pressure decision: upstream logs some failures internally.
+            MemoryPressureSnapshot after = measure(); after.Validate();
+            audit(outcome, after, detail + "; before available bytes=" + before.PhysicalAvailableBytes +
+                "; after=" + after.PhysicalAvailableBytes + "; before commit headroom bytes=" + before.CommitHeadroomBytes + "; after=" + after.CommitHeadroomBytes);
+            return after;
+        }
+        public static int RunTool(string executable, int timeoutSeconds)
+        {
+            if (timeoutSeconds < 1 || timeoutSeconds > 10) throw new ArgumentOutOfRangeException("timeoutSeconds");
+            if (!File.Exists(executable)) throw new FileNotFoundException("Protected WinMemoryCleaner copy is missing.", executable);
+            var start = new ProcessStartInfo(executable, Arguments) {
+                UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden,
+                WorkingDirectory = Path.GetDirectoryName(executable)
+            };
+            using (Process child = Process.Start(start)) {
+                if (!child.WaitForExit(timeoutSeconds * 1000)) {
+                    // Only the helper we launched is stopped; never kill an existing tray instance.
+                    try { child.Kill(); child.WaitForExit(1000); } catch (InvalidOperationException) { }
+                    throw new TimeoutException("Memory cleanup exceeded its deadline.");
+                }
+                return child.ExitCode;
+            }
+        }
+    }
     public sealed class EarlyOomGuard
     {
         readonly EarlyOomPolicy policy;
         readonly PressureDecision decision;
+        readonly MemoryReclaimer reclaimer;
         readonly string logPath;
         readonly Stopwatch clock = Stopwatch.StartNew();
         readonly JavaScriptSerializer json = new JavaScriptSerializer();
@@ -92,7 +169,7 @@ namespace DataWorkStation
         double nextHeartbeat;
         public object Status { get; private set; }
         public EarlyOomGuard(EarlyOomPolicy settings, string statePath)
-        { policy = settings; decision = new PressureDecision(settings); logPath = Path.Combine(statePath, "earlyoom.jsonl"); }
+        { policy = settings; decision = new PressureDecision(settings); reclaimer = new MemoryReclaimer(settings, statePath); logPath = Path.Combine(statePath, "earlyoom.jsonl"); }
         public void RecordFailure(string message) { decision.ResetPressure(); Status = new { mode = policy.Mode, state = "Faulted", error = message }; }
         bool Write(string action, MemoryPressureSnapshot sample, object candidate, string detail)
         {
@@ -121,6 +198,22 @@ namespace DataWorkStation
             if (state != "Ready") return;
             // Rate-limit observe mode, failed attempts and no-candidate decisions too.
             decision.ActionTaken(clock.Elapsed.TotalSeconds);
+            if (policy.Mode == "Enforce") {
+                // Avoid cleaning if the pressure already disappeared since the decision sample.
+                sample = ReadMemory();
+                if (!decision.UnderPressure(sample)) { Write("recovered", sample, null, "Pressure cleared before cleanup."); return; }
+                sample = reclaimer.BeforeTermination(sample, DateTime.UtcNow,
+                    delegate { return MemoryReclaimer.RunTool(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "WinMemoryCleaner.exe"), policy.MemoryOptimizeTimeoutSeconds); },
+                    ReadMemory,
+                    delegate(string action, MemoryPressureSnapshot memory, string detail) {
+                        if (!Write(action, memory, null, detail)) throw new IOException("Reclaim audit unavailable; action cancelled.");
+                    });
+                if (!decision.UnderPressure(sample)) {
+                    decision.ResetPressure();
+                    Status = new { mode = policy.Mode, state = "Recovered", memory = sample, thresholds = policy, log = logPath };
+                    Write("recovered", sample, null, "Pressure cleared after reclaim; no application terminated."); return;
+                }
+            }
             using (Candidate victim = FindCandidate()) {
                 if (victim == null) { Write("no-candidate", sample, null, "No eligible user application above minimum size; selection is independent of managed jobs."); return; }
                 var identity = Identity(victim.Facts);

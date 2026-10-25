@@ -2,6 +2,26 @@
     SchemaVersion = 1
     Capabilities = @(
         @{
+            Id = 'wsl-zram'
+            FeatureSpec = 'specs/020-wsl-memory'
+            Modules = @('WslMemory')
+            Title = 'Debian WSL compressed swap'
+            Triggers = @('zram', 'compressed swap', 'WSL memory compression')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @('sh linux/zram.sh Test (inside trusted Debian, repository directory)')
+            StateCommands = @('sudo sh linux/zram.sh Ensure (inside trusted Debian, repository directory)')
+        }
+        @{
+            Id = 'wsl-earlyoom'
+            FeatureSpec = 'specs/020-wsl-memory'
+            Modules = @('WslMemory')
+            Title = 'Debian WSL earlyoom emergency memory policy'
+            Triggers = @('earlyoom', 'WSL out of memory')
+            EvidenceKinds = @('Snapshot')
+            InspectCommands = @('sh linux/earlyoom.sh Test (inside trusted Debian, repository directory)')
+            StateCommands = @('sudo sh linux/earlyoom.sh Ensure (inside trusted Debian, repository directory)')
+        }
+        @{
             Id = 'razer-rgb'
             FeatureSpec = 'specs/016-razer-rgb'
             Modules = @('RazerRgb')
@@ -84,6 +104,7 @@
                 'MemoryOptimize --now'
                 'MemoryOptimize --now -Json'
                 'MemoryOptimize --run'
+                'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure -MemoryOptimizeCooldownMinutes 15'
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Ensure'
                 'sudo pwsh -NoProfile -File .\scripts\Set-WorkloadMemoryLimits.ps1 -Mode Remove'
                 'sudo pwsh -NoProfile -File .\scripts\Set-ProcessLassoResponsiveness.ps1 -Mode Ensure'

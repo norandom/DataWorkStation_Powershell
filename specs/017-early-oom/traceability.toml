@@ -27,3 +27,23 @@ tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
 [requirements.REQ-007]
 verification = "automated"
 tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-008]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-009]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-010]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-011]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]
+
+[requirements.REQ-012]
+verification = "automated"
+tests = ["tests/Test-EarlyOom.ps1#Test-EarlyOom"]

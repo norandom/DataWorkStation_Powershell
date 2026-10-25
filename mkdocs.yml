@@ -52,6 +52,7 @@ nav:
       - Review and run updates: workstation-update.md
       - Clean disk and traces: cleanup.md
   - Configure:
+      - WSL memory, zram and earlyoom: wsl-memory.md
       - Workload memory and optional Process Lasso: workload-memory.md
       - Optional Razer lighting: razer-rgb.md
       - Contour Terminal and BlueTerm: contour-terminal.md
@@ -65,6 +66,7 @@ nav:
       - Choose a capability: capabilities/index.md
       - Something is not working: workflows/problem-not-working.md
       - Memory pressure: workflows/memory-pressure.md
+      - Windows memory reclamation internals: windows-memory-reclamation.md
       - Network path: workflows/network-path.md
       - HTTP and authentication: workflows/http-authentication.md
       - Crash without an error: workflows/crash-without-error.md

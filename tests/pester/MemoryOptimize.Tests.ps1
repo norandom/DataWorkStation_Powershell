@@ -1,3 +1,7 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingCmdletAliases', '', Justification = 'These tests intentionally exercise the public MemoryOptimize alias and its double-dash arguments.')]
+[CmdletBinding()]
+param()
+
 BeforeAll {
     $repositoryRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     . (Join-Path $repositoryRoot 'profile\Tools.ps1')

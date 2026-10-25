@@ -1,9 +1,9 @@
 @{
     SchemaVersion = 1
     Package = @{
-        Version = '0.7.0.8982'
-        Sha256 = '29bed53dd40ae8625a0489deaea6a7303e18678869116622cad69f687440042e'
-        ProductCode = '{0E736497-2B72-4117-95E9-54EC6D000700}'
+        Version = '0.8.0.9335'
+        Sha256 = '7f426f0ccbf0ea12204945c4c5dd01428107c7541d48e3498d297b033326c7d8'
+        ProductCode = '{0E736497-2B72-4117-95E9-54EC6D000800}'
         UpgradeCode = '{0E736497-2B72-4117-95E9-54EC6D000000}'
         DisplayName = 'Contour'
         InstallRoot = '%ProgramFiles%\Contour Terminal Emulator 0.6'

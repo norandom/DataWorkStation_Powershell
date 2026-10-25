@@ -1,6 +1,6 @@
 # Contour Terminal and BlueTerm
 
-Contour 0.7.0.8982 is installed machine-wide from the [official GitHub release MSI](https://github.com/contour-terminal/contour/releases/tag/v0.7.0.8982). It is independent of the separately maintained Scoop installation. This release fixes the font-fallback run segmentation that affected prompts containing an ornament absent from the primary font, including Claude Code prompts.
+Contour 0.8.0.9335 is installed machine-wide from the [official GitHub release MSI](https://github.com/contour-terminal/contour/releases/tag/v0.8.0.9335). It is independent of the separately maintained Scoop installation. This release fixes retained memory after closing tabs or panes, improves terminal throughput, and adds per-profile tab colors. The managed GUI theme is dark, independently of the terminal color scheme.
 
 ## Human-readable commands
 
@@ -107,10 +107,10 @@ The MSI upgrades the binary in place at `C:\Program Files\Contour Terminal Emula
 
 The declaration pins:
 
-- version `0.7.0.8982`;
-- product code `{0E736497-2B72-4117-95E9-54EC6D000700}`;
+- version `0.8.0.9335`;
+- product code `{0E736497-2B72-4117-95E9-54EC6D000800}`;
 - upgrade code `{0E736497-2B72-4117-95E9-54EC6D000000}`;
-- release asset `contour-0.7.0.8982-win64.msi`;
-- SHA-256 `29bed53dd40ae8625a0489deaea6a7303e18678869116622cad69f687440042e`.
+- release asset `contour-0.8.0.9335-win64.msi`;
+- SHA-256 `7f426f0ccbf0ea12204945c4c5dd01428107c7541d48e3498d297b033326c7d8`.
 
 The upstream MSI is not Authenticode-signed. Desired state therefore relies on the exact HTTPS GitHub release URL plus the pinned SHA-256 and refuses installation on any mismatch. The MSI declares `ALLUSERS=1`, writes under Program Files and the common Desktop, and consequently requires administrator rights. Downloads and installation require network access; test and plan modes do not.

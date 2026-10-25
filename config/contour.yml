@@ -1,5 +1,6 @@
 # Managed Contour configuration translated from BlueTerm/Blue.json.
 # Contour requires "default" as the first color-scheme name.
+theme: dark
 default_profile: main
 on_mouse_select: CopyToClipboard
 

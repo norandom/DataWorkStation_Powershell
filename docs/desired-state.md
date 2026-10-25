@@ -90,8 +90,8 @@ The catalog also declares a runtime boundary for every module. `Inbox` is limite
 
 ## PowerShell runtime
 
-`.config/powershell7.winget` declares PowerShell 7.6.6 using WinGet's package version
-`7.6.6.0`. Inspect and apply this focused dependency from Windows PowerShell 5.1:
+`.config/powershell7.winget` declares PowerShell 7.6.8 using WinGet's package version
+`7.6.8.0`. Inspect and apply this focused dependency from Windows PowerShell 5.1:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Apply-Workstation.ps1 -Mode Test -Module PowerShell7

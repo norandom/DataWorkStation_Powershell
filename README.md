@@ -104,7 +104,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 |---|---|
 | `.config/configuration.winget` | Declarative WinGet package state, including Node.js LTS, pnpm, `uv`, IrfanView, and lightweight qView. |
 | `.config/git.winget` | Focused Git package state used by Scoop dependencies. |
-| `.config/powershell7.winget` | PowerShell 7.6.6 package state used by Contour, package, and profile dependencies. |
+| `.config/powershell7.winget` | PowerShell 7.6.8 package state used by Contour, package, and profile dependencies. |
 | `.config/go.winget` | Focused official Go MSI-backed package state for Windows development. |
 | `.config/native-text-tools.winget` | Focused native Win32 package state for PowerShell `awk` and `sed`. |
 | `.config/caffeine.winget` | Focused Zhorn Software Caffeine package state. |

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 4.7.0 - 2026-10-25
+
+- Add one-shot memory optimization and bounded reclaim-first memory recovery, with Windows and WSL memory internals documentation.
+- Add headless ArtCraft batch updates and update the managed Contour and PowerShell versions.
+- Handle Windows line endings in atomic WSL file transfers.
+- Remove Contour's Shift+Left/Right tab-switching shortcuts so terminal applications can receive them; keep Ctrl+Left/Right unbound for Codex and document the remaining tab shortcuts.
+- Synchronize the capability baseline with the existing WSL zram and earlyoom routes.
+
 ## 4.6.0 - 2026-10-11
 
 - Add an opt-in WinDbgMcp module that reports and reconciles the official WinDbg MCP server state: minimum MCP-capable version, resolved proxy, and the `EnableMcpServerFeature` setting with a settings backup, while leaving MCP service start, secure mode, and cross-prompt-injection mitigation to the operator.

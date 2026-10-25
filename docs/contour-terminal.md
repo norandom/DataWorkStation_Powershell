@@ -69,7 +69,8 @@ clipboard instead of Contour's platform-dependent selection clipboard. Selecting
 therefore replaces the current clipboard contents, which other processes in the interactive Windows
 session may be able to read.
 
-The managed map preserves Contour 0.7.0's bindings and adds common scrolling and mouse tab switching:
+The managed map adapts Contour 0.7.0's bindings and adds common scrolling and mouse tab switching.
+`Ctrl+Left` / `Ctrl+Right` and `Shift+Left` / `Shift+Right` are left unbound for Codex and other terminal applications:
 
 - `Ctrl+Alt+K` / `Ctrl+Alt+J`: jump to the previous or next marked prompt;
 - `Ctrl+click`: follow the OSC 8 link under the pointer;
@@ -79,7 +80,6 @@ The managed map preserves Contour 0.7.0's bindings and adds common scrolling and
 - `Ctrl+Shift+E` / `Ctrl+Shift+O`: split the active pane vertically or horizontally;
 - `Ctrl+Shift+P`: open the command palette;
 - `Alt+wheel up` / `Alt+wheel down`: switch to the tab on the left or right;
-- `Shift+Left` / `Shift+Right`: switch to the tab on the left or right;
 - `Alt+1` through `Alt+9`, and `Alt+0` for tab 10: switch directly to a tab.
 - `Ctrl+Shift+Page Up` / `Ctrl+Shift+Page Down`: scroll terminal history by a page, matching Windows Terminal.
 

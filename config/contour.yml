@@ -5,8 +5,9 @@ default_profile: main
 on_mouse_select: CopyToClipboard
 
 # Defining input_mapping replaces Contour's complete built-in map.
-# Retain the 0.7.0.8982 defaults, match Windows Terminal page scrolling,
-# and add mouse-wheel tab switching.
+# Retain the 0.7.0.8982 defaults except Shift+Left/Right tab switching,
+# match Windows Terminal page scrolling, and add mouse-wheel tab switching.
+# Leave Ctrl+Left/Right and Shift+Left/Right available to Codex and other apps.
 input_mapping:
   - { mods: [Alt], key: Enter, action: ToggleFullscreen }
   - { mods: [], key: Escape, action: CancelSelection, mode: 'Select|Insert' }
@@ -20,8 +21,6 @@ input_mapping:
   - { mods: [Shift], key: UpArrow, action: ScrollOneUp }
   - { mods: [], key: F3, action: FocusNextSearchMatch, mode: 'Search' }
   - { mods: [Shift], key: F3, action: FocusPreviousSearchMatch, mode: 'Search' }
-  - { mods: [Shift], key: LeftArrow, action: SwitchToTabLeft }
-  - { mods: [Shift], key: RightArrow, action: SwitchToTabRight }
   - { mods: [Control], key: PageUp, action: SwitchToTabLeft }
   - { mods: [Control], key: PageDown, action: SwitchToTabRight }
   - { mods: [Control], key: Tab, action: SwitchToTabRight }

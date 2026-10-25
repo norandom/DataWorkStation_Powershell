@@ -199,7 +199,7 @@ the feature artifacts, and confirm that every future behavior task names its req
 ### Measurable Outcomes
 
 - **SC-001**: All 58 declared workstation modules appear exactly once in the baseline inventory and dependency plan validation reports no missing dependency or cycle.
-- **SC-002**: All 35 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
+- **SC-002**: All 37 declared capability routes appear exactly once in the baseline inventory with at least one inspection command and one explicit capture command.
 - **SC-003**: One hundred percent of normative requirements pass the deterministic EARS syntax and traceability gates.
 - **SC-004**: One hundred percent of behavior-changing tasks identify requirement coverage and place verification work before implementation work.
 - **SC-005**: A contributor can locate a human command, its structured form where applicable, and its privilege boundary for every routed capability from the documentation.
@@ -285,6 +285,8 @@ the feature artifacts, and confirm that every future behavior task names its req
 |---|---|
 | razer-rgb | REQ-026, REQ-029 |
 | memory-pressure | REQ-026, REQ-028, REQ-033 |
+| wsl-zram | REQ-026, REQ-028, REQ-033 |
+| wsl-earlyoom | REQ-026, REQ-028, REQ-033 |
 | network-path | REQ-026, REQ-028, REQ-029 |
 | http-authentication | REQ-026, REQ-028, REQ-029 |
 | crash-analysis | REQ-026, REQ-028, REQ-029 |

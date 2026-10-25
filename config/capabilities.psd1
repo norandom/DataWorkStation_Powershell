@@ -9,6 +9,7 @@
             Triggers = @('zram', 'compressed swap', 'WSL memory compression')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @('sh linux/zram.sh Test (inside trusted Debian, repository directory)')
+            CaptureCommand = 'tricky add {case} -Path <wsl-zram-state.txt>'
             StateCommands = @('sudo sh linux/zram.sh Ensure (inside trusted Debian, repository directory)')
         }
         @{
@@ -19,6 +20,7 @@
             Triggers = @('earlyoom', 'WSL out of memory')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @('sh linux/earlyoom.sh Test (inside trusted Debian, repository directory)')
+            CaptureCommand = 'tricky add {case} -Path <wsl-earlyoom-state.txt>'
             StateCommands = @('sudo sh linux/earlyoom.sh Ensure (inside trusted Debian, repository directory)')
         }
         @{

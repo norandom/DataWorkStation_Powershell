@@ -56,7 +56,6 @@ Contour 0.7.0.8982 provides a clickable GUI tab bar and split panes. The managed
 | `Ctrl+Tab` / `Ctrl+Shift+Tab` | Switch to the right/left tab. |
 | `Ctrl+Page Down` / `Ctrl+Page Up` | Switch to the right/left tab. |
 | `Alt+wheel up` / `Alt+wheel down` | Switch to the left/right tab. |
-| `Shift+Left` / `Shift+Right` | Switch to the left/right tab. |
 | `Alt+1` through `Alt+9`, `Alt+0` | Switch directly to tabs 1 through 10. |
 | `Ctrl+Alt+K` / `Ctrl+Alt+J` | Jump to the previous/next PowerShell prompt mark outside the alternate screen. |
 
@@ -113,7 +112,8 @@ Contour 0.7.0.8982 provides a clickable GUI tab bar and split panes. The managed
 | `Ctrl+Shift+Q` | Quit Contour. |
 
 Contour's upstream default uses `Alt+wheel` to adjust opacity. The managed map assigns that pair to
-tab switching and retains the rest of the pinned release's default map.
+tab switching. `Ctrl+Left` / `Ctrl+Right` and `Shift+Left` / `Shift+Right` are
+left unbound so Codex and other terminal applications can receive them.
 
 ## Managed PowerShell and PSReadLine bindings
 

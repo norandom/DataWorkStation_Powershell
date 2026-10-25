@@ -50,6 +50,10 @@ Contour 0.7.0.8982 provides a clickable GUI tab bar and split panes. The managed
 
 ### Tabs and navigation
 
+Use the dropdown beside **+** to open PowerShell, Windows PowerShell, Command Prompt,
+Debian, Debian-MW, NixOS DevOps, or NixOS AI. `Ctrl+Shift+T` opens the default PowerShell profile.
+The existing `blue-dark` profile remains available as a PowerShell color variant.
+
 | Binding | Action |
 | --- | --- |
 | `Ctrl+Shift+T` | Create a tab. |

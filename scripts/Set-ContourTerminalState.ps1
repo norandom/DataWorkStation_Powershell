@@ -82,7 +82,18 @@ function Get-DesiredContourConfigContent {
     if (-not $placeholder -or @($template.Split($placeholder)).Count -ne 2) {
         throw "Managed Contour template must contain exactly one font placeholder '$placeholder': $desiredConfigPath"
     }
-    $template.Replace($placeholder, $FontFamily.Replace("'", "''"))
+    $template = $template.Replace($placeholder, $FontFamily.Replace("'", "''"))
+    foreach ($entry in $configuration.WslProfilePlaceholders.GetEnumerator()) {
+        $distribution = [string] $localConfiguration.Wsl.($entry.Value).distribution
+        if ($distribution -notmatch '^[A-Za-z0-9._-]+$') {
+            throw "Invalid WSL distribution for Contour profile role '$($entry.Value)'."
+        }
+        if (@($template.Split([string] $entry.Key)).Count -ne 2) {
+            throw "Managed Contour template must contain exactly one WSL placeholder '$($entry.Key)'."
+        }
+        $template = $template.Replace([string] $entry.Key, $distribution)
+    }
+    $template
 }
 
 function Test-FileContentEqual {
@@ -158,7 +169,7 @@ function Test-ContourGraphicsCompatibility {
             [string] $graphicsGate.PingCount
             '127.0.0.1'
         )
-        $process = Start-Process -FilePath $binaryPath -ArgumentList $arguments -WindowStyle Minimized `
+        $process = Start-Process -FilePath $binaryPath -ArgumentList $arguments -WindowStyle Hidden `
             -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -PassThru
         if (-not $process.WaitForExit([int] $graphicsGate.TimeoutSeconds * 1000)) {
             $timedOut = $true

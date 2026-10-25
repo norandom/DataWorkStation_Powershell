@@ -620,7 +620,28 @@ function Test-Contour {
     Assert-True ($scoopVerification -gt $scoopUninstall -and $msiDownload -gt $scoopVerification -and $msiInstall -gt $msiDownload) 'Contour verifies Scoop removal before downloading or installing the MSI'
     Assert-True ($source.IndexOf('Get-FileHash -LiteralPath $installerPath -Algorithm SHA256', [StringComparison]::Ordinal) -lt $msiInstall) 'Contour hashes the downloaded MSI before installation'
     Assert-True ($source -match '\$observedMsi = if \(\$desiredMsi\)' -and $source -match 'InstalledVersion = if \(\$observedMsi\)') 'Contour reports an installed older MSI while the declared release is drifted'
-    Assert-True ($contourConfig -match '(?ms)shell: "pwsh\.exe"\s+arguments:\s+- "-WorkingDirectory"\s+- "~"\s+initial_working_directory: "~"') 'Contour starts every PowerShell tab in the user home directory'
+    Assert-True ($contourConfig -match '(?ms)PowerShell:\s+shell: "pwsh\.exe".*?arguments: \[\]\s+initial_working_directory: "~"') 'Contour uses a home directory and an argument-free inheritance base for shell profiles'
+    $tokens = $null
+    $parseErrors = $null
+    $ast = [Management.Automation.Language.Parser]::ParseInput($source, [ref] $tokens, [ref] $parseErrors)
+    $renderer = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Get-DesiredContourConfigContent' }, $true)
+    . ([scriptblock]::Create($renderer.Extent.Text))
+    $desiredConfigPath = Join-Path $repositoryRoot 'config\contour.yml'
+    Assert-True (Test-Path -LiteralPath $desiredConfigPath -PathType Leaf) 'Contour renderer fixture uses the managed template'
+    $localConfiguration = @{ Wsl = @{} }
+    foreach ($role in @('developer', 'malware', 'nixos', 'ai')) {
+        $localConfiguration.Wsl[$role] = @{ distribution = "Custom-$role" }
+    }
+    $rendered = Get-DesiredContourConfigContent -FontFamily "Test's Mono"
+    Assert-True ($rendered.Contains("family: 'Test''s Mono'")) 'Contour safely quotes the selected font'
+    foreach ($role in @('developer', 'malware', 'nixos', 'ai')) {
+        Assert-True ($rendered.Contains('"--distribution", "Custom-' + $role + '", "--cd", "~"')) "Contour uses the configured $role WSL distribution and Linux home directory"
+    }
+    Assert-True ($rendered -notmatch '__WSL_|__TERMINAL_FONT_FAMILY__') 'Contour resolves every profile placeholder'
+    $localConfiguration.Wsl.ai.distribution = 'invalid"name'
+    $invalidRejected = $false
+    try { Get-DesiredContourConfigContent -FontFamily 'Test Mono' | Out-Null } catch { $invalidRejected = $true }
+    Assert-True $invalidRejected 'Contour rejects a distribution that could break YAML quoting'
     $gate = $configuration.GraphicsCompatibilityGate
     Assert-True ([bool] $gate.Enabled) 'the Contour graphics compatibility gate is enabled'
     Assert-True ([int] $gate.MinimumRuntimeSeconds -gt 0) 'the Contour gate requires a positive renderer lifetime'

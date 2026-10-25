@@ -44,7 +44,7 @@ The managed target is `%LocalAppData%\contour\contour.yml`, Contour's native Win
 The repository template contains a font-family placeholder. Set `fonts.terminalFamily` in ignored
 `config.json`; the portable sample selects the automatically installed `Fira Code`, while this
 workstation selects its separately licensed and installed `Berkeley Mono`. `Test` refuses a missing,
-empty, or multi-line preference, and `Ensure` renders it into `profiles.main.font.regular.family`
+empty, or multi-line preference, and `Ensure` renders it into `profiles.PowerShell.font.regular.family`
 without publishing the local choice.
 
 The translation preserves:
@@ -52,14 +52,26 @@ The translation preserves:
 - the deep-blue palette as the default and the near-black palette as the `blue-dark` profile;
 - 17-pixel text, equivalent to the source's 17-pixel iTerm sizing and close to the 12-point Windows Terminal translation;
 - a blinking bar cursor, unlimited history, and visual alert without bell sound;
-- the locally declared terminal font and an initial working directory of `~` (`$HOME`), reinforced with PowerShell's `-WorkingDirectory ~` argument for tabs created from the GUI;
+- the locally declared terminal font and an initial working directory of `~` (`$HOME`), with WSL profiles explicitly selecting the Linux home using `--cd ~`;
 - the `xterm-256color` environment intent and PowerShell 7 as the shell.
 
 Contour requires the first color scheme to be named `default`, so the deep-blue BlueTerm palette has that internal name. The second scheme is `Blue Dark` and can be launched with `contour profile blue-dark`. Contour uses `magenta` where Windows Terminal calls the same ANSI slot `purple`.
 
-The managed config keeps explicit `main` and `blue-dark` profiles rather than relying on automatic light/dark mappings, so the selected palette is deterministic.
+The managed config keeps explicit `PowerShell` and `blue-dark` profiles rather than relying on automatic light/dark mappings, so the selected palette is deterministic.
 
 ## PowerShell integration and tabs
+
+Contour 0.8's dropdown beside **+** lists the configured profiles. It now offers **PowerShell**
+(the default), **Windows PowerShell**, **Command Prompt**, **Debian**, **Debian-MW**,
+**NixOS DevOps**, and **NixOS AI**, alongside the existing **blue-dark** PowerShell palette.
+The four WSL entries use the `developer`, `malware`, `nixos`, and `ai` distribution names from
+ignored `config.json`; each starts in its Linux home. The shells share the default font and colors.
+Selecting a profile starts that shell in a new tab; adding it to the configuration does not start WSL.
+
+Apply the managed configuration with `pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Ensure`.
+This existing reconciliation command also ensures the pinned Contour package and runs its graphics check.
+You can also launch a specific profile with `contour profile "NixOS DevOps"`.
+Visual Studio developer shells and Azure Cloud Shell are not included.
 
 The managed PowerShell prompt emits Contour's `CSI > M` vertical-line mark before every prompt and wraps filesystem locations in an OSC 8 hyperlink. This behavior is enabled only when Contour identifies the session through `CONTOUR_PROFILE` or `TERMINAL_NAME`; redirected output and other terminals receive plain text. Use `terminal-link URI [TEXT]` to emit another explicit hyperlink.
 
@@ -85,7 +97,7 @@ The managed map adapts Contour 0.7.0's bindings and adds common scrolling and mo
 
 Contour 0.7 supplies a clickable GUI tab bar and split panes. The managed `Alt+wheel` binding remains a fast mouse-driven alternative. Plain wheel scrolling remains terminal scrollback, `Shift+wheel` moves by a page, and `Ctrl+wheel` changes font size.
 
-The MSI launches Contour with its installation directory as the application working directory. The GUI new-tab button can otherwise pass that directory to a new shell. The managed profile starts `pwsh.exe` with `-WorkingDirectory ~`, so every newly created PowerShell tab opens in the user's home directory instead of Contour's `bin` directory.
+The MSI launches Contour with its installation directory as the application working directory. The GUI new-tab button can otherwise pass that directory to a new shell. The managed profiles declare `initial_working_directory: "~"`. The default profile keeps its argument list empty because Contour appends inherited arguments when loading child profiles; PowerShell-only arguments must not leak into Command Prompt or WSL.
 
 The deep-blue palette uses a warm coral ANSI red (`#FF8F80`) and a pale-coral bright red (`#FFD0C8`). Red and blue are perceptual opposites, but the original dark red had only about 2.0:1 contrast against `#00347F`. The replacement retains error semantics while reaching about 5.3:1 for normal red and 8.4:1 for bright red. The same values are carried into the BlueTerm Windows Terminal conversion.
 

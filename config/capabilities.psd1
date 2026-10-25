@@ -542,6 +542,7 @@
         @{
             Id = 'contour-terminal'
             Title = 'Official Contour MSI and terminal desired state'
+            StateCommands = @('pwsh -NoProfile -File .\scripts\Set-ContourTerminalState.ps1 -Mode Ensure')
             Triggers = @('contour', 'contour msi', 'terminal theme', 'terminal font', 'blueterm', 'terminal package', 'scoop contour migration', 'opengl', 'glsl', 'display driver', 'terminal tabs', 'tab switching', 'terminal scrollback', 'terminal keybindings', 'psreadline', 'copy on select', 'clipboard', 'status line', 'statusline', 'byobu', 'vertical line marks', 'clickable links', 'osc 8')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(

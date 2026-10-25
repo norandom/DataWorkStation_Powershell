@@ -14,6 +14,12 @@
     DesiredConfig = 'config\contour.yml'
     UserConfig = '%LOCALAPPDATA%\contour\contour.yml'
     FontFamilyPlaceholder = '__TERMINAL_FONT_FAMILY__'
+    WslProfilePlaceholders = @{
+        '__WSL_DEVELOPER__' = 'developer'
+        '__WSL_MALWARE__' = 'malware'
+        '__WSL_NIXOS__' = 'nixos'
+        '__WSL_AI__' = 'ai'
+    }
     BackupDirectory = 'state\contour-backups'
     DesktopShortcutName = 'Contour Terminal Emulator.lnk'
     LegacyDesktopShortcutName = 'Contour.lnk'

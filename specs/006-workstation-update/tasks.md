@@ -124,6 +124,8 @@ Coverage: 25 of 25 requirements have preceding failing-test tasks and named impl
 
 ## Completion conditions
 
+- [x] T027 Add and validate the ArtCraft batch adapter, target, capability commands and PdfCraft documentation (REQ-026).
+
 - All 26 tasks use stable checklist IDs and concrete paths.
 - Every behavior task names requirements and selectors.
 - Automated validation never invokes a real updater or privileged mutation.

@@ -52,6 +52,7 @@ nav:
       - Review and run updates: workstation-update.md
       - Clean disk and traces: cleanup.md
   - Configure:
+      - ArtCraft updates and PdfCraft: artcraft.md
       - WSL memory, zram and earlyoom: wsl-memory.md
       - Workload memory and optional Process Lasso: workload-memory.md
       - Optional Razer lighting: razer-rgb.md

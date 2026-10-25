@@ -13,16 +13,20 @@ update -Target Homebrew,Containers
 
 These commands print a static dependency plan. They do not scan, download, install, restart, clean,
 prune, or reconcile anything. A focused target includes its required prerequisites. The complete
-plan has eight stages:
+plan has nine stages:
 
 1. accepted Windows software updates;
 2. known-version unpinned WinGet applications;
-3. Scoop core, declared buckets, and installed applications;
-4. the WSL host runtime;
-5. packages in declared developer Debian and Debian-MW;
-6. declared Homebrew instances and unpinned formulae;
-7. developer Docker and Debian-MW rootless Podman reconciliation;
-8. current-release default desired-state Ensure and Test.
+3. installed ArtCraft x64 MSI applications, with verified release downloads;
+4. Scoop core, declared buckets, and installed applications;
+5. the WSL host runtime;
+6. packages in declared developer Debian and Debian-MW;
+7. declared Homebrew instances and unpinned formulae;
+8. developer Docker and Debian-MW rootless Podman reconciliation;
+9. current-release default desired-state Ensure and Test.
+
+For a single sudo command that updates the installed Craft suite, see
+[ArtCraft batch updates and PdfCraft](artcraft.md). `update -Target ArtCraft -Run` runs the same adapter.
 
 ## Check release pins
 
@@ -75,6 +79,7 @@ reconciliation so the new process receives the updated environment.
 |---|---|---|
 | Windows | Applicable software/security updates with already accepted EULAs | Drivers, automatic EULA acceptance, reboot |
 | WinGet | `upgrade --all` for known-version unpinned apps | Unknown versions, pinned apps, forced previous-version removal |
+| ArtCraft | Installed official Craft x64 MSI apps and launcher | Missing apps, portable installs, running-app termination, automatic reboot |
 | Scoop | Core/bucket refresh and every installed app | Cleanup of old versions or caches, package removal |
 | WSL | Supported host runtime update | Automatic distribution shutdown |
 | Debian | APT refresh and noninteractive distribution upgrade for the two `config.json` Debian names | Discovery or modification of other distributions |

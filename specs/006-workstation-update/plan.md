@@ -120,4 +120,6 @@ inspectable without the aggregate command.
 
 ## Complexity Tracking
 
+The ArtCraft target adds an independent Windows-sudo batch over installed official Craft MSI apps. A dedicated read-only release check and explicit `-Run` command use a reviewed suite catalog, exact stable x64 asset selection, SHA-256 verification and sequential Windows Installer invocation. Running apps block their own updates; independent apps continue. Synthetic batch tests cover REQ-026 without installing software.
+
 No constitution violations or exceptional architecture are introduced.

@@ -856,7 +856,20 @@ Counts and paths are host-specific. Windows cleanup execution requires `-Run`; o
 deletion additionally requires `-ConfirmRestorePoints`. Trace deletion requires both `-Run` and
 `-ConfirmCleanup`.
 
-## GPU media playback
+## ArtCraft release check
+
+```text
+PS> pwsh -NoProfile -File .\scripts\Update-ArtCraft.ps1
+Name              Installed Available Status
+----              --------- --------- ------
+PdfCraft          0.13.0    0.13.0    current
+ArtCraft Launcher 0.7.0     0.7.0     current
+```
+
+Excerpt from the read-only 2026-10-25 check; all 13 installed suite apps and the launcher
+were current. See [ArtCraft batch updates](artcraft.md) for the explicit sudo command.
+
+## GPU media playback verification
 
 The focused mpv test is observational and verifies the package, managed user block, command shim,
 and compiled D3D11VA decoder support without opening a media file:

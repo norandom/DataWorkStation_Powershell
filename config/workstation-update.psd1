@@ -3,6 +3,11 @@
     PinnedSoftwareCatalog = 'config\software-updates.psd1'
     Targets = @(
         @{
+            Name = 'ArtCraft'; Title = 'Installed ArtCraft applications'; Order = 25; DependsOn = @()
+            Privilege = 'WindowsAdministrator'; Executor = 'ArtCraft'; RestartMayBeRequired = $true
+            Detail = 'Update installed official Craft x64 MSI applications with SHA-256 verification; running apps are reported, never closed.'
+        }
+        @{
             Name = 'Windows'; Title = 'Windows software updates'; Order = 10; DependsOn = @()
             Privilege = 'WindowsAdministrator'; Executor = 'WindowsUpdate'; RestartMayBeRequired = $true
             Detail = 'Install accepted Windows software updates; drivers and automatic restart are excluded.'

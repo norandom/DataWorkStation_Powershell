@@ -81,6 +81,9 @@ It never restarts Windows, shuts down WSL, updates drivers, discovers unrelated 
 overrides pins, cleans Scoop versions/caches, or prunes container data. See
 [Managed workstation update](workstation-update.md).
 
+Use `update -Target ArtCraft -Run` for the installed Craft suite; see
+[ArtCraft batch updates and PdfCraft](artcraft.md) for its single-sudo direct command.
+
 ## Cleanup
 
 | Command | Purpose |

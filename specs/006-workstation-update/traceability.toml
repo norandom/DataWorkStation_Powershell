@@ -75,3 +75,7 @@ tests = ["tests/Test-WorkstationUpdate.ps1#CommandSurface"]
 [requirements.REQ-025]
 verification = "automated"
 tests = ["tests/Test-WorkstationUpdate.ps1#DualShellContract"]
+
+[requirements.REQ-026]
+verification = "automated"
+tests = ["tests/Test-ArtCraftUpdate.ps1#Test-ArtCraftUpdate"]

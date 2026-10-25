@@ -135,6 +135,7 @@ both supported PowerShell profile targets, and reports any remaining drift.
 - REQ-023: When execution completes, the update workflow shall summarize every stage as succeeded, skipped, failed, restart-required, or not-selected and return nonzero if any selected stage failed or drift remains.
 - REQ-024: When the public update command changes, the repository shall update capability routing, operator documentation, sample output, and command discovery together.
 - REQ-025: When the update workflow is loaded by either supported PowerShell runtime, it shall expose the same plan and target contract.
+- REQ-026: When the ArtCraft batch is requested, the updater shall service only recognized installed official MSI applications using stable x64 releases with verified SHA-256 downloads, reporting running apps and individual failures without stopping processes or preventing independent updates.
 
 ### Key Entities
 

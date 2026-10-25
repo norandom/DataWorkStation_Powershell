@@ -260,7 +260,7 @@ function global:precommit-run {
 function global:update {
     [CmdletBinding()]
     param(
-        [ValidateSet('All', 'Windows', 'WinGet', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
+        [ValidateSet('All', 'Windows', 'WinGet', 'ArtCraft', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
         [string[]] $Target = @('All'),
         [switch] $Run,
         [switch] $Check,

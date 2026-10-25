@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('All', 'Windows', 'WinGet', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
+    [ValidateSet('All', 'Windows', 'WinGet', 'ArtCraft', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')]
     [string[]] $Target = @('All'),
     [switch] $Run,
     [switch] $Check,
@@ -167,6 +167,11 @@ function Invoke-UpdateStage {
 
     $stageName = [string] $Definition.Name
     switch ([string] $Definition.Executor) {
+        'ArtCraft' {
+            $response = Invoke-UpdateCommand -Stage $stageName -FilePath 'sudo.exe' -Privilege 'WindowsAdministrator' -AcceptedExitCodes @(0, 3010) -ArgumentList @('pwsh.exe', '-NoLogo', '-NoProfile', '-File', (Join-Path $PSScriptRoot 'Update-ArtCraft.ps1'), '-Run', '-Json')
+            $response.RestartRequired = $response.ExitCode -eq 3010
+            return Complete-CommandStage -Responses @($response) -SuccessDetail (ConvertTo-BoundedDetail $response.Output 'ArtCraft batch complete.')
+        }
         'WindowsUpdate' {
             $windowsUpdate = Join-Path $PSScriptRoot 'Invoke-WindowsUpdate.ps1'
             $response = Invoke-UpdateCommand -Stage $stageName -FilePath 'sudo.exe' -Privilege 'WindowsAdministrator' -ArgumentList @('powershell.exe', '-NoLogo', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $windowsUpdate, '-Action', 'Install', '-Json')

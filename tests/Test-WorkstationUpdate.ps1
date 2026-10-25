@@ -86,7 +86,7 @@ function Test-PlanContract {
     $plan = Invoke-Plan
     if (-not $plan) { return }
     Assert-True ($plan.Action -eq 'Plan') 'default action is Plan'
-    Assert-True (@($plan.Stages).Count -eq 8) 'complete plan contains eight stages'
+    Assert-True (@($plan.Stages).Count -eq 9) 'complete plan contains nine stages'
     Assert-True (@($plan.Stages | Where-Object Status -ne 'planned').Count -eq 0) 'all default stages are planned'
     Assert-True (@($plan.Stages | Where-Object ChangesState -ne $true).Count -eq 0) 'plan identifies every mutating stage'
     Assert-True (@($plan.PinnedSoftware).Count -eq 0) 'default plan performs no pinned release network check'
@@ -112,9 +112,9 @@ function Test-OutputContract {
 function Test-TargetContract {
     $configuration = Get-UpdateConfiguration
     if (-not $configuration) { return }
-    $expected = @('Windows', 'WinGet', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')
+    $expected = @('Windows', 'WinGet', 'ArtCraft', 'Scoop', 'Wsl', 'Linux', 'Homebrew', 'Containers', 'PowerShellEnvironment')
     Assert-True ($configuration.SchemaVersion -eq 1) 'catalog schema is version 1'
-    Assert-True (@($configuration.Targets).Count -eq $expected.Count) 'catalog contains eight executable targets'
+    Assert-True (@($configuration.Targets).Count -eq $expected.Count) 'catalog contains nine executable targets'
     foreach ($name in $expected) {
         Assert-True (@($configuration.Targets | Where-Object Name -eq $name).Count -eq 1) "$name exists once"
         $plan = Invoke-Plan -Target @($name)
@@ -297,7 +297,7 @@ function Test-PrivilegeContract {
     Assert-True ($source -match "'--user', 'root'") 'Linux administrator boundary names root explicitly'
     $configuration = Get-UpdateConfiguration
     if ($configuration) {
-        Assert-True (@($configuration.Targets | Where-Object Privilege -eq 'WindowsAdministrator').Count -eq 1) 'Windows privilege stage is declared once'
+        Assert-True (@($configuration.Targets | Where-Object Privilege -eq 'WindowsAdministrator').Count -eq 2) 'Windows and ArtCraft privilege stages are declared'
         Assert-True (@($configuration.Targets | Where-Object Privilege -eq 'WslRoot').Count -ge 1) 'WSL root stages are declared'
     }
 }
@@ -309,6 +309,9 @@ function Test-ExecutionContract {
     Assert-True ($source -match 'BlockedBy') 'blocked dependencies are reported'
     Assert-True ($source -match 'if \(-not \$Run\)') 'plan returns before execution'
     $success = Invoke-SyntheticRun
+    $craft = Invoke-SyntheticRun -Target @('ArtCraft')
+    Assert-True ($craft.Requests.Count -eq 1 -and $craft.Requests[0].FilePath -eq 'sudo.exe') 'Craft batch uses one sudo invocation'
+    Assert-True (($craft.Requests[0].ArgumentList -join ' ') -match 'Update-ArtCraft.ps1.*-Run') 'Craft target dispatches the explicit batch runner'
     Assert-True ($success.Result.Succeeded) 'synthetic all-stage execution succeeds'
     Assert-True (@($success.Result.Stages | Where-Object Status -ne 'succeeded').Count -eq 0) 'all synthetic success stages terminate succeeded'
     Assert-True (@($success.Requests).Count -gt @($success.Result.Stages).Count) 'compound stages emit individual reviewed commands'

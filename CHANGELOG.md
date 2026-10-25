@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 4.9.0 - 2026-10-25
+
+- Make Contour's PowerShell, Windows PowerShell, and Command Prompt profiles start in the Windows user home even when new tabs inherit another working directory; blue-dark inherits the same PowerShell behavior.
+- Preserve each WSL profile's explicit Linux home startup and document the shell-specific commands and argument-inheritance handling.
+- Extend Contour regression checks for the Windows shell home-directory commands.
+
 ## 4.8.0 - 2026-10-25
 
 - Add PowerShell, Windows PowerShell, Command Prompt, Debian, Debian-MW, NixOS DevOps, and NixOS AI to Contour's new-tab profile menu, retaining the blue-dark palette profile.

@@ -620,7 +620,9 @@ function Test-Contour {
     Assert-True ($scoopVerification -gt $scoopUninstall -and $msiDownload -gt $scoopVerification -and $msiInstall -gt $msiDownload) 'Contour verifies Scoop removal before downloading or installing the MSI'
     Assert-True ($source.IndexOf('Get-FileHash -LiteralPath $installerPath -Algorithm SHA256', [StringComparison]::Ordinal) -lt $msiInstall) 'Contour hashes the downloaded MSI before installation'
     Assert-True ($source -match '\$observedMsi = if \(\$desiredMsi\)' -and $source -match 'InstalledVersion = if \(\$observedMsi\)') 'Contour reports an installed older MSI while the declared release is drifted'
-    Assert-True ($contourConfig -match '(?ms)PowerShell:\s+shell: "pwsh\.exe".*?arguments: \[\]\s+initial_working_directory: "~"') 'Contour uses a home directory and an argument-free inheritance base for shell profiles'
+    Assert-True ($contourConfig -match '(?ms)PowerShell:.*?shell: "pwsh\.exe -WorkingDirectory ~".*?arguments: \[\]\s+initial_working_directory: "~"') 'Contour forces PowerShell home without leaking inherited arguments into other shells'
+    Assert-True ($contourConfig.Contains('"Set-Location -LiteralPath $HOME"')) 'Windows PowerShell changes to its home after startup'
+    Assert-True ($contourConfig.Contains('["/K", "cd", "/d", "%USERPROFILE%"]')) 'Command Prompt changes drive and directory to the Windows user home without nested command-line quoting'
     $tokens = $null
     $parseErrors = $null
     $ast = [Management.Automation.Language.Parser]::ParseInput($source, [ref] $tokens, [ref] $parseErrors)

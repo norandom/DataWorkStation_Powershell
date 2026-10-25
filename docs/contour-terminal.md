@@ -97,7 +97,13 @@ The managed map adapts Contour 0.7.0's bindings and adds common scrolling and mo
 
 Contour 0.7 supplies a clickable GUI tab bar and split panes. The managed `Alt+wheel` binding remains a fast mouse-driven alternative. Plain wheel scrolling remains terminal scrollback, `Shift+wheel` moves by a page, and `Ctrl+wheel` changes font size.
 
-The MSI launches Contour with its installation directory as the application working directory. The GUI new-tab button can otherwise pass that directory to a new shell. The managed profiles declare `initial_working_directory: "~"`. The default profile keeps its argument list empty because Contour appends inherited arguments when loading child profiles; PowerShell-only arguments must not leak into Command Prompt or WSL.
+Contour's new tabs can inherit the active tab's directory, overriding `initial_working_directory: "~"`.
+PowerShell therefore uses `pwsh.exe -WorkingDirectory ~` as its shell command; Windows PowerShell
+runs `Set-Location -LiteralPath $HOME` after startup, and Command Prompt runs `cd /d "%USERPROFILE%"`.
+Each WSL profile uses `--cd ~` for its Linux user's home. The blue-dark profile inherits PowerShell's
+home-directory command. The default profile keeps `arguments: []`: Contour supports inline shell
+arguments and appends inherited argument lists, so placing PowerShell's option in `shell` prevents
+it from leaking into profiles that replace the shell.
 
 The deep-blue palette uses a warm coral ANSI red (`#FF8F80`) and a pale-coral bright red (`#FFD0C8`). Red and blue are perceptual opposites, but the original dark red had only about 2.0:1 contrast against `#00347F`. The replacement retains error semantics while reaching about 5.3:1 for normal red and 8.4:1 for bright red. The same values are carried into the BlueTerm Windows Terminal conversion.
 

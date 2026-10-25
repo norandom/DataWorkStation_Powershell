@@ -91,7 +91,8 @@ input_mapping:
 
 profiles:
   PowerShell:
-    shell: "pwsh.exe"
+    # Inline shell arguments avoid being inherited by profiles that replace shell.
+    shell: "pwsh.exe -WorkingDirectory ~"
     # Contour appends child arguments to inherited arguments; keep the base empty.
     arguments: []
     initial_working_directory: "~"
@@ -124,11 +125,11 @@ profiles:
   # Other profiles inherit appearance from PowerShell; override its shell arguments.
   Windows PowerShell:
     shell: "powershell.exe"
-    arguments: ["-NoLogo"]
+    arguments: ["-NoLogo", "-NoExit", "-Command", "Set-Location -LiteralPath $HOME"]
     initial_working_directory: "~"
   Command Prompt:
     shell: "cmd.exe"
-    arguments: []
+    arguments: ["/K", "cd", "/d", "%USERPROFILE%"]
     initial_working_directory: "~"
   Debian:
     shell: "wsl.exe"

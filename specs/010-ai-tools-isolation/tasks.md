@@ -231,6 +231,8 @@ boundary.
 
 ## Phase 10: OpenCode extensions
 
+- [X] T047 Extend REQ-010 editor inventory with Zed, declared CLI targets, `-LaunchersOnly`, and explicit backed-up AMD machine-PATH repair; verify target rejection and PATH preservation in `tests/Test-AiToolsIsolation.ps1 -Section EditorInventory`.
+
 - [X] T044 Add pinned Cream Blue and OpenUltraCode declarations plus focused red contract coverage
   for REQ-038–REQ-042 in `config/opencode-extensions.psd1` and `tests/Test-OpenCodeExtensionsState.ps1`.
 - [X] T045 Implement observational Plan/Test and explicit verified Ensure/Reinitialize with bounded

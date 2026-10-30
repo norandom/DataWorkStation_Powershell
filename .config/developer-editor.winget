@@ -10,3 +10,9 @@ resources:
       id: Microsoft.VisualStudioCode
       source: winget
       useLatest: true
+  - name: Zed Stable
+    type: Microsoft.WinGet/Package
+    properties:
+      id: ZedIndustries.Zed
+      source: winget
+      useLatest: true

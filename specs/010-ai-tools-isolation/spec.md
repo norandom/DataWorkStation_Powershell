@@ -204,7 +204,7 @@ effective font selection while preserving unrelated editor settings and extensio
 - **REQ-007**: Where Antigravity is enabled, the workstation manager shall install only its CLI through `irm https://antigravity.google/cli/install.ps1 | iex` without adding a desktop application.
 - **REQ-008**: Where the Cline CLI is enabled, the workstation manager shall install it through the declared global npm command `npm i -g cline`.
 - **REQ-009**: Where the GitHub Copilot CLI is enabled, the workstation manager shall maintain the official supported CLI in its declared native environment.
-- **REQ-010**: Where the developer category is selected, the workstation manager shall maintain stable Visual Studio Code, `jx22/berg`, and the Cline, Jupyter, Python, and GitHub Copilot extensions.
+- **REQ-010**: Where the developer category is selected, the workstation manager shall maintain stable Visual Studio Code and Zed with `code` and `zed` command launchers, plus `jx22/berg` and the Cline, Jupyter, Python, and GitHub Copilot extensions in VS Code.
 - **REQ-011**: Where a valid local Berkeley Mono preference exists, the editor configuration shall select it without tracking the font files or machine-local preference.
 - **REQ-012**: Where no valid local font preference exists, the editor configuration shall select the declared portable Fira family.
 - **REQ-013**: When editor configuration is reconciled, the workstation manager shall preserve unrelated user settings, extensions, profiles, and workspace configuration.

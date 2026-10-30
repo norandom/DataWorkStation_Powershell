@@ -3,6 +3,22 @@
     PackageId = 'Microsoft.VisualStudioCode'
     PackageConfiguration = '.config/developer-editor.winget'
     Command = 'code'
+    CommandDirectory = '%USERPROFILE%\.local\bin'
+    SupersededPath = '%LOCALAPPDATA%\AMD\AI_Bundle\VSCode\bin'
+    Launchers = @(
+        @{
+            Name = 'code'
+            RegisteredApplicationName = 'Microsoft Visual Studio Code'
+            RegisteredPublisher = 'Microsoft Corporation'
+            Candidates = @('%LOCALAPPDATA%\Programs\Microsoft VS Code\bin\code.cmd', '%ProgramFiles%\Microsoft VS Code\bin\code.cmd')
+            RequiredSibling = '..\Code.exe'
+        }
+        @{
+            Name = 'zed'
+            Candidates = @('%LOCALAPPDATA%\Programs\Zed\bin\zed.exe', '%ProgramFiles%\Zed\bin\zed.exe')
+            RequiredSibling = 'zed.exe'
+        }
+    )
     Extensions = @(
         'saoudrizwan.claude-dev'
         'ms-toolsai.jupyter'

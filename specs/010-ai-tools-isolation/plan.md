@@ -8,7 +8,7 @@
 
 Add two focused desired-state modules: an opt-in `AiTools` module for the requested native agents
 and a separate opt-in `AiNixOsWsl` module for the OpenCode CLI boundary; add a `DeveloperEditor`
-module for stable VS Code, the pinned Berg source theme, four extensions, and the existing local-font
+module for stable VS Code and Zed with persistent CLI launchers, the pinned Berg source theme, four VS Code extensions, and the existing local-font
 selection, plus a default `OpenCodeExtensions` module for pinned Cream Blue themes and verified
 OpenUltraCode assets. Strengthen the existing DevOps NixOS and Debian-MW distributions by disabling WSL
 interop and automatic host mounts, deploy their configuration through Windows-owned standard-input

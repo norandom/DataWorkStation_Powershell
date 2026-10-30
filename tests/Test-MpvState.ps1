@@ -45,6 +45,43 @@ function Test-MpvState {
     Assert-True ($capabilities -match 'Set-MpvState\.ps1' -and $capabilities -match 'Apply-Workstation\.ps1 -Mode Test -Module Mpv') 'human mpv inspection commands are routed'
     Assert-True ($docs -match 'Radeon 890M' -and $docs -match 'ffmpeg') 'documentation explains the detected AMD GPU and the FFmpeg boundary'
 
+    . (Join-Path $repositoryRoot 'scripts/MpvAssociations.ps1')
+    $policy = (Import-PowerShellDataFile (Join-Path $repositoryRoot 'config/mpv.psd1')).VideoAssociations
+    $executable = 'C:\Program Files\mpv\mpv.exe'
+    $entries = @(Get-MpvAssociationRegistryValues -Policy $policy -Executable $executable)
+    $openCommand = @($entries | Where-Object Path -Like '*\shell\open\command')[0]
+    Assert-True ($openCommand.Value -ceq '"C:\Program Files\mpv\mpv.exe" -- "%1"') 'Explorer paths with spaces remain quoted and option-like filenames remain operands'
+    Assert-True ('.mp4' -in $policy.Extensions -and '.avi' -in $policy.Extensions -and '.mkv' -in $policy.Extensions) 'common video containers are declared'
+    Assert-True ('.mp3' -notin $policy.Extensions -and '.jpg' -notin $policy.Extensions -and '.ts' -notin $policy.Extensions) 'audio, images and TypeScript are excluded'
+    Assert-True (@($entries | Where-Object Path -NotLike 'HKCU:\*').Count -eq 0) 'registration stays in the current user hive'
+    Assert-True (@($entries | Where-Object Path -Like '*UserChoice*').Count -eq 0) 'protected Windows choices are never written'
+
+    # Synthetic registry and shell resolution: no workstation changes in this test.
+    $registry = @{}
+    foreach ($entry in $entries) { $registry[$entry.Path + '|' + $entry.Name] = $entry.Value }
+    $resolved = @{}
+    foreach ($extension in $policy.Extensions) { $resolved[$extension] = $executable }
+    function Get-MpvRegistryValue {
+        param([string] $Path, [string] $Name)
+        $registry[$Path + '|' + $Name]
+    }
+    function Get-MpvEffectiveExecutable {
+        param([string] $Extension)
+        $resolved[$Extension]
+    }
+    $report = Get-MpvAssociationState -Policy $policy -Executable $executable
+    Assert-True ($report.RegistrationCompliant -and $report.DefaultsCompliant) 'matching registrations and shell resolution converge'
+    $resolved['.mp4'] = 'C:\Other Player\player.exe'
+    $report = Get-MpvAssociationState -Policy $policy -Executable $executable
+    Assert-True ($report.RegistrationCompliant -and -not $report.DefaultsCompliant) 'an overriding default is drift even when registration matches'
+    Assert-True (@($report.Extensions | Where-Object { -not $_.IsMpv }).Extension -eq '.mp4') 'the pending extension is identified'
+    $registry.Remove($openCommand.Path + '|' + $openCommand.Name)
+    $report = Get-MpvAssociationState -Policy $policy -Executable $executable
+    Assert-True (-not $report.RegistrationCompliant) 'a missing launch command is registration drift'
+    $resolved['.mp4'] = ''
+    $report = Get-MpvAssociationState -Policy $policy -Executable $executable
+    Assert-True (-not $report.DefaultsCompliant) 'unresolved shell defaults cannot count as mpv'
+
     Write-Host "mpv state tests passed ($script:assertions assertions)."
 }
 

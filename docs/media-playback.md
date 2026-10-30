@@ -43,6 +43,33 @@ The second form prints decoder selection for troubleshooting. Press `i` during p
 statistics overlay. Hardware decode is intentionally codec-aware; forcing `auto-unsafe` or
 `hwdec-codecs=all` is not part of desired state.
 
+## Explorer video associations
+
+The `VideoAssociations` declaration in `config/mpv.psd1` registers mpv for MP4, AVI, MKV,
+MOV, WebM, MPEG, WMV and the other listed video extensions. Apply and inspect it through the
+same non-privileged module:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Ensure
+pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test -Json
+```
+
+Ensure writes current-user ProgID, quoted open command, icon, Open With entries and Default Apps
+capabilities. It also declares the per-user extension fallback. Previous managed registry values
+are saved under `state/mpv-config-backups/associations-*.xml` before changes. Test only reads state;
+it asks the Windows shell which executable each extension actually resolves to, so registration
+alone cannot produce a compliant result. Repeated Ensure calls preserve unrelated registry values.
+
+Windows protects existing `UserChoice` selections. The module does not delete those keys or forge
+their hashes. If another app still wins, Test and Ensure return exit code 1 and report the pending
+extensions and the Default Apps URI. Choose mpv there once, then repeat Test. An existing choice
+of mpv through its own registration is accepted when it resolves to the installed executable.
+See [Windows Default Apps](https://support.microsoft.com/en-us/windows/apps/change-default-apps-in-windows)
+and the [shell association query API](https://learn.microsoft.com/windows/win32/api/shlwapi/nf-shlwapi-assocquerystringw).
+
+Audio, image and playlist defaults are outside this declaration. `.ts` is deliberately excluded
+because it is also a TypeScript source extension; add it to the declaration only if desired.
+
 ## FFmpeg command-line processing
 
 mpv uses FFmpeg libraries internally but does not provide the separate `ffmpeg.exe` transcoding

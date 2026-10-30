@@ -140,8 +140,34 @@ function Test-CopilotCli {
 }
 
 function Test-EditorInventory {
+    . (Join-Path $repositoryRoot 'scripts/EditorLaunchers.Core.ps1')
     $config = Get-RequiredData 'config/developer-editor.psd1'
     Assert-True ($config.PackageId -eq 'Microsoft.VisualStudioCode') 'stable VS Code is selected'
+    Assert-True ((Get-RequiredText '.config/developer-editor.winget') -match 'ZedIndustries.Zed') 'official Zed package is declared'
+    Assert-True (@($config.Launchers | Where-Object Name -eq 'zed').Count -eq 1) 'zed has a persistent command launcher'
+    Assert-True (@($config.Launchers.Candidates | Where-Object { $_ -match 'AMD' }).Count -eq 0) 'launcher discovery excludes AMD bundles'
+    $bundle = 'C:\AMD\VSCode\bin'
+    Assert-True ((Get-EditorPathWithoutBundle "C:\Windows;$bundle;C:\Other" $bundle) -ceq 'C:\Windows;C:\Other') 'only the exact conflicting PATH entry is removed'
+    Assert-True ((Get-EditorPathWithoutBundle 'C:\AMD\VSCode\bin-extra;C:\Other' $bundle) -ceq 'C:\AMD\VSCode\bin-extra;C:\Other') 'similar PATH entries are preserved'
+    Assert-True ((Get-EditorPathWithoutBundle '"c:\amd\vscode\bin\";C:\Other' $bundle) -ceq 'C:\Other') 'case, quoting and trailing separator do not hide the conflict'
+    $batch = Get-EditorLauncherContent 'C:\Editor Folder\code.cmd'
+    Assert-True ($batch.Contains('call "C:\Editor Folder\code.cmd" %*') -and $batch.Contains('exit /b %ERRORLEVEL%')) 'batch target returns and propagates arguments and exit status'
+    $native = Get-EditorLauncherContent 'C:\Editor Folder\zed.exe'
+    Assert-True ($native.Contains('"C:\Editor Folder\zed.exe" %*') -and -not $native.Contains('call ')) 'native Zed launcher preserves quoting without batch CALL'
+    $fixture = Join-Path ([IO.Path]::GetTempPath()) ('editor-launcher-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $fixture | Out-Null
+    $fakeCli = Join-Path $fixture 'code.cmd'
+    $fakeExe = Join-Path $fixture 'Code.exe'
+    try {
+        Set-Content -LiteralPath $fakeCli -Value '@echo off'
+        $launcher = @{ Candidates = @($fakeCli); RequiredSibling = 'Code.exe' }
+        Assert-True (-not (Get-EditorLauncherTarget $launcher)) 'orphaned command without editor executable is rejected'
+        Set-Content -LiteralPath $fakeExe -Value 'fixture, never executed'
+        Assert-True ((Get-EditorLauncherTarget $launcher) -eq $fakeCli) 'complete declared installation is resolved'
+    } finally {
+        foreach ($file in @($fakeCli, $fakeExe)) { if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file } }
+        Remove-Item -LiteralPath $fixture
+    }
     foreach ($id in @('saoudrizwan.claude-dev', 'ms-toolsai.jupyter', 'ms-python.python', 'GitHub.copilot-chat')) {
         Assert-True ($config.Extensions -contains $id) "$id is declared"
     }

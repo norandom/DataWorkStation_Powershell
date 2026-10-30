@@ -2,24 +2,44 @@
 param(
     [ValidateSet('Plan', 'Test', 'Ensure', 'Reinitialize')]
     [string] $Mode = 'Ensure',
-    [switch] $Json
+    [switch] $Json,
+    [switch] $LaunchersOnly,
+    [switch] $RepairMachinePath
 )
 
 $ErrorActionPreference = 'Stop'
 $asJson = [bool] $Json
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'DeveloperEditor.Core.ps1')
+. (Join-Path $PSScriptRoot 'EditorLaunchers.Core.ps1')
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\developer-editor.psd1')
 $packageFile = Join-Path $repositoryRoot $configuration.PackageConfiguration
 $settingsPath = [Environment]::ExpandEnvironmentVariables($configuration.SettingsPath)
 $extensionRoot = [Environment]::ExpandEnvironmentVariables($configuration.Berg.ExtensionRoot)
+$backupDirectory = Join-Path $repositoryRoot $configuration.BackupDirectory
+if ($RepairMachinePath) {
+    if ($Mode -ne 'Ensure') { throw '-RepairMachinePath requires -Mode Ensure.' }
+    Repair-EditorMachinePath -Configuration $configuration -BackupDirectory $backupDirectory
+    Write-Host 'Removed the declared AMD VS Code directory from machine PATH; other entries are preserved.'
+    exit 0
+}
+
+if ($LaunchersOnly) {
+    if ($Mode -in @('Ensure', 'Reinitialize')) {
+        & winget.exe configure --file $packageFile --accept-configuration-agreements --disable-interactivity
+        if ($LASTEXITCODE -ne 0) { throw 'Editor package configuration failed.' }
+        Set-EditorLaunchers -Configuration $configuration -BackupDirectory $backupDirectory
+    }
+    $launcherState = Get-EditorLauncherState $configuration
+    if ($asJson) { $launcherState | ConvertTo-Json -Depth 5 } else {
+        $launcherState.Launchers | Format-Table Name, Target, Compliant -AutoSize
+        Write-Host "Machine PATH clean: $($launcherState.MachinePathClean); user PATH clean: $($launcherState.UserPathClean); command bin on PATH: $($launcherState.CommandDirectoryOnPath)"
+    }
+    if ($Mode -eq 'Plan' -or $launcherState.Compliant) { exit 0 } else { exit 1 }
+}
 
 function Get-CodePath {
-    $stable = Join-Path $env:LOCALAPPDATA 'Programs\Microsoft VS Code\bin\code.cmd'
-    if (Test-Path -LiteralPath $stable -PathType Leaf) { return $stable }
-    $command = Get-Command code.cmd,code.exe -ErrorAction Ignore | Select-Object -First 1
-    if ($command) { return $command.Source }
-    $null
+    Get-EditorLauncherTarget ($configuration.Launchers | Where-Object Name -eq 'code')
 }
 
 function Get-CodeRoot {
@@ -68,12 +88,13 @@ function Test-StableCode {
 
 function Get-LiveState {
     $codePath = Get-CodePath
-    $extensions = if ($codePath) { @(Get-CodeExtensionInventory $codePath) } else { @() }
+    $extensions = @(if ($codePath) { Get-CodeExtensionInventory $codePath })
     $font = Get-DeveloperEditorFont $repositoryRoot $configuration
     $settings = Get-DeveloperEditorSettings $settingsPath
     $berg = Get-BergExtensionState -Configuration $configuration.Berg -ExtensionInventory $extensions -ExtensionRoot $extensionRoot
     $checks = [ordered]@{
         StableCode = Test-StableCode $codePath
+        Launchers = (Get-EditorLauncherState $configuration).Compliant
         Extensions = @($configuration.Extensions | Where-Object { $_ -notin $extensions }).Count -eq 0
         Berg = $berg.Compliant
         Theme = $settings['workbench.colorTheme'] -eq $configuration.Berg.ThemeLabel
@@ -108,6 +129,7 @@ if ($Mode -eq 'Test') { Write-State $before; if ($before.Status -eq 'compliant')
 
 & winget.exe configure --file $packageFile --accept-configuration-agreements --disable-interactivity
 if ($LASTEXITCODE -ne 0) { throw 'Stable VS Code WinGet configuration failed.' }
+Set-EditorLaunchers -Configuration $configuration -BackupDirectory $backupDirectory
 $codePath = Get-CodePath
 if (-not $codePath) { throw 'Stable VS Code command was not found after installation.' }
 $installedExtensions = @(Get-CodeExtensionInventory $codePath)

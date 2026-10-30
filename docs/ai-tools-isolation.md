@@ -109,7 +109,7 @@ Review the Plan output first. Automated repository tests never run this command.
 
 ## Developer editor
 
-`DeveloperEditor` maintains stable `Microsoft.VisualStudioCode`, activates the pinned Berg theme,
+`DeveloperEditor` installs stable `Microsoft.VisualStudioCode` and `ZedIndustries.Zed`, activates the pinned Berg theme in VS Code,
 installs these exact extensions, and owns only the theme and two font keys in the user settings:
 
 - `saoudrizwan.claude-dev` (Cline)
@@ -129,6 +129,39 @@ Windows registers the family or when a font in the per-user Windows font directo
 exact embedded family name. Public configuration without that valid local family falls back to
 the installed `Fira Code` family. Existing settings are backed up and unrelated settings,
 extensions, profiles, and workspace configuration are preserved.
+
+### Editor command launchers
+
+Install or repair just the two editors and their command launchers without applying VS Code themes,
+extensions or settings:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test -LaunchersOnly -Json
+pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Ensure -LaunchersOnly
+code .
+zed .
+```
+
+`config/developer-editor.psd1` declares standard VS Code and Zed installation locations and the
+`%USERPROFILE%\.local\bin` command directory. The module creates `code.cmd` and `zed.cmd`
+forwarders usable from PowerShell and cmd.exe; arguments and exit codes are passed to the real CLI.
+Zed uses the [official WinGet package](https://zed.dev/docs/windows). Zed settings remain user-owned.
+The same launchers are included in the full `DeveloperEditor` module.
+VS Code can also resolve from its Microsoft installer registration when installed in a custom
+directory. Its executable must have a valid Microsoft signature; arbitrary PATH matches are ignored.
+
+AMD's bundled VS Code directory can precede the normal installation on machine PATH. Test reports
+that conflict. Ensure removes the declared AMD entry from user PATH, but machine PATH repair is
+separate and explicitly elevated:
+
+```powershell
+sudo pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Ensure -RepairMachinePath
+```
+
+This command only removes the exact declared AMD VS Code directory; it preserves other PATH
+entries and does not uninstall AMD software. Changed PATH values and existing command forwarders
+are backed up under `state/developer-editor-backups`. Reopen the terminal after installation or
+PATH repair so its environment receives the changes.
 
 ## WSL trust matrix
 

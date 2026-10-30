@@ -341,8 +341,8 @@
         }
         @{
             Id = 'workstation-modules'
-            Title = 'Focused desired-state modules and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'artcraft', 'pdfcraft', 'craft batch update', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher', 'process lasso', 'processlasso')
+            Title = 'Focused desired-state modules, mpv video associations and dependency order'
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'artcraft', 'pdfcraft', 'craft batch update', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'video associations', 'default video player', 'mp4', 'avi', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher', 'process lasso', 'processlasso')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
@@ -359,6 +359,7 @@
                 '.\Apply-Workstation.ps1 -Mode Test -Module Packages -Plan'
                 'pnpm --version'
                 'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test -Json'
                 '.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan'
                 'pwsh -NoProfile -File .\scripts\Set-AudioSwitcherState.ps1 -Mode Test'
                 '.\Apply-Workstation.ps1 -Mode Test -Module AudioSwitcher -Plan'
@@ -442,7 +443,7 @@
             FeatureSpec = 'specs/010-ai-tools-isolation'
             Modules = @('AiTools', 'AiNixOsWsl', 'OpenCodeExtensions', 'DeveloperEditor')
             Title = 'AI tools, OpenCode extensions, developer editor, and restricted WSL trust boundaries'
-            Triggers = @('opencode', 'opencode theme', 'cream blue', 'cobalt', 'openultracode', 'claude code', 'antigravity cli', 'cursor cli', 'cursor agent', 'cline', 'copilot cli', 'grok build', 'vscode', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
+            Triggers = @('opencode', 'opencode theme', 'cream blue', 'cobalt', 'openultracode', 'claude code', 'antigravity cli', 'cursor cli', 'cursor agent', 'cline', 'copilot cli', 'grok build', 'vscode', 'zed', 'code command', 'editor launcher', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Plan'
@@ -455,6 +456,7 @@
                 'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test'
+                'pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Test -LaunchersOnly -Json'
                 'pwsh -NoProfile -File .\scripts\Set-AiNixOsWslState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1'
                 'pwsh -NoProfile -File .\scripts\Test-WslTrustBoundary.ps1 -Json'
@@ -462,6 +464,8 @@
             StateCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-OpenCodeExtensionsState.ps1 -Mode Ensure'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module DeveloperEditor'
+                'pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Ensure -LaunchersOnly'
+                'sudo pwsh -NoProfile -File .\scripts\Set-DeveloperEditorState.ps1 -Mode Ensure -RepairMachinePath'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product "Antigravity CLI"'
                 'pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product "Cursor CLI"'

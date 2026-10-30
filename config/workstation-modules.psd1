@@ -400,7 +400,7 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'Stable VS Code, pinned Berg theme, developer extensions, and merge-preserved font settings.'
+            Description = 'Stable VS Code and Zed with command launchers, pinned Berg theme, developer extensions, and merge-preserved VS Code font settings.'
         }
         @{
             Name = 'OpenCodeExtensions'

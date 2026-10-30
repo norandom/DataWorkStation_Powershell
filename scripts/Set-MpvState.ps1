@@ -8,6 +8,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'MpvAssociations.ps1')
 $configuration = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\mpv.psd1')
 if ([int] $configuration.SchemaVersion -ne 1) { throw "Unsupported mpv state schema: $($configuration.SchemaVersion)" }
 $packageConfiguration = Join-Path $repositoryRoot ([string] $configuration.PackageConfiguration)
@@ -66,6 +67,7 @@ function Get-MpvState {
         $commandCompliant = (Test-Path -LiteralPath $commandPath -PathType Leaf) -and
             (Get-Content -LiteralPath $commandPath -Raw) -ceq $desiredCommand
     }
+    $associations = Get-MpvAssociationState -Policy $configuration.VideoAssociations -Executable $executable
     [pscustomobject][ordered]@{
         SchemaVersion = 1
         PackageId = [string] $configuration.PackageId
@@ -78,7 +80,8 @@ function Get-MpvState {
         ConfigurationCompliant = $configCompliant
         HardwareDecoder = [string] $configuration.RequiredHardwareDecoder
         HardwareDecoderAvailable = $hardwareDecoderAvailable
-        Compliant = $installed -and [bool] $executable -and $configCompliant -and $commandCompliant -and $hardwareDecoderAvailable
+        VideoAssociations = $associations
+        Compliant = $installed -and [bool] $executable -and $configCompliant -and $commandCompliant -and $hardwareDecoderAvailable -and $associations.RegistrationCompliant -and $associations.DefaultsCompliant
     }
 }
 
@@ -90,6 +93,12 @@ function Write-MpvState {
     Write-Host "  GPU decode: $($State.HardwareDecoder); available=$($State.HardwareDecoderAvailable)"
     Write-Host "  Config: $($State.UserConfiguration); compliant=$($State.ConfigurationCompliant)"
     Write-Host "  Command: $($State.CommandPath); compliant=$($State.CommandCompliant)"
+    Write-Host "  Video associations: registered=$($State.VideoAssociations.RegistrationCompliant); defaults=$($State.VideoAssociations.DefaultsCompliant)"
+    $pending = @($State.VideoAssociations.Extensions | Where-Object { -not $_.IsMpv })
+    if ($pending.Count) {
+        Write-Host "  Pending Windows defaults: $($pending.Extension -join ', ')"
+        Write-Host "  Select mpv in Windows Default Apps: $($State.VideoAssociations.SettingsUri)"
+    }
 }
 
 $state = Get-MpvState
@@ -125,6 +134,13 @@ if ($existingCommand -cne $desiredCommand -or $Mode -eq 'Reinitialize') {
     [IO.File]::WriteAllText($commandPath, $desiredCommand, [Text.ASCIIEncoding]::new())
 }
 
+Set-MpvAssociations -Policy $configuration.VideoAssociations -Executable $executable -BackupDirectory $backupDirectory
 $verified = Get-MpvState
-if (-not $verified.Compliant) { throw 'mpv package, GPU decoder, or managed configuration did not converge.' }
 Write-MpvState $verified
+if (-not $verified.Compliant) {
+    if (-not $verified.VideoAssociations.DefaultsCompliant) {
+        if (-not $Json) { Write-Warning 'Video registration is applied; Windows default-app selection is still required for the pending extensions.' }
+        exit 1
+    }
+    throw 'mpv package, GPU decoder, managed configuration, or video registration did not converge.'
+}

@@ -801,7 +801,7 @@ without installing anything:
 ```text
 PS> pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Test
 AI tools: drifted (opt-in)
-  OpenCode Desktop: absent; target=Windows; channel=GitHubRelease
+  OpenCode Desktop: absent; target=Windows; channel=OpenCodeRelease
   OpenCode CLI: absent; target=Windows; channel=NpmGlobal
   Claude Code: wrong-channel; target=Windows; channel=OfficialPowerShell
   Antigravity CLI: absent; target=Windows; channel=OfficialPowerShell

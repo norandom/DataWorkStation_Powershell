@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 4.10.0 - 2026-10-31
+
+- Update OpenCode Desktop and both Windows and NixOS-AI CLI declarations to 2.2.5, using the official v2 download service and `@opencode/cli` packages with refreshed integrity locks.
+- Check all three OpenCode version pins together and reconcile native CLI version drift, including migration from the former `opencode-ai` package.
+
 ## 4.9.0 - 2026-10-25
 
 - Make Contour's PowerShell, Windows PowerShell, and Command Prompt profiles start in the Windows user home even when new tabs inherit another working directory; blue-dark inherits the same PowerShell behavior.

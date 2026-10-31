@@ -68,6 +68,7 @@ function Get-NpmGlobalPackageRecord {
     $formerScoopPath = if ($Product.ContainsKey('FormerScoopPath')) { Resolve-AiToolPath $Product.FormerScoopPath } else { $null }
     $wrongChannel = [bool] ($formerScoopPath -and (Test-Path -LiteralPath $formerScoopPath -PathType Leaf))
     $expectedPathMatched = -not $expectedPath -or (Test-Path -LiteralPath $expectedPath -PathType Leaf)
+    $versionMatched = -not $Product.ContainsKey('Version') -or $version -eq [string] $Product.Version
     [pscustomobject]@{
         Name = $Product.Name
         Enabled = [bool] $Product.Enabled
@@ -79,8 +80,8 @@ function Get-NpmGlobalPackageRecord {
         Version = $version
         ObservedPath = if ($expectedPathMatched -and $expectedPath) { $expectedPath } elseif ($npm) { $npm.Source } else { $null }
         WrongChannel = $wrongChannel
-        Status = if ($wrongChannel) { 'wrong-channel' } elseif (-not $version) { 'absent' } elseif (-not $expectedPathMatched) { 'wrong-channel' } else { 'compliant' }
-        Action = if (-not $Product.Enabled -or ($version -and $expectedPathMatched -and -not $wrongChannel)) { 'none' } else { 'npm-global-install' }
+        Status = if ($wrongChannel) { 'wrong-channel' } elseif (-not $version) { 'absent' } elseif (-not $versionMatched) { 'version-drift' } elseif (-not $expectedPathMatched) { 'wrong-channel' } else { 'compliant' }
+        Action = if (-not $Product.Enabled -or ($version -and $versionMatched -and $expectedPathMatched -and -not $wrongChannel)) { 'none' } else { 'npm-global-install' }
         PrivilegeBoundary = 'Current Windows user global npm prefix; explicit Ensure only.'
     }
 }

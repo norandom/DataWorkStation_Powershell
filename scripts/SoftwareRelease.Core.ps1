@@ -24,7 +24,7 @@ function Resolve-PinnedSoftwareReleaseAsset {
     )
 
     $definition = Get-PinnedSoftwareReleaseDefinition -Name $Name -CatalogPath $CatalogPath
-    if ([string] $definition.Provider -ne 'GitHubRelease') { throw "Release URI generation is unsupported for provider '$($definition.Provider)'." }
+    if ([string] $definition.Provider -notin @('GitHubRelease', 'OpenCodeRelease')) { throw "Release URI generation is unsupported for provider '$($definition.Provider)'." }
     if ([string]::IsNullOrWhiteSpace([string] $definition.TagTemplate)) { throw "Release '$Name' has no deterministic tag template." }
     $templates = @($definition.AssetNameTemplates | Where-Object { -not [string]::IsNullOrWhiteSpace([string] $_) })
     if ($AssetIndex -lt 0 -or $AssetIndex -ge $templates.Count) { throw "Release '$Name' has no deterministic asset template at index $AssetIndex." }
@@ -36,6 +36,10 @@ function Resolve-PinnedSoftwareReleaseAsset {
         Version = $Version
         Tag = $tag
         AssetName = $assetName
-        Uri = "https://github.com/$($definition.Repository)/releases/download/$([Uri]::EscapeDataString($tag))/$([Uri]::EscapeDataString($assetName))"
+        Uri = if ($definition.Provider -eq 'OpenCodeRelease') {
+            "https://opencode.ai/files/bin/$([Uri]::EscapeDataString($Version))/$([Uri]::EscapeDataString($assetName))"
+        } else {
+            "https://github.com/$($definition.Repository)/releases/download/$([Uri]::EscapeDataString($tag))/$([Uri]::EscapeDataString($assetName))"
+        }
     }
 }

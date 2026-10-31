@@ -162,10 +162,15 @@ function Test-PinnedSoftwareContract {
     . (Join-Path $repositoryRoot 'scripts\SoftwareRelease.Core.ps1')
     $contourAsset = Resolve-PinnedSoftwareReleaseAsset -Name 'Contour' -Version '9.8.7.6'
     Assert-True ($contourAsset.Uri -eq 'https://github.com/contour-terminal/contour/releases/download/v9.8.7.6/contour-9.8.7.6-win64.msi') 'changing one version value produces the matching Contour tag, asset, and URI'
+    $openCodeAsset = Resolve-PinnedSoftwareReleaseAsset -Name 'OpenCode' -Version '2.2.5'
+    Assert-True ($openCodeAsset.Uri -eq 'https://opencode.ai/files/bin/2.2.5/opencode-desktop-win-x64.exe') 'OpenCode v2 resolves through the official versioned download service'
 
     $fetcher = {
         param($Definition, $CurrentVersion)
-        $latestVersion = if ($Definition.Name -eq 'Contour') { '0.8.0.9000' } else { [string] $CurrentVersion }
+        $latestVersion = if ($Definition.Name -eq 'Contour') {
+            $current = [version] $CurrentVersion
+            [version]::new($current.Major, $current.Minor, $current.Build, [Math]::Max(0, $current.Revision) + 1).ToString()
+        } else { [string] $CurrentVersion }
         $tag = switch ([string] $Definition.Name) {
             'Autopsy' { "autopsy-$latestVersion" }
             'NixOS-WSL' { $latestVersion }
@@ -197,7 +202,7 @@ function Test-PinnedSoftwareContract {
     Assert-True ($detected.Succeeded) 'synthetic pinned release detection succeeds'
     Assert-True ($detected.UpdatesAvailable -eq 1) 'synthetic detector reports one newer release'
     Assert-True (($detected.Releases | Where-Object Name -eq 'Contour').Status -eq 'update-available') 'newer Contour release is reported without adoption'
-    Assert-True (@(($detected.Releases | Where-Object Name -eq 'OpenCode').Locations).Count -eq 2) 'duplicated OpenCode pins are checked together'
+    Assert-True (@(($detected.Releases | Where-Object Name -eq 'OpenCode').Locations).Count -eq 3) 'desktop and both CLI OpenCode pins are checked together'
     Assert-True (@($detected.Releases | Where-Object Status -eq 'inconsistent-pin').Count -eq 0) 'current duplicated version strings agree'
 
     $updateScript = Join-Path $repositoryRoot 'scripts\Invoke-WorkstationUpdate.ps1'

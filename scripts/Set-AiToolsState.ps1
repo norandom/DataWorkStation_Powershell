@@ -217,7 +217,13 @@ foreach ($item in @($selectedConfiguration.Products | Where-Object Enabled)) {
             Invoke-OfficialBashInstaller $item.InstallCommand
         }
         'NpmGlobal' {
-            & npm.cmd install --global $item.NpmPackage
+            if ($item.ContainsKey('FormerNpmPackage')) {
+                Write-Host "Removing former npm package $($item.FormerNpmPackage) before publishing the replacement command."
+                & npm.cmd uninstall --global $item.FormerNpmPackage
+                if ($LASTEXITCODE -ne 0) { throw "npm failed to remove $($item.FormerNpmPackage)." }
+            }
+            $package = if ($item.ContainsKey('Version')) { "$($item.NpmPackage)@$($item.Version)" } else { $item.NpmPackage }
+            & npm.cmd install --global $package
             if ($LASTEXITCODE -ne 0) { throw "npm failed to install $($item.NpmPackage)." }
         }
         'Scoop' {
@@ -226,7 +232,7 @@ foreach ($item in @($selectedConfiguration.Products | Where-Object Enabled)) {
             & $scoop.Source $verb $item.ScoopPackage
             if ($LASTEXITCODE -ne 0) { throw "Scoop failed to $verb $($item.ScoopPackage)." }
         }
-        'GitHubRelease' {
+        'OpenCodeRelease' {
             if (-not $record.Installed -or $record.Status -in @('version-drift', 'shortcut-missing', 'wrong-channel')) { Install-OpenCodeDesktop $item }
         }
         default { throw "Unsupported AI tool channel: $($item.Channel)" }

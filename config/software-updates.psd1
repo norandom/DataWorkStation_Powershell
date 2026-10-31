@@ -31,12 +31,14 @@
             )
         }
         @{
-            Name = 'OpenCode'; Provider = 'GitHubRelease'; Repository = 'anomalyco/opencode'
+            Name = 'OpenCode'; Provider = 'OpenCodeRelease'; Repository = 'anomalyco/opencode'
+            Review = 'version-and-npm-integrity-review'
             TagTemplate = 'v{version}'
             TagPattern = '^v(?<version>\d+\.\d+\.\d+)$'
-            AssetNameTemplates = @('opencode-desktop-win-x64.exe', 'opencode-linux-x64.tar.gz')
+            AssetNameTemplates = @('opencode-desktop-win-x64.exe')
             Locations = @(
                 @{ ConfigPath = 'config\ai-tools.psd1'; CollectionPath = 'Products'; MatchProperty = 'Name'; MatchValue = 'OpenCode Desktop'; VersionPath = 'Version'; IntegrityPath = 'Sha256' }
+                @{ ConfigPath = 'config\ai-tools.psd1'; CollectionPath = 'Products'; MatchProperty = 'Name'; MatchValue = 'OpenCode CLI'; VersionPath = 'Version' }
                 @{ ConfigPath = 'config\ai-nixos-wsl.psd1'; VersionPath = 'OpenCode.Version'; IntegrityPath = 'OpenCode.Sha256' }
             )
         }

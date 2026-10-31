@@ -75,14 +75,37 @@ function Test-OutputParity {
 }
 
 function Test-OpenCodeTargets {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidOverwritingBuiltInCmdlets', '', Justification = 'Test-local mock prevents npm execution and is discarded when this test returns.')]
+    param()
     $config = Get-RequiredData 'config/ai-tools.psd1'
     $desktop = @($config.Products | Where-Object Name -eq 'OpenCode Desktop')[0]
-    Assert-True ($desktop.Target -eq 'Windows' -and $desktop.Channel -eq 'GitHubRelease' -and $desktop.InstallerMode -eq 'ExtractedRelease') 'OpenCode Desktop uses the verified official Windows release payload without Scoop'
+    Assert-True ($desktop.Target -eq 'Windows' -and $desktop.Channel -eq 'OpenCodeRelease' -and $desktop.InstallerMode -eq 'ExtractedRelease') 'OpenCode Desktop uses the verified official v2 Windows release payload without Scoop'
     $windowsCli = @($config.Products | Where-Object Name -eq 'OpenCode CLI')[0]
-    Assert-True ($windowsCli.Target -eq 'Windows' -and $windowsCli.Channel -eq 'NpmGlobal' -and $windowsCli.NpmPackage -eq 'opencode-ai') 'OpenCode CLI is available natively through the official npm package'
+    Assert-True ($windowsCli.Target -eq 'Windows' -and $windowsCli.Channel -eq 'NpmGlobal' -and $windowsCli.NpmPackage -eq '@opencode/cli') 'OpenCode CLI is available natively through the official v2 npm package'
     Assert-True ($desktop.FormerScoopPackage -eq 'opencode-desktop' -and $windowsCli.FormerScoopPackage -eq 'opencode') 'former Scoop packages are declared for post-install migration'
     $ai = Get-RequiredData 'config/ai-nixos-wsl.psd1'
+    Assert-True ($desktop.Version -match '^2\.' -and $windowsCli.Version -eq $desktop.Version -and $ai.OpenCode.Version -eq $desktop.Version) 'all OpenCode declarations select the same v2 release'
+    $nix = Get-RequiredText 'nixos-ai/configuration.nix'
+    Assert-True ($nix.Contains('version = "' + $ai.OpenCode.Version + '"') -and $nix.Contains($ai.OpenCode.Uri)) 'the Nix derivation matches the declared CLI version and archive'
+    $sri = 'sha256-' + [Convert]::ToBase64String([byte[]] @(for ($index = 0; $index -lt 64; $index += 2) { [Convert]::ToByte($ai.OpenCode.Sha256.Substring($index, 2), 16) }))
+    Assert-True ($nix.Contains($sri) -and $nix.Contains('install -m 0555 package/bin/opencode')) 'Nix uses the same integrity lock and the npm archive binary layout'
     Assert-True ($ai.RequiredCommands -contains 'opencode' -and $ai.DistributionVariable -eq 'WSL_AI_DISTRIBUTION') 'OpenCode CLI remains available in the restricted AI WSL'
+    . (Join-Path $repositoryRoot 'scripts/AiTools.Core.ps1')
+    $fixture = $windowsCli.Clone()
+    $fixture.Remove('FormerScoopPath')
+    $fixture.ExpectedPath = $PSCommandPath
+    function Get-Command {
+        [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseSingularNouns', '', Justification = 'Mocks the built-in command lookup within this test only.')]
+        param([Parameter(ValueFromRemainingArguments = $true)][object[]] $Arguments)
+        $null = $Arguments
+        [pscustomobject]@{ Source = { '{"dependencies":{"@opencode/cli":{"version":"' + $script:openCodeNpmFixture + '"}}}' } }
+    }
+    $script:openCodeNpmFixture = '2.2.4'
+    $old = Get-NpmGlobalPackageRecord $fixture
+    Assert-True ($old.Status -eq 'version-drift' -and $old.Action -eq 'npm-global-install') 'an installed older v2 CLI is reconciled to the declared version'
+    $script:openCodeNpmFixture = $windowsCli.Version
+    $current = Get-NpmGlobalPackageRecord $fixture
+    Assert-True ($current.Status -eq 'compliant' -and $current.Action -eq 'none') 'the declared npm CLI version needs no installation'
 }
 
 function Test-FocusedProductSelection {

@@ -3,17 +3,17 @@
 let
   opencode = pkgs.stdenvNoCC.mkDerivation {
     pname = "opencode";
-    version = "1.18.19";
+    version = "2.2.5";
     src = pkgs.fetchurl {
-      url = "https://github.com/anomalyco/opencode/releases/download/v1.18.19/opencode-linux-x64.tar.gz";
-      hash = "sha256-e7NUh8VfmVf12RrmC+b6SfyPdGKcIQwXGe11/b9+K9k=";
+      url = "https://registry.npmjs.org/@opencode/cli-linux-x64/-/cli-linux-x64-2.2.5.tgz";
+      hash = "sha256-kmkO7gemgNPLdgygK6Q4eN6eqxtOXV366HlVGMU2KPQ=";
     };
     dontUnpack = true;
     nativeBuildInputs = [ pkgs.gnutar pkgs.gzip ];
     installPhase = ''
       mkdir -p "$out/bin"
       tar -xzf "$src"
-      install -m 0555 opencode "$out/bin/opencode"
+      install -m 0555 package/bin/opencode "$out/bin/opencode"
     '';
   };
 

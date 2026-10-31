@@ -56,6 +56,19 @@ function Get-GitHubRelease {
     param([hashtable] $Definition, [string] $CurrentVersion)
 
     if ($ReleaseFetcher) { return & $ReleaseFetcher $Definition $CurrentVersion }
+    if ($Definition.Provider -eq 'OpenCodeRelease') {
+        $metadata = Invoke-RestMethod -Uri 'https://opencode.ai/update/api/latest/desktop' -Method Get
+        $artifacts = @($metadata.artifacts | Where-Object { $_.distribution -eq 'opencode' -and $_.active })
+        if ($artifacts.Count -ne 1) { throw 'Expected one active official OpenCode desktop release.' }
+        $artifact = $artifacts[0]
+        $assets = foreach ($file in $artifact.metadata.files.PSObject.Properties) {
+            [pscustomobject]@{
+                name = $file.Name; browser_download_url = $file.Value.url
+                size = $file.Value.size; digest = 'sha256:' + $file.Value.sha256
+            }
+        }
+        return [pscustomobject]@{ tag_name = "v$($artifact.version)"; html_url = 'https://opencode.ai/download'; assets = @($assets) }
+    }
     if ([string] $Definition.Repository -notmatch '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$') {
         throw "Invalid GitHub repository '$($Definition.Repository)'."
     }
@@ -139,7 +152,7 @@ $releaseResults = foreach ($definition in @($catalog.Releases)) {
             continue
         }
         $currentVersion = [string] $versions[0]
-        if ([string] $definition.Provider -ne 'GitHubRelease') { throw "Unsupported release provider '$($definition.Provider)'." }
+        if ([string] $definition.Provider -notin @('GitHubRelease', 'OpenCodeRelease')) { throw "Unsupported release provider '$($definition.Provider)'." }
         $release = Get-GitHubRelease -Definition $definition -CurrentVersion $currentVersion
         $tag = [string] $release.tag_name
         if ($tag -notmatch [string] $definition.TagPattern -or -not $Matches.version) {

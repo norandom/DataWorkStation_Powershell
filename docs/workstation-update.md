@@ -35,10 +35,11 @@ update -Check
 update -Check -Json
 ```
 
-Unlike the static plan, `-Check` makes read-only HTTPS requests to the official GitHub Releases API.
+Unlike the static plan, `-Check` makes read-only HTTPS requests to the official GitHub Releases API
+and the OpenCode 2 desktop metadata service at `opencode.ai/update/api/latest/desktop`.
 It reads current versions directly from their owning configuration files through
 `config/software-updates.psd1`, so the update catalog does not contain a second copy of a version.
-It currently covers the GitHub-backed Contour, Autopsy, NixOS-WSL, OpenCode, CodeQL, capa, Ghidra,
+It currently covers Contour, Autopsy, NixOS-WSL, OpenCode, CodeQL, capa, Ghidra,
 malware_hashes, Quarto, Sleuth Kit, Spec Kit EARS/TDD, and Fira Code releases. Repeated declarations
 such as OpenCode and NixOS-WSL are grouped and reported as `inconsistent-pin` when they disagree.
 
@@ -52,6 +53,10 @@ exclusive.
 For deterministic GitHub layouts, installers call `Resolve-PinnedSoftwareReleaseAsset` from
 `scripts/SoftwareRelease.Core.ps1`. The catalog owns the repository, tag template, and asset-name
 template, while the owning package configuration keeps the current version and integrity lock.
+OpenCode Desktop resolves its pinned version through `opencode.ai/files/bin`; its GitHub Releases
+feed still tracks 1.x. The detector checks the desktop and both CLI version pins together. The
+Linux CLI npm archive URL and SHA-256 must also match `nixos-ai/configuration.nix`.
+
 This removes version copies from download URLs for Contour, NixOS-WSL, OpenCode Desktop, CodeQL,
 capa, malware_hashes, Quarto, and Fira Code. Assets whose names or packaging are not predictable,
 such as dated Ghidra archives or the current Spec Kit migration, remain explicit review cases.

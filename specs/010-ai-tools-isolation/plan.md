@@ -128,7 +128,7 @@ declarations own immutable guest boundary files; PSD1 files own reviewed channel
    user. Cline and Copilot CLI use their official npm packages. No WinGet Claude declaration
    remains.
 3. OpenCode Desktop is a pinned signed official Windows release installer; the ordinary Windows CLI
-   uses the official `opencode-ai` npm package, while a separate root-owned pinned release remains
+   uses the pinned official OpenCode 2 `@opencode/cli` npm package, while a separate root-owned pinned release remains
    available inside the AI NixOS distribution.
 4. Berg uses the exact `teehausamberg.berg@0.0.4` VS Code extension whose manifest identifies
    `jx22/berg`; compliance also verifies its contributed `Berg Theme` JSON against the pinned

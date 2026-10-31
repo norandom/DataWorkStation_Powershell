@@ -43,9 +43,9 @@ TUI after reconciliation so it loads the selected theme and plugin.
 
 | Product | Location | Declared channel |
 |---|---|---|
-| OpenCode Desktop | Windows | signed official release payload with pinned SHA-256, extracted to the standard per-user Programs path |
-| OpenCode CLI | Windows | official global npm package `opencode-ai` |
-| OpenCode CLI (sandboxed) | `NixOS-AI` | pinned Nix derivation in the complete verified Nix store |
+| OpenCode Desktop | Windows | signed official OpenCode 2.2.5 payload from `opencode.ai/files/bin`, with pinned SHA-256, extracted to the standard per-user Programs path |
+| OpenCode CLI | Windows | official global npm package `@opencode/cli@2.2.5` |
+| OpenCode CLI (sandboxed) | `NixOS-AI` | pinned 2.2.5 Nix derivation from the official `@opencode/cli-linux-x64` npm archive in the complete verified Nix store |
 | Claude Code | Windows | `irm https://claude.ai/install.ps1 \| iex` |
 | Antigravity CLI (`agy`) | Windows | `irm https://antigravity.google/cli/install.ps1 \| iex` |
 | Cursor CLI (`cursor-cli`) | Windows | `irm 'https://cursor.com/install?win32=true' \| iex`; vendor `agent` aliases are removed |
@@ -91,6 +91,11 @@ Install only the two native Windows OpenCode products as the current user:
 ```powershell
 pwsh -NoProfile -File .\scripts\Set-AiToolsState.ps1 -Mode Ensure -Product OpenCode
 ```
+
+The focused Ensure removes the former `opencode-ai` npm package before installing the pinned
+`@opencode/cli` replacement, because both publish the `opencode` command. Desktop and CLI versions
+are checked against the declarations. The GitHub Releases feed and `opencode-ai` remain on 1.x;
+OpenCode 2 desktop update checks use the official `opencode.ai` metadata service.
 
 The focused Ensure installs the replacements first, then removes any former Scoop OpenCode Desktop
 and CLI packages. Both silent and interactive execution of the Desktop installer faulted on this

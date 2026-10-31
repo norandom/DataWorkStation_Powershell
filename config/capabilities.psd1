@@ -442,7 +442,7 @@
             Id = 'ai-tools-isolation'
             FeatureSpec = 'specs/010-ai-tools-isolation'
             Modules = @('AiTools', 'AiNixOsWsl', 'OpenCodeExtensions', 'DeveloperEditor')
-            Title = 'AI tools, OpenCode extensions, developer editor, and restricted WSL trust boundaries'
+            Title = 'AI tools, OpenCode 2 and extensions, developer editor, and restricted WSL trust boundaries'
             Triggers = @('opencode', 'opencode theme', 'cream blue', 'cobalt', 'openultracode', 'claude code', 'antigravity cli', 'cursor cli', 'cursor agent', 'cline', 'copilot cli', 'grok build', 'vscode', 'zed', 'code command', 'editor launcher', 'berg theme', 'ai sandbox', 'nono', 'wsl isolation', 'devops keys', 'malware case staging')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(

@@ -8,6 +8,15 @@
     InstallDirectory = '%LOCALAPPDATA%\Microsoft\Windows\Fonts'
     RegistryPath = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
     BackupDirectory = 'state\font-backups'
+    DirectFonts = @(
+        @{
+            Name = 'Fixedsys Excelsior ALT'
+            Version = '3.09.10'
+            FileName = 'FSEX302-alt.ttf'
+            RegistryName = 'Fixedsys Excelsior (TrueType)'
+            Sha256 = '21b801fe4179dc884a9836d1fbd570ce83249d77204a0a017fbae14aa2dea132'
+        }
+    )
     Fonts = @(
         @{ FileName = 'FiraCode-Bold.ttf'; RegistryName = 'Fira Code Bold (TrueType)'; Sha256 = '41f6554e845e2f5b70adad3950122334b866aac436793b7742ade600067701be' }
         @{ FileName = 'FiraCode-Light.ttf'; RegistryName = 'Fira Code Light (TrueType)'; Sha256 = 'c146c9a7a61914f9f5a47d24c199c50c8f143f5710b93efd3a3953af50816443' }

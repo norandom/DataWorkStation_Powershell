@@ -204,7 +204,7 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false
-            Description = 'Hash-pinned per-user Fira Code font installation.'
+            Description = 'Hash-pinned per-user Fira Code and Fixedsys Excelsior ALT font installation.'
         }
         @{
             Name = 'ContourTerminal'

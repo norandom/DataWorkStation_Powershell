@@ -89,6 +89,7 @@ Use `update -Target ArtCraft -Run` for the installed Craft suite; see
 | Command | Purpose |
 |---|---|
 | `workstation-config [-Json]` | Read the validated ignored `config.json` containing local fonts, WSL selectors, paths, exclusions, and retention. |
+| `compact-wsl Debian [-WhatIf]` | Trim and compact one WSL 2 distribution through Windows sudo; stops its sessions/containers and leaves it stopped. `-WhatIf` previews without starting WSL or elevating. |
 | `cleanup-windows` | Plan the allowlisted elevated Windows cleanup without changing state. |
 | `cleanup-windows -Run -ConfirmRestorePoints` | Run component/update cleanup and delete old C: shadow copies while keeping the newest one. |
 | `cleanup-traces [-RetentionDays N]` | Plan expired inactive items under the configured trace root. |
@@ -278,6 +279,7 @@ GitHub CLI is managed separately from GitHub Desktop through the official WinGet
 
 | Command | Purpose |
 |---|---|
+| `gdu [ARG...]` | Browse disk usage with the native Windows gdu package. Use `gdu --no-delete C:\` to disable deletion while inspecting C:. |
 | `btop` / `top` | btop4win with its process pane sorted by RAM. |
 | `memtop` | Run btop4win elevated so it can see more system-process data. |
 | `memmap` | Open Sysinternals RAMMap for kernel, driver, cache, and standby memory. |

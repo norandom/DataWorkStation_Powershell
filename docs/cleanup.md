@@ -1,6 +1,6 @@
 # Disk and trace cleanup
 
-Cleanup is plan-first. The default commands inspect only; deletion requires `-Run`, and recovery
+Windows and trace cleanup are plan-first. Their default commands inspect only; deletion requires `-Run`, and recovery
 state has an additional confirmation switch.
 
 ## Local configuration
@@ -21,6 +21,65 @@ they are credentials rather than workstation routing settings.
 This workstation uses `E:\Traces` for new CPU profiles, ETL, packet captures, development event-log
 sessions, dumps, and TTD output. Event-log archives remain separate under `E:\Logs`, so trace cleanup
 cannot remove them.
+
+## WSL disk compaction
+
+Preview or compact a named distribution (names are case-insensitive):
+
+```powershell
+compact-wsl Debian -WhatIf
+compact-wsl Debian
+compact-wsl Debian-MW
+```
+
+The standalone equivalent is `pwsh -NoProfile -File .\scripts\Invoke-WslCompaction.ps1 -Distribution Debian`.
+The command resolves the current user's registered WSL 2 disk, requests administrator rights through
+Windows sudo, runs `fstrim /` as Linux root and `sync`, terminates only the selected distribution,
+then uses `Optimize-VHD -Mode Full` after verifying the disk has detached. If WSL retains the disk
+and no distributions are running, it shuts down the idle WSL VM to release it. It reports before/after
+file sizes and reclaimed GiB. A stopped distribution starts briefly for trim, which can start its
+normal services. Sessions and containers in that distribution stop; the distribution remains stopped
+afterward. Close its work before running the command, and do not start it again during compaction.
+
+`-WhatIf` resolves the target without starting WSL, elevating, or changing the disk. Unknown names,
+WSL 1, sparse disks, missing Hyper-V tools, trim failures, and disks that remain attached fail without
+attempting compaction. It does not delete Linux files, change virtual capacity, modify sparse policy,
+or stop other distributions. Space recovered depends on the free blocks available inside Linux.
+
+## Developer caches and temporary builds
+
+Inspect or configure Windows developer storage explicitly:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-DeveloperStorage.ps1 -Mode Test -Root D:\BuildArtifacts
+pwsh -NoProfile -File .\scripts\Set-DeveloperStorage.ps1 -Mode Ensure -Root D:\BuildArtifacts -MigrateCaches
+```
+
+The resource migrates uv, npm, Cargo home, pip, Bun, Go, NuGet, Playwright and Deno caches and the default pnpm store,
+keeping compatibility junctions at the original locations. It sets current-user environment variables
+for those tools and Cargo build output, sets the public debugger symbol cache, and configures pnpm's global store directory. Existing
+project `target` directories are not migrated. `PowerShellProfile` uses the configured
+`DEVELOPER_TEMP` directory for `TEMP` and `TMP` in developer shells and child processes.
+Developer jobs must run from their repository and use tool/project subdirectories beneath the
+artifact root for disposable output. The repository's `AGENTS.md` forbids generated directories at
+drive roots. These defaults and instructions do not sandbox unrelated programs or other repositories;
+they do not change filesystem ACLs. Pass an explicit build/output directory when a tool does not
+honor its cache or temporary-directory settings.
+Reopen terminals and development applications after configuration. Kondo handles project build
+directories; use package-manager commands such as `uv cache prune` for shared caches.
+
+WSL distributions can be moved while stopped with `wsl --manage Debian --move D:\Debian`.
+Use a new destination directory and keep the registered distribution name. `compact-wsl` resolves
+the registered path, so it continues to work after relocation.
+
+## Protect drive roots
+
+Inspect root-only write grants with `pwsh -NoProfile -File .\scripts\Set-DriveRootWriteAccess.ps1 -Mode Test`.
+Apply explicitly with `sudo pwsh -NoProfile -File .\scripts\Set-DriveRootWriteAccess.ps1 -Mode Ensure -BackupPath D:\BuildArtifacts\acl-backups\drive-roots.json`.
+This removes broad root-only write grants from C: and D:, preserving inherited subdirectory rights,
+SYSTEM and administrator access. Normal users cannot create new root entries; elevated administrators
+can still maintain the drive. Restore the saved DACLs with the same command using `-Mode Restore`
+and the exact backup path. No recursive permission reset or deny ACE is applied.
 
 ## Windows cleanup
 

@@ -1,5 +1,18 @@
 # Shell behavior: readline editing, completion, prompt, and native command precedence.
 
+# Developer shells and their children use the explicitly configured artifact volume.
+foreach ($developerVariable in @('DEVELOPER_STORAGE_ROOT', 'UV_CACHE_DIR', 'npm_config_cache', 'CARGO_HOME', 'CARGO_TARGET_DIR', 'PIP_CACHE_DIR', 'BUN_INSTALL_CACHE_DIR', 'DEVELOPER_TEMP', 'GOCACHE', 'GOMODCACHE', 'NUGET_PACKAGES', 'PLAYWRIGHT_BROWSERS_PATH', 'DENO_DIR', '_NT_SYMBOL_PATH')) {
+    $developerValue = [Environment]::GetEnvironmentVariable($developerVariable, 'User')
+    if ($developerValue) { [Environment]::SetEnvironmentVariable($developerVariable, $developerValue, 'Process') }
+}
+$developerTemp = [Environment]::GetEnvironmentVariable('DEVELOPER_TEMP', 'User')
+if ($developerTemp -and (Test-Path -LiteralPath $developerTemp -PathType Container)) {
+    $env:TEMP = $developerTemp
+    $env:TMP = $developerTemp
+    $env:TMPDIR = $developerTemp
+}
+Remove-Variable developerTemp, developerVariable, developerValue -ErrorAction Ignore
+
 # These user-tool and WPT directories are managed profile dependencies.
 # Add an entry only when the directory exists and PATH does not already contain it.
 $managedToolPaths = @(

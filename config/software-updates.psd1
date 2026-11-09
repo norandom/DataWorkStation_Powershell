@@ -2,6 +2,15 @@
     SchemaVersion = 1
     Releases = @(
         @{
+            Name = 'Fixedsys Excelsior ALT'; Provider = 'GitHubRelease'; Repository = 'kika/fixedsys'
+            TagTemplate = 'v{version}'
+            TagPattern = '^v(?<version>\d+\.\d+\.\d+)$'
+            AssetNameTemplates = @('FSEX302-alt.ttf')
+            Locations = @(
+                @{ ConfigPath = 'config\terminal-fonts.psd1'; CollectionPath = 'DirectFonts'; MatchProperty = 'Name'; MatchValue = 'Fixedsys Excelsior ALT'; VersionPath = 'Version'; IntegrityPath = 'Sha256' }
+            )
+        }
+        @{
             Name = 'Contour'; Provider = 'GitHubRelease'; Repository = 'contour-terminal/contour'
             TagTemplate = 'v{version}'
             TagPattern = '^v(?<version>\d+\.\d+\.\d+\.\d+)$'

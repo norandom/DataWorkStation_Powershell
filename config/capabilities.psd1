@@ -342,7 +342,7 @@
         @{
             Id = 'workstation-modules'
             Title = 'Focused desired-state modules, mpv video associations and dependency order'
-            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'artcraft', 'pdfcraft', 'craft batch update', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'video associations', 'default video player', 'mp4', 'avi', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher', 'process lasso', 'processlasso')
+            Triggers = @('module', 'run one module', 'dependency order', 'partial desired state', 'focused ensure', 'skip module', 'update workstation', 'artcraft', 'pdfcraft', 'craft batch update', 'upgrade packages', 'check pinned updates', 'latest release', 'windows update', 'update wsl', 'update homebrew', 'update docker', 'disk cleanup', 'restore points', 'trace cleanup', 'free disk space', 'pnpm', 'javascript build', 'mpv', 'video associations', 'default video player', 'mp4', 'avi', 'gpu video', 'hardware video decode', 'radeon media playback', 'audio switcher', 'audio device', 'sound device', 'audioswitcher', 'process lasso', 'processlasso', 'wiztree', 'gdu', 'ncdu', 'disk usage', 'kondo', 'build artifact cleanup', 'compact-wsl', 'wsl compaction', 'shrink vhdx')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 '.\Apply-Workstation.ps1 -Mode Test -Plan'
@@ -351,6 +351,9 @@
                 'update -Check'
                 'pwsh -NoProfile -File .\scripts\Update-ArtCraft.ps1 -Json'
                 'update -Json'
+                'pwsh -NoProfile -File .\scripts\Set-DeveloperStorage.ps1 -Mode Test -Root D:\BuildArtifacts'
+                'pwsh -NoProfile -File .\scripts\Set-DriveRootWriteAccess.ps1 -Mode Test'
+                'compact-wsl Debian -WhatIf'
                 'cleanup-windows'
                 'cleanup-windows -Json'
                 'cleanup-traces'
@@ -358,6 +361,10 @@
                 'workstation-config'
                 '.\Apply-Workstation.ps1 -Mode Test -Module Packages -Plan'
                 'pnpm --version'
+                'kondo --help'
+                'kondo --dry-run <project-directory>'
+                'gdu --version'
+                'gdu --no-delete C:\'
                 'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-MpvState.ps1 -Mode Test -Json'
                 '.\Apply-Workstation.ps1 -Mode Test -Module Mpv -Plan'
@@ -366,7 +373,7 @@
                 'pwsh -NoProfile -File .\scripts\Set-ProcessLassoState.ps1 -Mode Test -Json'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso -Plan'
             )
-            StateCommands = @('update -Run', 'update -Target <name> -Run', 'update -Target ArtCraft -Run', 'sudo pwsh -NoProfile -File .\scripts\Update-ArtCraft.ps1 -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv', '.\Apply-Workstation.ps1 -Mode Ensure -Module AudioSwitcher', '.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso')
+            StateCommands = @('sudo pwsh -NoProfile -File .\scripts\Set-DriveRootWriteAccess.ps1 -Mode Ensure -BackupPath <backup.json>', 'pwsh -NoProfile -File .\scripts\Set-DeveloperStorage.ps1 -Mode Ensure -Root D:\BuildArtifacts -MigrateCaches', 'compact-wsl <distribution>', 'update -Run', 'update -Target <name> -Run', 'update -Target ArtCraft -Run', 'sudo pwsh -NoProfile -File .\scripts\Update-ArtCraft.ps1 -Run', 'cleanup-windows -Run -ConfirmRestorePoints', 'cleanup-traces -Run -ConfirmCleanup', '.\Apply-Workstation.ps1 -Mode Ensure -Module Packages', '.\Apply-Workstation.ps1 -Mode Ensure -Module Mpv', '.\Apply-Workstation.ps1 -Mode Ensure -Module AudioSwitcher', '.\Apply-Workstation.ps1 -Mode Ensure -Module ProcessLasso')
             CaptureCommand = 'tricky add {case} <module-plan.json>'
         }
         @{
@@ -522,7 +529,7 @@
         @{
             Id = 'terminal-fonts'
             Title = 'Managed terminal fonts'
-            Triggers = @('terminal font', 'fira code', 'font dependency', 'terminal-fonts')
+            Triggers = @('terminal font', 'fira code', 'fixedsys', 'fixedsys excelsior', 'font dependency', 'terminal-fonts')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-TerminalFontState.ps1 -Mode Test'

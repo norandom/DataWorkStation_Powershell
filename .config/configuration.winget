@@ -52,6 +52,24 @@ resources:
       id: 9P7KNL5RWT25
       source: msstore
       useLatest: true
+  - name: WizTree
+    type: Microsoft.WinGet/Package
+    properties:
+      id: AntibodySoftware.WizTree
+      source: winget
+      useLatest: true
+  - name: gdu
+    type: Microsoft.WinGet/Package
+    properties:
+      id: dundee.gdu
+      source: winget
+      useLatest: true
+  - name: Kondo
+    type: Microsoft.WinGet/Package
+    properties:
+      id: tbillington.kondo
+      source: winget
+      useLatest: true
   - name: btop4win
     type: Microsoft.WinGet/Package
     properties:

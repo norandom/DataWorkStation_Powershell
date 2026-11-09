@@ -117,7 +117,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/shared-ssh.psd1` | Canonical Windows SSH config and trusted WSL link boundaries; Debian-MW is excluded. |
 | `config/scoop.psd1` | Official per-user Scoop source and Main/Extras bucket state. |
 | `config/contour-terminal.psd1` | Contour package, config, Desktop shortcut, backup, and BlueTerm source paths. |
-| `config/terminal-fonts.psd1` | Pinned official Fira Code archive, per-font hashes, and per-user installation paths. |
+| `config/terminal-fonts.psd1` | Pinned Fira Code and Fixedsys Excelsior ALT releases, per-font hashes, and per-user installation paths. |
 | `config/contour.yml` | Managed Contour configuration translated from BlueTerm. |
 | `config/windows-features.psd1` | Declarative Hyper-V and Windows Sandbox optional-feature state. |
 | `config/workstation-modules.psd1` | Module catalog, default selection, dependencies, and execution order. |
@@ -202,7 +202,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Invoke-MalwareContainerAnalysis.ps1` | Plans or explicitly runs non-executing Office/PDF/binary parsing. |
 | `scripts/Read-MalwareEvidence.ps1` | Delegates hostile result validation and canonicalization to a bounded Python boundary. |
 | `scripts/Set-ContourTerminalState.ps1` | Installs the hash-pinned official Contour MSI, deploys the BlueTerm theme, and gates success on a bounded graphics smoke test. |
-| `scripts/Set-TerminalFontState.ps1` | Installs and verifies Fira Code per-user from the hash-pinned official release. |
+| `scripts/Set-TerminalFontState.ps1` | Installs and verifies Fira Code and Fixedsys Excelsior ALT per-user from hash-pinned releases. |
 | `scripts/Test-RepositorySkills.ps1` | Validates all repo-local skill packages locally and in CI. |
 | `scripts/Invoke-PowerShellLint.ps1` | Runs the pinned PSScriptAnalyzer policy on staged paths or the full tracked tree. |
 | `scripts/Install-PreCommitHook.ps1` | Installs the isolated pre-commit CLI, pinned analyzer module, and local Git hook. |
@@ -342,7 +342,7 @@ free. The task stages files under ProgramData on C:, runs from an administrator-
 the exporter, and uses the SYSTEM account.
 
 The package set includes PowerShell 7, Windows Terminal, Go, mpv, Microsoft Coreutils, ripgrep, rclone,
-WinFsp, aria2, WinDbg, Sysinternals Suite, btop4win, uv, the .NET 10 SDK, Node.js LTS, pnpm, Git, GitHub CLI
+WinFsp, aria2, WinDbg, Sysinternals Suite, WizTree, gdu, Kondo, btop4win, uv, the .NET 10 SDK, Node.js LTS, pnpm, Git, GitHub CLI
 (`gh`), Tailscale, WSL, Debian, IrfanView with its matching plug-ins, and lightweight qView for SVG
 profile viewing. Node.js supplies npm and npx; the same default `Packages` state maintains pnpm
 through the official `pnpm.pnpm` WinGet package, and the default `SafeChain` module keeps its pnpm

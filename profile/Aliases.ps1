@@ -287,6 +287,10 @@ function global:cleanup-windows {
     & sudo.exe @arguments
 }
 
+function global:compact-wsl {
+    & (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Invoke-WslCompaction.ps1') @args
+}
+
 function global:cleanup-traces {
     [CmdletBinding()]
     param([switch] $Run, [switch] $ConfirmCleanup, [int] $RetentionDays, [switch] $Json)
@@ -322,6 +326,13 @@ function global:aria2c {
 }
 function global:aria { aria2c @args }
 Set-Alias -Name wget -Value aria2c -Scope Global
+
+function global:gdu {
+    $executable = Find-NativeTool -Name gdu.exe
+    if (-not $executable) { $executable = Find-NativeTool -Name gdu_windows_amd64.exe -WinGetId 'dundee.gdu' }
+    if (-not $executable) { throw 'gdu is not installed. Apply the Packages module.' }
+    & $executable @args
+}
 
 function global:rclone {
     $executable = Find-NativeTool -Name rclone.exe -WinGetId 'Rclone.Rclone'

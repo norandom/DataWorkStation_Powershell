@@ -9,6 +9,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'SoftwareRelease.Core.ps1')
 $configuration = Import-PowerShellDataFile (Join-Path $repositoryRoot 'config\terminal-fonts.psd1')
 $package = $configuration.Package
+$fonts = @($configuration.Fonts) + @($configuration.DirectFonts)
 $packageRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'Fira Code' -Version $package.Version
 $installDirectory = [Environment]::ExpandEnvironmentVariables($configuration.InstallDirectory)
 $registryPath = $configuration.RegistryPath
@@ -16,7 +17,7 @@ $backupDirectory = Join-Path $repositoryRoot $configuration.BackupDirectory
 
 function Get-TerminalFontState {
     $registry = if (Test-Path -LiteralPath $registryPath) { Get-ItemProperty -LiteralPath $registryPath } else { $null }
-    $items = foreach ($font in $configuration.Fonts) {
+    $items = foreach ($font in $fonts) {
         $path = Join-Path $installDirectory $font.FileName
         $fileHash = if (Test-Path -LiteralPath $path -PathType Leaf) {
             (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -32,7 +33,7 @@ function Get-TerminalFontState {
         }
     }
     [pscustomobject]@{
-        Package = "$($package.Name) $($package.Version)"
+        Package = 'Managed terminal fonts'
         Items = @($items)
         Compliant = @($items | Where-Object { -not $_.FileCompliant -or -not $_.RegistryCompliant }).Count -eq 0
     }
@@ -51,11 +52,15 @@ function Write-TerminalFontState {
 }
 
 function Send-FontChangeNotification {
+    param([string[]] $FontPaths)
+
     if (-not ('TerminalFontChangeNotifier' -as [type])) {
         Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 public static class TerminalFontChangeNotifier {
+    [DllImport("gdi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int AddFontResourceEx(string path, uint flags, IntPtr reserved);
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam, uint flags, uint timeout, out IntPtr result);
     public static void Notify() {
@@ -64,6 +69,11 @@ public static class TerminalFontChangeNotifier {
     }
 }
 '@
+    }
+    foreach ($fontPath in $FontPaths) {
+        if ([TerminalFontChangeNotifier]::AddFontResourceEx($fontPath, 0, [IntPtr]::Zero) -eq 0) {
+            throw "Windows could not load font '$fontPath' into the current session."
+        }
     }
     [TerminalFontChangeNotifier]::Notify()
 }
@@ -77,7 +87,7 @@ if ($Mode -eq 'Test') {
 
 if ($state.Compliant -and $Mode -ne 'Reinitialize') {
     Write-TerminalFontState $state
-    Write-Host "$($state.Package) terminal fonts are unchanged."
+    Write-Host "$($state.Package) are unchanged."
     exit 0
 }
 
@@ -97,24 +107,32 @@ try {
     New-Item -Path $registryPath -Force | Out-Null
     $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 
-    foreach ($font in $configuration.Fonts) {
+    foreach ($font in $fonts) {
         $source = Join-Path $expandedDirectory "ttf\$($font.FileName)"
+        if ($font.Name) {
+            $release = Resolve-PinnedSoftwareReleaseAsset -Name $font.Name -Version $font.Version
+            $source = Join-Path $temporaryDirectory $font.FileName
+            Invoke-WebRequest -Uri $release.Uri -OutFile $source -UseBasicParsing
+        }
         $destination = Join-Path $installDirectory $font.FileName
-        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Fira Code archive is missing $($font.FileName)." }
+        if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Font source is missing $($font.FileName)." }
         $sourceHash = (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($sourceHash -ne $font.Sha256) {
             throw "$($font.FileName) SHA-256 mismatch. Expected $($font.Sha256), got $sourceHash."
         }
+        $destinationHash = ''
         if (Test-Path -LiteralPath $destination -PathType Leaf) {
             $destinationHash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
             if ($destinationHash -ne $font.Sha256) {
                 Copy-Item -LiteralPath $destination -Destination (Join-Path $backupDirectory "$($font.FileName).$timestamp.bak")
             }
         }
-        Copy-Item -LiteralPath $source -Destination $destination -Force
+        if ($destinationHash -ne $sourceHash) {
+            Copy-Item -LiteralPath $source -Destination $destination -Force
+        }
         Set-ItemProperty -LiteralPath $registryPath -Name $font.RegistryName -Value $destination -Type String
     }
-    Send-FontChangeNotification
+    Send-FontChangeNotification -FontPaths @($fonts | ForEach-Object { Join-Path $installDirectory $_.FileName })
 } finally {
     if (Test-Path -LiteralPath $temporaryDirectory -PathType Container) {
         Remove-Item -LiteralPath $temporaryDirectory -Recurse -Force
@@ -124,4 +142,4 @@ try {
 $result = Get-TerminalFontState
 Write-TerminalFontState $result
 if (-not $result.Compliant) { throw "$($result.Package) did not reach the declared per-user font state." }
-Write-Host "$($result.Package) installed per-user from the hash-pinned official release."
+Write-Host "$($result.Package) installed per-user from hash-pinned upstream releases."

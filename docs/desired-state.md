@@ -1,5 +1,27 @@
 # Desired state
 
+## Managed terminal fonts
+
+Inspect or install the declared fonts directly:
+
+```powershell
+pwsh -NoProfile -File .\scripts\Set-TerminalFontState.ps1 -Mode Test
+pwsh -NoProfile -File .\scripts\Set-TerminalFontState.ps1 -Mode Ensure
+```
+
+The equivalent focused DSL command is `.\Apply-Workstation.ps1 -Mode Ensure -Module TerminalFonts`.
+This installs Fira Code 6.2 and [Fixedsys Excelsior ALT 3.09.10](https://github.com/kika/fixedsys/releases/tag/v3.09.10)
+per-user without elevation, verifies SHA-256 hashes, registers the fonts, and loads them into the
+current Windows session. `Test` checks files and registrations without installing anything.
+`Ensure` is idempotent; `Reinitialize` reinstalls the declared fonts and backs up changed files.
+
+Select **Fixedsys Excelsior** in an application's font picker after restarting that application.
+This TrueType recreation coexists with Windows' original raster Fixedsys. The ALT variant uses
+`<=` for the less-than-or-equal ligature; ligatures remain an application preference. Start at
+16 pixels (12 points at 96 DPI) for the intended bitmap appearance. Installation does not change
+`fonts.terminalFamily` in local `config.json` or application font preferences. Upstream distributes
+the font as public domain / CC0. The software-update catalog tracks the pinned release.
+
 `Apply-Workstation.ps1` composes WinGet Configuration with focused idempotent PowerShell resources, including separately dependency-ordered Scoop and Contour Terminal paths.
 
 ## Choose scope and mode
@@ -123,6 +145,19 @@ a local input-reactive helper with per-user sign-in startup. Synapse removal req
 resource's explicit `-RemoveSynapse` switch. See [Optional Razer lighting](razer-rgb.md).
 
 The declared package set, official Scoop buckets, Windows Terminal, Contour Terminal and its BlueTerm theme, Windows optional features, developer hardening profile, current-user hover-focus behavior, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
+
+The default `Packages` group also declares WizTree (`AntibodySoftware.WizTree`) and gdu (`dundee.gdu`)
+for graphical and terminal disk-usage inspection. Test with
+`.\Apply-Workstation.ps1 -Mode Test -Module Packages`; reconcile the package group with
+`.\Apply-Workstation.ps1 -Mode Ensure -Module Packages`. Open WizTree from Start, or run
+`gdu --no-delete C:\` in a new terminal to browse usage with deletion disabled. Installation does
+not start a scan or remove files. WizTree's installer can request elevation.
+The `PowerShellProfile` module provides the short `gdu` command for WinGet's
+`gdu_windows_amd64.exe`; deploy it with `pwsh -NoProfile -File .\scripts\Set-PowerShellProfile.ps1 -Mode Ensure`.
+
+Kondo (`tbillington.kondo`) is also in `Packages` for cleaning project dependencies and build
+artifacts. Preview a selected project tree with `kondo --dry-run C:\path\to\projects`; running
+`kondo C:\path\to\projects` prompts before cleanup. Installing the package performs no cleanup.
 
 The base WinGet package DSL also installs IrfanView with its matching plug-in collection and qView.
 Completed SVG flame graphs open in the smaller native qView application after headless profiling

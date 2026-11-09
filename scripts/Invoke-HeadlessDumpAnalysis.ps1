@@ -5,7 +5,7 @@ param(
 
     [string] $OutputPath,
 
-    [string] $SymbolCache = (Join-Path $env:LOCALAPPDATA 'DataWorkStation\symbols'),
+    [string] $SymbolCache = $(if ($env:DEVELOPER_STORAGE_ROOT) { Join-Path $env:DEVELOPER_STORAGE_ROOT 'symbols' } else { Join-Path $env:LOCALAPPDATA 'DataWorkStation\symbols' }),
 
     [ValidatePattern('^https://')]
     [string] $SymbolServer = 'https://msdl.microsoft.com/download/symbols',

@@ -1,5 +1,6 @@
 # Generated local state and backups
 state/
+/%SystemDrive%/
 state/ai/
 state/cases/
 eventlog-*/

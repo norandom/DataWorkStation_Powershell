@@ -146,6 +146,13 @@ resource's explicit `-RemoveSynapse` switch. See [Optional Razer lighting](razer
 
 The declared package set, official Scoop buckets, Windows Terminal, Contour Terminal and its BlueTerm theme, Windows optional features, developer hardening profile, current-user hover-focus behavior, profiles, inline Windows sudo, firewall rules, Defender exclusions, SmartScreen baseline, WSL/pagefile limits, event-log retention, developer CLIs, PoolMon tags, and profiling tools are automatically maintained unless their skip switch is supplied.
 
+The managed PowerShell profile removes duplicate PATH directories while preserving their first
+occurrence and command precedence. This keeps repeated tool paths from overflowing CMD's 8191-character
+environment-variable limit and breaking npm/npx `.cmd` launchers. Reloading profiles does not grow
+PATH. If distinct entries still exceed 7500 characters, startup warns before npm/npx's temporary
+PATH additions can cross CMD's limit; unique directories are never silently truncated. Reopen the
+shell after deploying profiles.
+
 The default `Packages` group also declares WizTree (`AntibodySoftware.WizTree`) and gdu (`dundee.gdu`)
 for graphical and terminal disk-usage inspection. Test with
 `.\Apply-Workstation.ps1 -Mode Test -Module Packages`; reconcile the package group with

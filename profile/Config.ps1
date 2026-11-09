@@ -14,6 +14,17 @@ if ($developerTemp -and (Test-Path -LiteralPath $developerTemp -PathType Contain
 Remove-Variable developerTemp, developerVariable, developerValue -ErrorAction Ignore
 
 # These user-tool and WPT directories are managed profile dependencies.
+# CMD drops inherited PATH values longer than 8191 characters. Keep the first
+# occurrence of each directory, ignoring case, quotes and trailing separators.
+$normalizedPathSeen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+$env:PATH = (@($env:PATH -split ';' | ForEach-Object {
+    $normalizedPathEntry = $_.Trim().Trim('"')
+    if ($normalizedPathEntry -and $normalizedPathSeen.Add($normalizedPathEntry.TrimEnd('\'))) {
+        $normalizedPathEntry
+    }
+}) -join ';')
+Remove-Variable normalizedPathSeen, normalizedPathEntry -ErrorAction Ignore
+
 # Add an entry only when the directory exists and PATH does not already contain it.
 $managedToolPaths = @(
     (Join-Path $env:USERPROFILE '.local\bin'),
@@ -24,11 +35,14 @@ $managedToolPaths = @(
 )
 foreach ($managedToolPath in $managedToolPaths) {
     if ((Test-Path -LiteralPath $managedToolPath -PathType Container) -and
-        -not (($env:PATH -split ';') -contains $managedToolPath)) {
+        -not (($env:PATH -split ';' | ForEach-Object { $_.TrimEnd('\') }) -contains $managedToolPath.TrimEnd('\'))) {
         $env:PATH = "$managedToolPath;$env:PATH"
     }
 }
 Remove-Variable managedToolPaths, managedToolPath -ErrorAction Ignore
+if ($env:PATH.Length -gt 7500) {
+    Write-Warning "PATH remains $($env:PATH.Length) characters after deduplication. CMD's limit is 8191, and npm/npx add temporary entries. Consolidate tool paths before batch command resolution fails."
+}
 
 # Configure Emacs-style editing, searchable history, and menu completion.
 if (Get-Module -ListAvailable -Name PSReadLine) {

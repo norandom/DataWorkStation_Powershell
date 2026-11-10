@@ -53,7 +53,7 @@
         @{
             Name = 'Developer'; Role = 'Developer'; DistributionVariable = 'WSL_DISTRIBUTION'
             UserVariable = 'WSL_USER'; Executable = '/home/linuxbrew/.linuxbrew/bin/brew'
-            PinnedFormulae = @('dagger')
+            PinnedFormulae = @()
         }
     )
     ProhibitedOperations = @(

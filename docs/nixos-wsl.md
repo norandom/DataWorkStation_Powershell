@@ -1,13 +1,13 @@
 # Reproducible NixOS WSL tools
 
-The `NixOsWsl` module provides Helm, kubectl, Pulumi, Git, jq, and OpenSSH in a locked NixOS system generation. It is the reproducible Kubernetes and infrastructure-as-code environment. Ordinary Debian remains the Homebrew, pyinfra, Docker, and Dagger environment. `Debian-MW` remains isolated for untrusted analysis and receives neither these tools nor shared SSH state.
+The `NixOsWsl` module provides Helm, kubectl, Pulumi, Git, jq, and OpenSSH in a locked NixOS system generation. It is the reproducible Kubernetes and infrastructure-as-code environment. Ordinary Debian remains the Homebrew, pyinfra, and legacy Docker environment. `Debian-MW` remains isolated for untrusted analysis and receives neither these tools nor shared SSH state.
 
 ## Environment boundaries
 
 | Environment | Intended work | Package/state owner | SSH client |
 |---|---|---|---|
 | Windows | Workstation orchestration and Windows tools | WinGet, Scoop, focused PowerShell resources | Windows OpenSSH |
-| Debian | pyinfra, Homebrew, Docker, and Dagger development | APT, Homebrew, pyinfra | Debian OpenSSH |
+| Debian | pyinfra, Homebrew and legacy Docker development | APT, Homebrew, pyinfra | Debian OpenSSH |
 | NixOS | Helm, kubectl, Pulumi, and reproducible infrastructure tooling | Locked Nix flake | Nix store OpenSSH |
 | Debian-MW | Rootless untrusted static-analysis containers | APT and pyinfra-managed Podman | No shared SSH state |
 

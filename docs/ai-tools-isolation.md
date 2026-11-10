@@ -172,7 +172,7 @@ PATH repair so its environment receives the changes.
 
 | Distribution role | Interop | Windows PATH | Windows automount | Daily sudo | Intended content |
 |---|---:|---:|---:|---:|---|
-| ordinary Debian (`TrustedUtility`) | on | on | on | allowed | trusted administration, Homebrew, Docker/Dagger |
+| ordinary Debian (`TrustedUtility`) | on | on | on | allowed | trusted administration, Homebrew, legacy Docker (Dagger CI uses Windows Podman) |
 | DevOps NixOS | off | off | off | off | private SSH/cloud/Kubernetes credentials and IaC tools |
 | Debian-MW | off | off | off | off | hostile static inputs and rootless parser containers |
 | AI NixOS | off | off | off | off | private agent projects and OpenCode runtime state |

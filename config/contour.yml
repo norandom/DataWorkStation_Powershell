@@ -100,7 +100,9 @@ profiles:
       columns: 80
       lines: 25
     history:
-      limit: -1
+      # Bound retained output during day-long agent sessions.
+      limit: 50000
+      hard_limit: 60000
       auto_scroll_on_update: true
       scroll_multiplier: 3
     smooth_scrolling: true

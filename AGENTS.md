@@ -1,5 +1,7 @@
 # Repository operating contract
 
+- Run Windows Dagger CI with `pwsh -NoProfile -File .\scripts\Invoke-Dagger.ps1 <arguments>` (or `dagger <arguments>` through the installed Windows launcher). It selects the pinned Podman engine and works without profile aliases. Use `core version` to check connectivity. Do not reinstall Dagger in Debian; existing unrelated Debian Docker applications remain separate.
+
 - Use `main` as the repository branch. Publish releases with version tags; do not create stable branches.
 - Preserve human/AI parity: add a human-readable command before documenting AI orchestration around it.
 - Inspect existing EVTX, ETL, PCAPNG, dump, profile, and snapshot evidence before starting another capture.

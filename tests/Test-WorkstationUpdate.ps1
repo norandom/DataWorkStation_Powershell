@@ -261,7 +261,7 @@ function Test-HomebrewContract {
     if (-not $configuration) { return }
     Assert-True (@($configuration.HomebrewInstances).Count -eq 1) 'only one Homebrew instance is declared'
     Assert-True ($configuration.HomebrewInstances[0].Role -eq 'Developer') 'Homebrew belongs to developer Debian'
-    Assert-True ($configuration.HomebrewInstances[0].PinnedFormulae -contains 'dagger') 'release-owned Dagger formula is pinned'
+    Assert-True ($configuration.HomebrewInstances[0].PinnedFormulae -notcontains 'dagger') 'migrated Dagger is not managed through Homebrew'
     $source = Get-Source 'scripts/Invoke-WorkstationUpdate.ps1'
     Assert-True ($source -match '''pin'', \$formula') 'declared release formulae are pinned before upgrade'
     Assert-True ($source -match '\$brew, ''update''') 'Homebrew metadata is updated'

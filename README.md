@@ -54,7 +54,7 @@ current shell before using `cl`, Microsoft `link`, `lib`, `nmake`, or `msbuild`.
 
 ### Reproducible Kubernetes and infrastructure tools
 
-The default `NixOsWsl` module provides a locked NixOS generation for Helm, kubectl, Pulumi, and native OpenSSH. It content-verifies the complete local Nix store, compares the active generation with the evaluated flake, and separately verifies the deployed `/etc/nixos` source manifest. Ordinary Debian remains the Homebrew/Docker/Dagger environment, and Debian-MW remains excluded from shared SSH state.
+The default `NixOsWsl` module provides a locked NixOS generation for Helm, kubectl, Pulumi, and native OpenSSH. It content-verifies the complete local Nix store, compares the active generation with the evaluated flake, and separately verifies the deployed `/etc/nixos` source manifest. Ordinary Debian remains the Homebrew and legacy Docker environment; Dagger CI runs through Windows Podman, and Debian-MW remains excluded from shared SSH state.
 
 ```powershell
 .\Apply-Workstation.ps1 -Mode Test -Module NixOsWsl,SharedSshConfig -Plan
@@ -143,7 +143,7 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `config/malware-analysis-tools.psd1` | Pinned capa/Ghidra archives and optional WinGet analysis tools. |
 | `config/linux-homebrew.psd1` | Homebrew location and prerequisites inside the managed Debian WSL distribution. |
 | `config/linux-automation.psd1` | Homebrew `uv` and pinned pyinfra state for Debian-local deploys. |
-| `config/developer-docker.psd1` | Adopted rootful Docker state for Dagger in developer Debian. |
+| `config/developer-docker.psd1` | Optional legacy Docker state in developer Debian. |
 | `config/rootless-podman.psd1` | Dedicated clean Debian-MW and daemonless rootless Podman state for untrusted parsers. |
 | `config/malware-container.psd1` | Pinned static-container image inventory, runtime boundary, and resource limits. |
 | `config/profiling-tools.psd1` | Pinned profiler versions and the feature-scoped WPT bootstrap. |
@@ -160,10 +160,10 @@ btop settings, and firewall policy. The repository does not use the old DSC MOF/
 | `scripts/Invoke-WindowsUpdate.ps1` | Scans or installs accepted Windows software updates without drivers or automatic restart. |
 | `scripts/Set-LinuxHomebrewState.ps1` | Maintains Homebrew inside Debian WSL as a focused developer-package prerequisite. |
 | `scripts/Set-LinuxAutomationState.ps1` | Maintains the Debian-local pyinfra executor without installing it into Windows Python. |
-| `scripts/Set-DeveloperDockerState.ps1` | Maintains the existing rootful Dagger Docker daemon through local pyinfra. |
+| `scripts/Set-DeveloperDockerState.ps1` | Maintains the existing legacy Docker daemon through local pyinfra. |
 | `scripts/Set-RootlessPodmanState.ps1` | Provisions Debian-MW and maintains local rootless Podman through local pyinfra. |
 | `scripts/Remove-LegacyDockerMwState.ps1` | Reports retained Debian-MW Docker data and removes it only with explicit destructive confirmation. |
-| `scripts/Set-DeveloperToolsState.ps1` | Maintains CodeQL, Trail of Bits packs, Semgrep CE, pyinfra-managed Dagger through Homebrew, TTD, Debian rsync, and PoolMon tags. |
+| `scripts/Set-DeveloperToolsState.ps1` | Maintains CodeQL, Trail of Bits packs, Semgrep CE, native Windows Dagger through Podman, TTD, Debian rsync, and PoolMon tags. |
 | `scripts/Set-GoState.ps1` | Maintains the official Go package, `GOPATH`, command path, and `GOTOOLCHAIN=auto` behavior without overriding MSI-owned `GOROOT`. |
 | `scripts/Set-MalwareHashesState.ps1` | Installs and verifies the pinned `malware_hashes` Windows release for host and Sandbox use. |
 | `scripts/Invoke-EwfVerification.ps1` | Verifies segmented EWF evidence read-only and writes attributable human/JSON/raw reports. |
@@ -371,8 +371,8 @@ removes any legacy Scoop package. The module manages the translated BlueTerm `de
 
 The Windows feature resource enables Hyper-V, Windows Sandbox, and their parent features in
 dependency order. It does not restart Windows. DeveloperTools installs the verified CodeQL CLI,
-public Trail of Bits query packs, Semgrep CE in an isolated uv environment, Dagger through Homebrew
-in Debian WSL, standalone TTD, Debian rsync, and the official PoolMon tag database.
+public Trail of Bits query packs, Semgrep CE in an isolated uv environment, Windows Dagger through Podman,
+standalone TTD, Debian rsync, and the official PoolMon tag database.
 
 WinDbgMcp is opt-in and manages only the MCP side of the WinDbg package that `Packages` installs: the
 minimum MCP-capable version, the proxy, and the `EnableMcpServerFeature` setting. Starting the MCP
@@ -495,7 +495,7 @@ the `PowerShellTesting` module to inspect or repair it.
 The full WDK is not installed automatically because WinDbg supplies the required `pooltag.txt`. If that source disappears, `Set-PoolMonState.ps1` reports the explicit fallback command instead of silently installing the large WDK.
 
 Docker Engine and Compose run inside WSL, while the PowerShell module DSL manages them from Windows.
-Local pyinfra applies the state inside each distribution. `Debian` keeps a rootful daemon for Dagger.
+Local pyinfra applies the state inside each distribution. `Debian` retains its existing Docker applications. Dagger CI uses the native Windows launcher and rootful Podman machine on D:.
 `Debian-MW` uses separate, daemonless rootless Podman for inert static parsers. The pinned
 `lint-python` Ruff command checks the deploy and container code.
 

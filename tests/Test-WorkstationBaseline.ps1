@@ -682,9 +682,9 @@ function Test-DeveloperTools {
     $deploySource = Get-Content -LiteralPath (Join-Path $repositoryRoot 'linux\developer_tools.py') -Raw
     Assert-True ($homebrew.Prefix -eq '/home/linuxbrew/.linuxbrew' -and $automation.Homebrew -like '/home/linuxbrew/*') 'Homebrew and uv remain inside the selected Debian distribution'
     Assert-True ($automation.PyinfraVersion -match '^\d+\.\d+\.\d+$' -and $automationSource -match 'uv tool install --force "pyinfra==\$\(\$configuration\.PyinfraVersion\)"') 'pyinfra is pinned in an isolated uv tool environment inside Debian'
-    Assert-True ($developer.Dagger.Version -match '^\d+\.\d+\.\d+$' -and $developer.Dagger.Formula -eq 'dagger/tap/dagger') 'Dagger declares a version and official Homebrew formula'
-    Assert-True ($deploySource -match 'from pyinfra\.operations import brew, files' -and $deploySource -match 'packages=\["dagger"\]') 'the local pyinfra deploy installs Dagger through Homebrew'
-    Assert-True ($developerSource -match '\$pyinfra ''@local'' \$deploy ''-y''') 'developer-tool desired state executes the reviewed pyinfra deploy locally in Debian'
+    Assert-True ($developer.Dagger.Version -match '^\d+\.\d+\.\d+$' -and $developer.Dagger.EngineImage -eq "registry.dagger.io/engine:v$($developer.Dagger.Version)") 'Windows CLI and Podman engine versions match'
+    Assert-True ($deploySource -match 'present=False') 'Debian deploy removes migrated Dagger'
+    Assert-True ($developerSource -match 'Set-WindowsDaggerState.ps1') 'developer tools use Windows Dagger state'
     Assert-True ($developerSource -match '& \$uv tool install --upgrade semgrep') 'Semgrep uses an isolated host uv tool environment'
     Assert-True (($automationSource + $developerSource) -notmatch '(?i)\bpip(?:3)?\s+install\b') 'developer automation does not install into an unrelated Python environment'
     foreach ($source in @($homebrewSource, $automationSource, $developerSource)) {
@@ -695,7 +695,7 @@ function Test-DeveloperTools {
     $catalog = Import-PowerShellDataFile -LiteralPath (Join-Path $repositoryRoot 'config\workstation-modules.psd1')
     $developerModule = @($catalog.Modules | Where-Object Name -eq 'DeveloperTools')[0]
     $malwareModule = @($catalog.Modules | Where-Object Name -eq 'RootlessPodman')[0]
-    Assert-True ($developerModule.DependsOn -contains 'DeveloperDocker' -and $developerModule.DependsOn -notcontains 'RootlessPodman') 'developer tools use the developer engine rather than Debian-MW Podman'
+    Assert-True ($developerModule.DependsOn -notcontains 'DeveloperDocker' -and $developerModule.DependsOn -notcontains 'RootlessPodman') 'Windows Dagger does not depend on either Debian container engine'
     Assert-True ($malwareModule.DependsOn -notcontains 'DeveloperTools') 'the malware-analysis engine does not inherit developer tools'
 }
 

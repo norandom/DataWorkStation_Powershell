@@ -12,7 +12,6 @@ $wslEnvironment = Import-WslEnvironment -RepositoryRoot $repositoryRoot
 $configuration = Import-PowerShellDataFile (Join-Path $PSScriptRoot '..\config\developer-tools.psd1')
 $codeQlRelease = Resolve-PinnedSoftwareReleaseAsset -Name 'CodeQL' -Version $configuration.CodeQL.Version
 $configuration.DebianDistribution = $wslEnvironment.WSL_DISTRIBUTION
-$pyinfra = "/home/$($wslEnvironment.WSL_USER)/.local/bin/pyinfra"
 $codeqlRoot = Join-Path $env:LOCALAPPDATA "Programs\CodeQL\$($configuration.CodeQL.Version)\codeql"
 $codeql = Join-Path $codeqlRoot 'codeql.exe'
 $uv = (Get-Command uv.exe -ErrorAction Stop).Source
@@ -37,28 +36,15 @@ function Test-Rsync {
 }
 
 function Test-DaggerCli {
-    $dagger = $configuration.Dagger.Executable
-    $version = & wsl.exe -d $configuration.DebianDistribution -- sh -lc "'$dagger' version 2>/dev/null"
-    $LASTEXITCODE -eq 0 -and "$version" -match "dagger v$([regex]::Escape($configuration.Dagger.Version))(?:\s|$)"
+    & pwsh.exe -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'Set-WindowsDaggerState.ps1') -Mode Test | Out-Host
+    $LASTEXITCODE -eq 0
 }
 
 function Test-DaggerEngine {
     if (-not (Test-DaggerCli)) { return $false }
-    $dagger = $configuration.Dagger.Executable
-    & wsl.exe -d $configuration.DebianDistribution -- sh -lc "'$dagger' core version >/dev/null 2>&1"
+    & pwsh.exe -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'Invoke-Dagger.ps1') core version | Out-Host
     $LASTEXITCODE -eq 0
 }
-
-function Invoke-LinuxDeveloperDeploy {
-    $deployWindows = Join-Path $PSScriptRoot "..\$($configuration.Dagger.Deploy)"
-    $deployPortable = [IO.Path]::GetFullPath($deployWindows).Replace('\', '/')
-    $deploy = (& wsl.exe -d $configuration.DebianDistribution -- wslpath -a $deployPortable).Trim()
-    if (-not $deploy) { throw 'Failed to resolve the pyinfra deploy path inside WSL.' }
-    $path = "/home/linuxbrew/.linuxbrew/bin:/home/$($wslEnvironment.WSL_USER)/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    & wsl.exe -d $configuration.DebianDistribution -- env "PATH=$path" $pyinfra '@local' $deploy '-y'
-    if ($LASTEXITCODE -ne 0) { throw "pyinfra failed to apply Debian developer tools: $LASTEXITCODE" }
-}
-
 function Test-CodeQL {
     if (-not (Test-Path -LiteralPath $codeql -PathType Leaf)) { return $false }
     $version = & $codeql version --format terse 2>$null
@@ -135,7 +121,8 @@ if (-not $checks.DebianRsync) {
     if ($LASTEXITCODE -ne 0) { throw "Debian failed to install rsync: $LASTEXITCODE" }
 }
 if (-not $checks.DaggerCli -or $Mode -eq 'Reinitialize') {
-    Invoke-LinuxDeveloperDeploy
+    & pwsh.exe -NoLogo -NoProfile -File (Join-Path $PSScriptRoot 'Set-WindowsDaggerState.ps1') -Mode Ensure
+    if ($LASTEXITCODE) { throw 'Windows Dagger setup failed.' }
 }
 if (-not $checks.TTD) { Install-Ttd }
 

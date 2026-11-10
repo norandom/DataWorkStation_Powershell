@@ -379,12 +379,15 @@
         @{
             Id = 'linux-developer-packages'
             Title = 'Trusted Debian and NixOS WSL developer environments'
-            Triggers = @('homebrew', 'brew', 'dagger', 'docker mtu', 'container nuget stall', 'release pipeline', 'developer package', 'nixos', 'nix', 'helm', 'kubectl', 'pulumi', 'shared ssh config', 'wsl ssh')
+            Triggers = @('podman desktop', 'docker compose', 'homebrew', 'brew', 'dagger', 'docker mtu', 'container nuget stall', 'release pipeline', 'developer package', 'nixos', 'nix', 'helm', 'kubectl', 'pulumi', 'shared ssh config', 'wsl ssh')
             EvidenceKinds = @('Snapshot')
             InspectCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-LinuxAutomationState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test'
+                'pwsh -NoProfile -File scripts/Set-WindowsDaggerState.ps1 -Mode Test'
+                'pwsh -NoProfile -File scripts/Invoke-Dagger.ps1 core version'
+                'podman machine list'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Test -Json'
                 'pwsh -NoProfile -File .\scripts\Set-RootlessPodmanState.ps1 -Mode Test'
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperToolsState.ps1 -Mode Test'
@@ -400,6 +403,7 @@
             )
             StateCommands = @(
                 'pwsh -NoProfile -File .\scripts\Set-DeveloperDockerState.ps1 -Mode Ensure'
+                'pwsh -NoProfile -File scripts/Set-WindowsDaggerState.ps1 -Mode Ensure'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module NixOsWsl'
                 '.\Apply-Workstation.ps1 -Mode Ensure -Module SharedSshConfig'
             )

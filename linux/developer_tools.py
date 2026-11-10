@@ -4,15 +4,16 @@ from pathlib import Path
 
 from pyinfra.operations import brew, files
 
-brew.tap(
-    name="Add the official Dagger Homebrew tap",
-    src="dagger/tap",
+brew.packages(
+    name="Remove the migrated Debian Dagger CLI",
+    packages=["dagger"],
+    present=False,
 )
 
-brew.packages(
-    name="Install the Dagger CLI",
-    packages=["dagger"],
-    present=True,
+files.file(
+    name="Remove the obsolete standalone Debian Dagger CLI",
+    path=str(Path.home() / ".local/bin/dagger"),
+    present=False,
 )
 
 files.line(

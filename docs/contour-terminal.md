@@ -51,7 +51,7 @@ The translation preserves:
 
 - the deep-blue palette as the default and the near-black palette as the `blue-dark` profile;
 - 17-pixel text, equivalent to the source's 17-pixel iTerm sizing and close to the 12-point Windows Terminal translation;
-- a blinking bar cursor, unlimited history, and visual alert without bell sound;
+- a blinking bar cursor, 50,000 lines of history with a 60,000-line hard cap per pane, and visual alert without bell sound;
 - the locally declared terminal font and an initial working directory of `~` (`$HOME`), with WSL profiles explicitly selecting the Linux home using `--cd ~`;
 - the `xterm-256color` environment intent and PowerShell 7 as the shell.
 

@@ -4,6 +4,24 @@ metadata:
     processor:
       identifier: dscv3
 resources:
+  - name: Podman Desktop
+    type: Microsoft.WinGet/Package
+    properties:
+      id: RedHat.Podman-Desktop
+      source: winget
+      useLatest: true
+  - name: Podman
+    type: Microsoft.WinGet/Package
+    properties:
+      id: RedHat.Podman
+      source: winget
+      useLatest: true
+  - name: Docker Compose provider for Podman
+    type: Microsoft.WinGet/Package
+    properties:
+      id: Docker.DockerCompose
+      source: winget
+      useLatest: true
   - name: Windows Memory Cleaner
     type: Microsoft.WinGet/Package
     properties:

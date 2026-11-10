@@ -19,11 +19,11 @@ $developerDocker = @($catalog.Modules | Where-Object Name -eq 'DeveloperDocker')
 $developerTools = @($catalog.Modules | Where-Object Name -eq 'DeveloperTools')
 Assert-True ($developerDocker.Count -eq 1) 'DeveloperDocker module exists once'
 Assert-True ($developerDocker[0].DependsOn -contains 'LinuxAutomation') 'pyinfra precedes developer Docker'
-Assert-True ($developerTools[0].DependsOn -contains 'DeveloperDocker') 'developer Docker precedes Dagger'
+Assert-True ($developerTools[0].DependsOn -notcontains 'DeveloperDocker') 'Dagger no longer requires Debian Docker'
 $state = Get-Content (Join-Path $repositoryRoot 'scripts\Set-DeveloperDockerState.ps1') -Raw
 Assert-True ($state -match '--user root -- env') 'privileged pyinfra state runs as WSL root without changing user sudo policy'
 $aliases = Get-Content (Join-Path $repositoryRoot 'profile\Aliases.ps1') -Raw
 Assert-True ($aliases -match 'function global:wsl-dev') 'the developer WSL boundary has an explicit human command'
-Assert-True ($aliases -match 'wsl-dev docker @args') 'the ordinary Docker command routes through the configured developer WSL boundary'
+Assert-True ($aliases -match '& podman.exe @args') 'the ordinary Docker command routes to Windows Podman'
 Assert-True ($aliases -notmatch 'function global:docker \{[^}]*wsl-mw') 'the ordinary Docker command never routes through the malware WSL boundary'
 Write-Host "Developer Docker state tests passed ($script:assertions assertions)."

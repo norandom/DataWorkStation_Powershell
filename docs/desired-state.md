@@ -234,15 +234,9 @@ The default `NixOsWsl` module installs the pinned NixOS-WSL image and activates 
 
 `DeveloperEditor` maintains stable VS Code, the pinned `jx22/berg` source theme, Cline, Jupyter, Python, and GitHub Copilot extensions, and the existing local-or-Fira font selection. `OpenCodeExtensions` maintains the pinned Cream Blue theme set, selects Cobalt, and installs the verified OpenUltraCode release while merge-preserving the global OpenCode configuration. `AiTools` and `AiNixOsWsl` are separate opt-in modules for native Windows agents and the additional restricted OpenCode CLI environment. The AI-tools state command accepts a focused `-Product` selection, so OpenCode Desktop and the native CLI can be reconciled without installing every other agent. Test and Plan are observational; Ensure executes reviewed network installers and may create or restart only the selected AI distribution. See [AI tools, editor, and WSL isolation](ai-tools-isolation.md).
 
-The selectable `DeveloperTools` bundle pulls in `Go`, `LinuxHomebrew`, `LinuxAutomation`, and `DeveloperDocker` after the Debian and package prerequisites. `LinuxAutomation` installs Homebrew `uv` and the pinned pyinfra version. `DeveloperDocker` adopts the existing official Docker CE packages, root-owned service/socket, and selected user's group membership through `linux/developer_docker.py`; this rootful daemon is retained because Dagger requires privileged engine capabilities. The developer bundle then runs the repository's Debian-native deploy:
+The `DeveloperTools` bundle uses native Windows Dagger with the rootful Podman machine on `D:\Docker`. Run `pwsh -NoProfile -File scripts/Set-WindowsDaggerState.ps1 -Mode Test` to inspect it, or `-Mode Ensure` to install the checksum-pinned CLI and Windows launcher and verify the engine. The machine must already be configured rootful explicitly. `pwsh -NoProfile -File scripts/Invoke-Dagger.ps1 core version` checks the engine; pass `call <function>` for project CI. CLI and engine versions are pinned together in `config/developer-tools.psd1`.
 
-```bash
-cd /mnt/c/path/to/DataWorkStation_PowerShell
-PATH="/home/linuxbrew/.linuxbrew/bin:$HOME/.local/bin:$PATH" \
-  pyinfra @local ./linux/developer_tools.py -y
-```
-
-Use `--dry` instead of `-y` to inspect proposed changes. The external equivalent is `./Apply-Workstation.ps1 -Mode Ensure -Module DeveloperTools`. Both paths use the same deploy file to install Dagger with the official `dagger/tap/dagger` formula. The outer test verifies the CLI version and a minimal Dagger Engine call against the developer Docker daemon inside Debian WSL. Run either prerequisite alone with `-Module LinuxHomebrew`, `-Module LinuxAutomation`, or `-Module DeveloperDocker`, or inspect the complete order with `-Mode Test -Module DeveloperTools -Plan`.
+The Windows `dagger.cmd` launcher works without PowerShell profiles, selects Podman explicitly, and scopes the terminal-theme workaround and runner environment to the invocation. It resolves ancestor directory junctions before starting Dagger so Windows repository files can be synced reliably. The Debian Homebrew Dagger package has been removed. `linux/developer_tools.py` now declares its absence. Legacy Debian Docker applications remain available separately; the `DeveloperDocker` module is optional and is no longer a prerequisite for Dagger.
 
 Inspect developer Docker installation and MTU drift before applying changes:
 

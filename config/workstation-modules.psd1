@@ -350,7 +350,7 @@
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $true
             Destructive = $false
-            Description = 'Pyinfra-managed rootful Docker daemon in Debian for Dagger.'
+            Description = 'Optional legacy Docker daemon in Debian; Windows Dagger uses Podman.'
         }
         @{
             Name = 'DeveloperTools'
@@ -358,7 +358,7 @@
             Runtime = 'PowerShell7'
             Order = 50
             Default = $true
-            DependsOn = @('DeveloperDocker', 'Go')
+            DependsOn = @('LinuxAutomation', 'Packages', 'Go')
             SupportedModes = @('Test', 'Ensure', 'Reinitialize')
             Privileged = $false
             Destructive = $false

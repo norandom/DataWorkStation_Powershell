@@ -644,16 +644,12 @@ function global:nixos-check {
         -File (Join-Path $env:USERPROFILE 'Source\PowerShell\scripts\Set-NixOsWslState.ps1') -Mode Test @args
 }
 
-if (-not (Get-Command docker.exe -CommandType Application -ErrorAction Ignore)) {
-    function global:docker {
-        wsl-dev docker @args
-    }
+function global:docker {
+    & podman.exe @args
 }
 
-if (-not (Get-Command docker-compose.exe -CommandType Application -ErrorAction Ignore)) {
-    function global:docker-compose {
-        wsl-dev docker compose @args
-    }
+function global:docker-compose {
+    & podman.exe compose @args
 }
 
 if (-not (Get-Command ssh-copy-id.exe -CommandType Application -ErrorAction Ignore)) {

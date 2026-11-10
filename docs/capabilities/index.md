@@ -16,6 +16,8 @@ debugger, changes policy, or repairs desired state.
 | Route | Use when | Inspect first | Explicit next action |
 |---|---|---|---|
 | `memory-pressure` | RAM, commit, WSL memory, a kernel pool, or an early-OOM intervention | `mem`, `memapps`, `memproc`, `Get-WorkloadMemoryDiagnostics.ps1 -Action Events` | `profile-native-record CASE -Seconds 30` |
+| `wsl-zram` | Inspect compressed swap in trusted Debian | `sh linux/zram.sh Test` from the repository inside Debian | Review `sudo sh linux/zram.sh Ensure` before applying |
+| `wsl-earlyoom` | Inspect Debian's early-OOM policy | `sh linux/earlyoom.sh Test` from the repository inside Debian | Review `sudo sh linux/earlyoom.sh Ensure` before applying |
 | `network-path` | DNS, IPv6, firewall, port, or reachability fails | `ports`, `connections`, existing PCAPNG | `pcap-debug-start CASE` |
 | `http-authentication` | An HTTP operation fails, including Office Store installation | `http-debug-summary -Path EXISTING.etl -Executable WINWORD.EXE` | Review `http-debug-start -Name CASE -Executable WINWORD.EXE -Plan` before capture |
 | `crash-analysis` | A process exits, faults, freezes, or hangs | `crashes`, `problems`, existing dumps | `dump-on-crash -Name CASE -Executable PATH` |
@@ -51,7 +53,7 @@ Follow the concrete operator evidence and safety boundaries in [sample outputs](
 | `workstation-help` | Find managed commands, aliases, and skills | `workstation-help` |
 | `idle-sleep-inhibition` | Inspect Caffeine and its startup state | `pwsh -NoProfile -File .\scripts\Set-CaffeineState.ps1 -Mode Test` |
 | `workstation-modules` | Select desired state, inspect managed packages such as pnpm or Audio Switcher, or review the complete update workflow | `.\Apply-Workstation.ps1 -Mode Test -Module Packages -Plan`, `pnpm --version`, `pwsh -NoProfile -File .\scripts\Set-AudioSwitcherState.ps1 -Mode Test`, or `update` |
-| `linux-developer-packages` | Inspect Homebrew, pyinfra, Dagger, or container engines in WSL | `pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test` |
+| `linux-developer-packages` | Inspect Windows Dagger/Podman and Homebrew, pyinfra, or container engines in WSL | `pwsh -NoProfile -File .\scripts\Set-LinuxHomebrewState.ps1 -Mode Test` |
 | `go-development` | Inspect Go, its workspace, and toolchain selection | `go version` |
 | `package-supply-chain` | Inspect Safe-Chain protection for pnpm and other supported npm/Python package managers on Windows and trusted Debian | `pwsh -NoProfile -File .\scripts\Set-SafeChainState.ps1 -Mode Test`, `Get-Command pnpm,pnpx -CommandType Function | Format-List Name,Definition`, `pnpm safe-chain-verify`, or `pnpx safe-chain-verify` |
 | `native-development` | Inspect MSVC, CMake, Rust, Java, and explicitly activate MSVC | `msvc-activate; Get-Command cl.exe,link.exe,msbuild.exe` |

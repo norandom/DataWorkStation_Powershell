@@ -111,9 +111,9 @@ The routing DSL is `config/workstation-modules.psd1`.
 | `NixOsWsl` | yes | `Packages` | locked NixOS-WSL generation with Helm, kubectl, Pulumi CLI, native OpenSSH, and integrity checks |
 | `SharedSshConfig` | yes | `NixOsWsl` | canonical Windows SSH config linked only into trusted Debian; restricted WSLs excluded |
 | `AiNixOsWsl` | **no** | `Packages` | restricted NixOS-AI generation with OpenCode, maintenance-owned nono, and fail-closed integrity checks |
-| `DeveloperDocker` | no | `LinuxAutomation` | pyinfra-adopted rootful Docker daemon in Debian for Dagger |
+| `DeveloperDocker` | no | `LinuxAutomation` | pyinfra-adopted optional legacy Docker daemon in Debian |
 | `RootlessPodman` | yes | none | clean Debian-MW distro with local pyinfra and daemonless rootless Podman |
-| `DeveloperTools` | yes | `DeveloperDocker`, `Go` | Go, CodeQL, Semgrep, pyinfra-managed Dagger, TTD, rsync, and PoolMon support |
+| `DeveloperTools` | yes | `LinuxAutomation`, `Packages`, `Go` | Go, CodeQL, Semgrep, native Windows Dagger on Podman, TTD, rsync, and PoolMon support |
 | `AiTools` | **no** | `Packages` | native Windows OpenCode Desktop/CLI, Claude Code, Antigravity, Cursor, Grok Build, Cline, and Copilot CLI through reviewed channels |
 | `DeveloperEditor` | yes | `PowerShell7`, `TerminalFonts` | stable VS Code, pinned Berg source, Cline/Jupyter/Python/Copilot extensions, and selected font |
 | `OpenCodeExtensions` | yes | none | pinned Cream Blue themes with Cobalt selected and verified OpenUltraCode 0.1.3 assets |
